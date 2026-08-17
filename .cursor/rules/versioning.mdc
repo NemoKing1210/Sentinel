@@ -1,0 +1,44 @@
+---
+description: Bump SemVer and update CHANGELOG.md on every user-facing or shipped change
+alwaysApply: true
+---
+
+# Versioning and changelog
+
+Every shipped change must bump the app version and record the change in `CHANGELOG.md`. Do not leave the version or changelog for a later commit.
+
+## SemVer (`MAJOR.MINOR.PATCH`)
+
+Start is `0.1.0`. Bump the **smallest** number that matches the change:
+
+| Bump | When | Example |
+| --- | --- | --- |
+| **Patch** | Small change: bugfix, copy, docs, tweak, translation, hardening | `0.1.0` → `0.1.1` |
+| **Minor** | New user-visible capability that stays compatible | `0.1.1` → `0.2.0` |
+| **Major** | Breaking change for users or persisted data | `0.2.0` → `1.0.0` |
+
+Default to **patch** when unsure. One change set = one bump (not one bump per file).
+
+## Keep these versions in sync
+
+- `package.json`
+- `package-lock.json` (root `version` and `packages[""].version`)
+- `src-tauri/Cargo.toml`
+- `src-tauri/Cargo.lock` (`name = "sentinel"`)
+- `src-tauri/tauri.conf.json`
+- `AGENTS.md` (the `Version:` line)
+- `CHANGELOG.md` (new `## [x.y.z] - YYYY-MM-DD` section at the top)
+
+The UI reads `package.json` via `src/app/utils/packageMeta.ts`. Do not hardcode the version elsewhere.
+
+## Changelog entry
+
+Add a dated section under the heading, using `Added` / `Changed` / `Fixed` / `Removed`. Write user-facing bullets, not file lists.
+
+```markdown
+## [0.1.1] - 2026-08-19
+
+### Fixed
+
+- Queue retry no longer leaves a stale uploading row
+```
