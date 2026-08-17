@@ -1,0 +1,149 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: Create a draft GitHub Release
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  quality:
+    name: Quality
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  metadata:
+    name: Metadata
+    needs: quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      changelog: ${{ steps.meta.outputs.changelog }}
+      create_release: ${{ steps.meta.outputs.create_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          rust: 'false'
+          frontend: 'false'
+
+      - name: Collect release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          create_release=false
+          if [[ '${{ github.ref_type }}' == tag ]]; then
+            tag="${GITHUB_REF_NAME#v}"
+            if [[ "$tag" != "$version" ]]; then
+              echo "::error::Tag v$tag does not match package.json version $version"
+              exit 1
+            fi
+            create_release=true
+          elif [[ '${{ inputs.create_release }}' == true ]]; then
+            create_release=true
+          fi
+
+          delimiter="CHANGELOG_$(openssl rand -hex 8)"
+          {
+            echo "version=$version"
+            echo "create_release=$create_release"
+            echo "changelog<<$delimiter"
+            node scripts/extract-changelog.mjs --github "$version"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: ${{ matrix.name }}
+    needs: metadata
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            platform: macos-latest
+            target: aarch64-apple-darwin
+          - name: macOS x64
+            platform: macos-latest
+            target: x86_64-apple-darwin
+          - name: Linux x64
+            platform: ubuntu-22.04
+            target: ''
+          - name: Linux arm64
+            platform: ubuntu-22.04-arm
+            target: ''
+          - name: Windows x64
+            platform: windows-latest
+            target: ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          rust-targets: ${{ matrix.target }}
+
+      - name: Import Windows certificate
+        if: runner.os == 'Windows' && env.WINDOWS_CERTIFICATE != ''
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $certDir = Join-Path $env:RUNNER_TEMP 'certificate'
+          New-Item -ItemType Directory -Path $certDir | Out-Null
+          $encoded = Join-Path $certDir 'tempCert.txt'
+          $pfx = Join-Path $certDir 'certificate.pfx'
+          Set-Content -Path $encoded -Value $env:WINDOWS_CERTIFICATE
+          certutil -decode $encoded $pfx
+          Remove-Item $encoded
+          Import-PfxCertificate `
+            -FilePath $pfx `
+            -CertStoreLocation Cert:\CurrentUser\My `
+            -Password (ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText)
+          Remove-Item $pfx
+
+      - name: Build installers
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ needs.metadata.outputs.create_release == 'true' && format('v{0}', needs.metadata.outputs.version) || '' }}
+          releaseName: Sentinel v__VERSION__
+          releaseBody: ${{ needs.metadata.outputs.changelog }}
+          releaseDraft: true
+          prerelease: false
+          generateReleaseNotes: false
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+          uploadWorkflowArtifacts: true
+          args: ${{ matrix.target && format('--target {0}', matrix.target) || '' }}

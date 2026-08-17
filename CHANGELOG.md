@@ -5,6 +5,24 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-08-18
+
+### Added
+
+- npm scripts to bump SemVer in every version file and to tag a GitHub release
+- Release tag and GitHub Release notes are taken from the latest CHANGELOG.md section
+
+## [0.1.1] - 2026-08-18
+
+### Added
+
+- GitHub Actions CI on pull requests: lint, format, TypeScript build, Rust clippy, and version sync
+- Tagged releases build Windows, macOS, and Linux installers and attach them to a draft GitHub Release
+
+### Fixed
+
+- Clippy and React hook lint rules that would have failed the new CI gate
+
 ## [0.1.0] - 2026-08-18
 
 Initial release of the VirusTotal desktop client.

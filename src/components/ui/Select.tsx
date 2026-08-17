@@ -63,6 +63,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel }
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [menuLayout, setMenuLayout] = useState<MenuLayout | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement>(() => document.body);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -81,6 +82,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel }
 
   useLayoutEffect(() => {
     if (!open) return;
+    setPortalRoot(getSelectPortalRoot(rootRef.current));
     updateMenuLayout();
   }, [open, updateMenuLayout]);
 
@@ -196,7 +198,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel }
               </button>
             ))}
           </div>,
-          getSelectPortalRoot(rootRef.current),
+          portalRoot,
         )
       : null;
 

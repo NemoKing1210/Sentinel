@@ -110,7 +110,8 @@ export function presentHashes(report: FileReport): HashEntry[] {
 
 export function sortEngines(engines: EngineResult[]): EngineResult[] {
   return [...engines].sort((left, right) => {
-    const rank = (ENGINE_RANK[left.category] ?? ENGINE_RANK_FALLBACK) - (ENGINE_RANK[right.category] ?? ENGINE_RANK_FALLBACK);
+    const rank =
+      (ENGINE_RANK[left.category] ?? ENGINE_RANK_FALLBACK) - (ENGINE_RANK[right.category] ?? ENGINE_RANK_FALLBACK);
     if (rank !== 0) return rank;
     return left.name.localeCompare(right.name);
   });

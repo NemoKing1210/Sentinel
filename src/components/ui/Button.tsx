@@ -23,13 +23,7 @@ export function Button({
   ariaLabel,
 }: ButtonProps) {
   return (
-    <button
-      type={type}
-      className={`button ${variant}`}
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={ariaLabel}
-    >
+    <button type={type} className={`button ${variant}`} onClick={onClick} disabled={disabled} aria-label={ariaLabel}>
       {icon ? <Icon name={icon} /> : null}
       {children}
     </button>

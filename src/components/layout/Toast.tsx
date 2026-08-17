@@ -68,20 +68,11 @@ function Toast({ toast, onDismiss }: ToastProps) {
             {toast.action.label}
           </button>
         ) : null}
-        <button
-          type="button"
-          className="toast-close"
-          onClick={() => setLeaving(true)}
-          aria-label={t('toast.dismiss')}
-        >
+        <button type="button" className="toast-close" onClick={() => setLeaving(true)} aria-label={t('toast.dismiss')}>
           <Icon name="close" />
         </button>
       </div>
-      <span
-        className="toast-progress"
-        style={{ animationDuration: `${toast.duration}ms` }}
-        aria-hidden="true"
-      />
+      <span className="toast-progress" style={{ animationDuration: `${toast.duration}ms` }} aria-hidden="true" />
     </div>
   );
 }

@@ -11,6 +11,8 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-59d5cc?style=flat-square" alt="MIT License"></a>
+  <a href="https://github.com/NemoKing1210/Sentinel/actions/workflows/ci.yml"><img src="https://github.com/NemoKing1210/Sentinel/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/NemoKing1210/Sentinel/releases/latest"><img src="https://img.shields.io/github/v/release/NemoKing1210/Sentinel?style=flat-square" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2">
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React 19">
   <img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat-square&logo=rust&logoColor=white" alt="Rust">
@@ -18,6 +20,7 @@
 </p>
 
 <p align="center">
+  <a href="#install">Install</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#privacy">Privacy</a> ·
@@ -44,6 +47,18 @@ Maintained by [NemoKing](https://github.com/NemoKing1210) · [NemoKing1210/Senti
 | **Preferences** | Theme, accent, language, polling interval, structured logs (rotated, 30-day retention).                                                                                             |
 
 UI languages: English, Russian, Spanish, German, French, Portuguese, Chinese.
+
+## Install
+
+Download an installer from [GitHub Releases](https://github.com/NemoKing1210/Sentinel/releases):
+
+| Platform | Artifact                           |
+| -------- | ---------------------------------- |
+| Windows  | `.exe` (NSIS) or `.msi`            |
+| macOS    | `.dmg` for Apple Silicon and Intel |
+| Linux    | `.AppImage` or `.deb`              |
+
+Unsigned builds may show an OS SmartScreen or Gatekeeper warning. That is expected until signing certificates are configured in the release workflow.
 
 ## Quick start
 
@@ -99,10 +114,13 @@ flowchart LR
 | `npm run lint`                                     | ESLint                           |
 | `npm run format:check`                             | Prettier                         |
 | `npm run build`                                    | `tsc` + Vite production bundle   |
+| `npm run check:versions`                           | SemVer files stay in sync        |
+| `npm run version:patch`                            | Bump patch + changelog stub      |
+| `npm run release`                                  | Tag `vX.Y.Z` and push            |
 | `cargo check --manifest-path src-tauri/Cargo.toml` | Native compile check             |
 | `npm run tauri build`                              | Packaged installer / binary      |
 
-Before a pull request, run `npm run build` and `cargo check --manifest-path src-tauri/Cargo.toml`.
+Before a pull request, run `npm run build` and `cargo check --manifest-path src-tauri/Cargo.toml`. GitHub Actions repeats those checks and, on a `vX.Y.Z` tag, builds installers.
 
 <details>
 <summary><strong>Stack</strong></summary>

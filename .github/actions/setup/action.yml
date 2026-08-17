@@ -1,0 +1,57 @@
+name: Setup Sentinel
+description: Install Node, Rust, caches, and Linux packages needed to build Sentinel
+
+inputs:
+  node:
+    description: Install Node.js from .nvmrc
+    default: 'true'
+  rust:
+    description: Install the Rust toolchain from rust-toolchain.toml
+    default: 'true'
+  rust-targets:
+    description: Extra rustup targets (comma-separated)
+    default: ''
+  frontend:
+    description: Install npm dependencies with npm ci
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      if: inputs.node == 'true'
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - name: Install Rust
+      if: inputs.rust == 'true'
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.rust-targets }}
+
+    - name: Cache Rust build
+      if: inputs.rust == 'true'
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri -> target
+        cache-on-failure: true
+
+    - name: Install Linux build dependencies
+      if: runner.os == 'Linux' && inputs.rust == 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libwebkit2gtk-4.1-dev \
+          libappindicator3-dev \
+          librsvg2-dev \
+          patchelf \
+          xdg-utils \
+          libsecret-1-dev
+
+    - name: Install frontend dependencies
+      if: inputs.frontend == 'true'
+      shell: bash
+      run: npm ci --no-audit --no-fund

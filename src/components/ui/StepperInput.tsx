@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Icon } from './Icon';
 
@@ -26,10 +26,11 @@ export function StepperInput({
   decreaseLabel = 'Decrease',
 }: StepperInputProps) {
   const [text, setText] = useState(String(value));
-
-  useEffect(() => {
+  const [seenValue, setSeenValue] = useState(value);
+  if (value !== seenValue) {
+    setSeenValue(value);
     setText(String(value));
-  }, [value]);
+  }
 
   const clamp = (next: number) => Math.min(max, Math.max(min, next));
 

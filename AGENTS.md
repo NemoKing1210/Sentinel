@@ -13,22 +13,22 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.1.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.1.2`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
 ## Stack (accurate)
 
-| Piece | Reality |
-| --- | --- |
-| Frontend | React 19 + TypeScript + Vite 6 |
-| UI kit | **Custom CSS**, not MUI. Primitives in `src/components/ui/` |
-| Icons | `@heroicons/react` 24/outline, mapped in `src/components/ui/Icon.tsx` |
-| State | Zustand (`src/core/state/store.ts`) |
-| i18n | i18next + react-i18next, catalogs in `src/core/i18n/locales/` (`en`, `ru`, `es`, `de`, `fr`, `pt`, `zh`) |
-| Native | Rust 2021, Tauri 2, plugins: dialog, opener, single-instance, tray |
-| HTTP | `reqwest` (rustls) to `https://www.virustotal.com/api/v3` |
-| Secrets | `keyring` service `sentinel-virustotal`, account `api-key` |
+| Piece    | Reality                                                                                                  |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| Frontend | React 19 + TypeScript + Vite 6                                                                           |
+| UI kit   | **Custom CSS**, not MUI. Primitives in `src/components/ui/`                                              |
+| Icons    | `@heroicons/react` 24/outline, mapped in `src/components/ui/Icon.tsx`                                    |
+| State    | Zustand (`src/core/state/store.ts`)                                                                      |
+| i18n     | i18next + react-i18next, catalogs in `src/core/i18n/locales/` (`en`, `ru`, `es`, `de`, `fr`, `pt`, `zh`) |
+| Native   | Rust 2021, Tauri 2, plugins: dialog, opener, single-instance, tray                                       |
+| HTTP     | `reqwest` (rustls) to `https://www.virustotal.com/api/v3`                                                |
+| Secrets  | `keyring` service `sentinel-virustotal`, account `api-key`                                               |
 
 Path alias `@/*` → `src/*` (`tsconfig.json`, `vite.config.ts`). Vite dev server is port **1421** (`strictPort: true`).
 
@@ -71,6 +71,11 @@ src-tauri/src/
   persistence.rs           state.json in app data dir (version 1)
   logging.rs               Daily JSON logs, rotation, level config
   chrome.rs                Native menu + tray
+.github/
+  workflows/ci.yml         PR quality gate (lint, format, build, clippy, versions)
+  workflows/release.yml    Tag/manual installer builds → draft GitHub Release
+  actions/setup            Shared Node/Rust/Linux setup
+scripts/                   Version bump, changelog extract, release tag
 ```
 
 Do not edit `dist/` or `src-tauri/target/` by hand.
@@ -106,17 +111,17 @@ Pages are presentational: they receive props and render store state. I/O stays i
 
 Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them from `api.ts`.
 
-| Command | Role |
-| --- | --- |
-| `has_saved_api_key` / `get_api_key` / `save_api_key` / `validate_api_key` | Keychain + VT probe (`GET /domains/google.com`) |
-| `submit_file` | Hash SHA-256, upload (direct `/files` if ≤ 32 MB, else `/files/upload_url`), cap **650 MB** |
-| `submit_archive` | Walk folder, ZIP to tempfile, then `submit_file` |
-| `get_analysis_status` | `GET /analyses/{id}` |
-| `get_path_metadata` | Size, file count, mtime, `is_dir` |
-| `open_external_url` | Open VirusTotal (or other) URLs |
-| `get_log_level` / `set_log_level` / `get_log_directory` / `open_log_directory` / `log_event` | Logging |
-| `load_persisted_state` / `save_persisted_state` / `clear_persisted_state` | App data `state.json` |
-| `set_close_to_tray` | Close button hides window when enabled |
+| Command                                                                                      | Role                                                                                        |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `has_saved_api_key` / `get_api_key` / `save_api_key` / `validate_api_key`                    | Keychain + VT probe (`GET /domains/google.com`)                                             |
+| `submit_file`                                                                                | Hash SHA-256, upload (direct `/files` if ≤ 32 MB, else `/files/upload_url`), cap **650 MB** |
+| `submit_archive`                                                                             | Walk folder, ZIP to tempfile, then `submit_file`                                            |
+| `get_analysis_status`                                                                        | `GET /analyses/{id}`                                                                        |
+| `get_path_metadata`                                                                          | Size, file count, mtime, `is_dir`                                                           |
+| `open_external_url`                                                                          | Open VirusTotal (or other) URLs                                                             |
+| `get_log_level` / `set_log_level` / `get_log_directory` / `open_log_directory` / `log_event` | Logging                                                                                     |
+| `load_persisted_state` / `save_persisted_state` / `clear_persisted_state`                    | App data `state.json`                                                                       |
+| `set_close_to_tray`                                                                          | Close button hides window when enabled                                                      |
 
 Native commands return `Result<T, String>` (or a typed error converted at the boundary). They must not panic on user-controlled input.
 
@@ -169,18 +174,18 @@ Keep scan state serializable and UI-independent. Components render; services per
 7. Preserve English and Russian translations for every user-facing string.
 8. Use small, composable functions and explicit types. Avoid `any` in new code.
 9. Do not commit secrets, generated build output, local credentials, or OS-specific temp files.
-10. Before submitting changes, run `npm run build` and `cargo check --manifest-path src-tauri/Cargo.toml` when Rust is available.
+10. Before submitting changes, run `npm run build`, `npm run check:versions`, and `cargo check --manifest-path src-tauri/Cargo.toml` when Rust is available.
 11. Log every shipped change in [CHANGELOG.md](CHANGELOG.md) and bump SemVer in the same change. Small changes are a **patch** (`0.1.0` → `0.1.1`). New user-visible capabilities are a **minor**. Breaking changes are a **major**. Keep `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` (`sentinel`), `src-tauri/tauri.conf.json`, and the `Version:` line in this file in sync.
 
 ## Naming
 
-| Kind | Convention |
-| --- | --- |
-| React components | PascalCase |
-| TS functions / variables | camelCase |
-| Rust fn + Tauri commands | snake_case |
-| Feature directories | kebab-case |
-| Tests | next to the module or matching `tests/` |
+| Kind                     | Convention                              |
+| ------------------------ | --------------------------------------- |
+| React components         | PascalCase                              |
+| TS functions / variables | camelCase                               |
+| Rust fn + Tauri commands | snake_case                              |
+| Feature directories      | kebab-case                              |
+| Tests                    | next to the module or matching `tests/` |
 
 ## How to add work safely
 
@@ -200,6 +205,8 @@ Keep scan state serializable and UI-independent. Components render; services per
 npm run lint
 npm run format:check
 npm run build
+npm run check:versions
+npm test
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
 

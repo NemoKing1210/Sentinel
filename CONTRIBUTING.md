@@ -25,16 +25,20 @@ Use `npm run tauri dev` for almost all work. `npm run dev` is the Vite UI withou
 
 ## Everyday commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run tauri dev` | Run the desktop app |
-| `npm run lint` | ESLint on TypeScript |
-| `npm run format` / `npm run format:check` | Prettier |
-| `npm run build` | `tsc` + Vite production bundle |
-| `cargo check --manifest-path src-tauri/Cargo.toml` | Native compile check |
-| `npm run tauri build` | Packaged installer / binary |
+| Command                                            | Purpose                                              |
+| -------------------------------------------------- | ---------------------------------------------------- |
+| `npm run tauri dev`                                | Run the desktop app                                  |
+| `npm run lint`                                     | ESLint on TypeScript                                 |
+| `npm run format` / `npm run format:check`          | Prettier                                             |
+| `npm run build`                                    | `tsc` + Vite production bundle                       |
+| `npm run check:versions`                           | Confirm SemVer files and the changelog section match |
+| `npm run version:patch` / `minor` / `major`        | Bump every version file and insert a changelog stub  |
+| `npm run changelog`                                | Print release notes for the current version          |
+| `npm run release`                                  | Tag `vX.Y.Z` and push it to origin                   |
+| `cargo check --manifest-path src-tauri/Cargo.toml` | Native compile check                                 |
+| `npm run tauri build`                              | Packaged installer / binary                          |
 
-Run `npm run build` and `cargo check --manifest-path src-tauri/Cargo.toml` before you open a pull request.
+Run `npm run build` and `cargo check --manifest-path src-tauri/Cargo.toml` before you open a pull request. GitHub Actions CI must stay green.
 
 ## How to make a change
 
@@ -44,7 +48,7 @@ Run `npm run build` and `cargo check --manifest-path src-tauri/Cargo.toml` befor
 4. Route every Tauri `invoke` through `src/core/native/api.ts` (or a feature service). Visual components must not call commands directly.
 5. Add or update `en` and `ru` strings in `src/core/i18n/index.ts` for any user-facing text.
 6. Register new Rust commands in `src-tauri/src/lib.rs`.
-7. Bump the app version and add a dated section to [CHANGELOG.md](CHANGELOG.md) in the same change. Small changes are a **patch** (`0.1.0` → `0.1.1`). New user-visible capabilities are a **minor**. Breaking changes are a **major**. Keep `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` (`sentinel`), `src-tauri/tauri.conf.json`, and the `Version:` line in [AGENTS.md](AGENTS.md) in sync.
+7. Bump the app version with `npm run version:patch` (or `minor` / `major`) and replace the changelog stub with user-facing notes. `npm run check:versions` must pass. Keep `package.json`, lockfiles, `Cargo.toml`, `tauri.conf.json`, and the `Version:` line in [AGENTS.md](AGENTS.md) in sync.
 8. Open a pull request with what changed, why, and how you tested it.
 
 ## Code conventions
@@ -86,3 +90,31 @@ Keep the UI responsive while uploads and polling run.
 - Do not commit secrets.
 
 Commit messages should say **why** the change exists in one or two sentences. Use `add` / `update` / `fix` language that matches the actual intent.
+
+## Release
+
+1. On the change itself, bump with `npm run version:patch` (or `minor` / `major`) and rewrite the changelog stub. `npm run check:versions` must pass.
+2. Merge the change to `main`.
+3. From a clean `main`:
+
+```bash
+npm run release -- --dry-run
+npm run release
+```
+
+That tags `v` + `package.json` version and pushes it. The tag message and the GitHub Release body are the latest `[x.y.z]` section from [CHANGELOG.md](CHANGELOG.md). The Release workflow runs CI first, then builds Windows, macOS, and Linux installers and opens a **draft** GitHub Release. Review the artifacts, then publish the draft.
+
+Useful flags: `--dry-run`, `--no-push`, `--allow-branch`, `--allow-empty-notes`.
+
+To build installers without a tag, run **Actions → Release → Run workflow**. Leave “Create a draft GitHub Release” unchecked to upload artifacts only.
+
+Optional signing secrets (repository Settings → Secrets and variables → Actions):
+
+| Secret                                          | Purpose                                |
+| ----------------------------------------------- | -------------------------------------- |
+| `WINDOWS_CERTIFICATE`                           | Base64-encoded `.pfx` for Authenticode |
+| `WINDOWS_CERTIFICATE_PASSWORD`                  | Password for that certificate          |
+| `APPLE_CERTIFICATE`                             | Base64-encoded `.p12`                  |
+| `APPLE_CERTIFICATE_PASSWORD`                    | Password for that certificate          |
+| `APPLE_SIGNING_IDENTITY`                        | Codesign identity name                 |
+| `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` | Notarization                           |

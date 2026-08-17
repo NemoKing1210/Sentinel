@@ -20,6 +20,9 @@ npm run tauri dev          # real desktop app
 npm run lint
 npm run format:check
 npm run build              # tsc + Vite
+npm run check:versions     # SemVer files + changelog section
+npm run version:patch      # bump every version file
+npm run release            # tag vX.Y.Z and push
 cargo check --manifest-path src-tauri/Cargo.toml
 npm run tauri build        # packaged binary
 ```

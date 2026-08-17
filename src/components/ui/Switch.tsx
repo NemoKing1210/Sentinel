@@ -10,15 +10,7 @@ interface SwitchProps {
   className?: string;
 }
 
-export function Switch({
-  checked,
-  onChange,
-  label,
-  description,
-  ariaLabel,
-  disabled = false,
-  className,
-}: SwitchProps) {
+export function Switch({ checked, onChange, label, description, ariaLabel, disabled = false, className }: SwitchProps) {
   const hasCopy = Boolean(label || description);
   const classes = ['switch-field'];
   if (disabled) classes.push('disabled');

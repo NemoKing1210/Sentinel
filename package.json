@@ -1,7 +1,7 @@
 {
   "name": "sentinel",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "license": "MIT",
   "author": "NemoKing (https://github.com/NemoKing1210)",
   "homepage": "https://github.com/NemoKing1210/Sentinel",
@@ -20,7 +20,18 @@
     "tauri": "tauri",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check:versions": "node scripts/check-versions.mjs",
+    "changelog": "node scripts/extract-changelog.mjs",
+    "version:patch": "node scripts/bump-version.mjs patch",
+    "version:minor": "node scripts/bump-version.mjs minor",
+    "version:major": "node scripts/bump-version.mjs major",
+    "release": "node scripts/release.mjs",
+    "test": "node --test scripts/lib/versions.test.mjs",
+    "ci": "npm run lint && npm run format:check && npm run build && npm run check:versions && npm test"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
