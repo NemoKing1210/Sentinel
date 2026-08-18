@@ -34,6 +34,7 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 import { hydratePersistedState, subscribePersistence } from '@/core/persistence/store';
 import { applyPersistedWindowState, subscribeWindowState } from '@/core/persistence/windowState';
 import { bindNativeMenu } from '@/core/native/menuBridge';
+import { bindNativeNotifications } from '@/core/native/notificationBridge';
 
 function keepListener(cancelled: { current: boolean }, assign: (unlisten: () => void) => void) {
   return (unlisten: () => void) => {
@@ -77,6 +78,17 @@ export default function App() {
   const pickFolderAndAddRef = useRef<() => Promise<void>>(async () => undefined);
   const addDetectedPathsRef = useRef<(items: Array<{ path: string; isFolder: boolean }>) => Promise<void>>(
     async () => undefined,
+  );
+  const openNotificationReportRef = useRef<(itemId: string) => void>(() => undefined);
+
+  const openNotificationReport = useCallback(
+    (itemId: string) => {
+      const report = useAppStore.getState().history.find((entry) => entry.itemId === itemId);
+      setReport(report ?? null);
+      setView('history');
+      logInfo('notifications.report_opened', { itemId, found: Boolean(report) });
+    },
+    [setReport, setView],
   );
 
   const addPaths = useCallback(
@@ -140,13 +152,15 @@ export default function App() {
     pickFilesAndAddRef.current = pickFilesAndAdd;
     pickFolderAndAddRef.current = pickFolderAndAdd;
     addDetectedPathsRef.current = addDetectedPaths;
-  }, [goToView, pickFilesAndAdd, pickFolderAndAdd, addDetectedPaths]);
+    openNotificationReportRef.current = openNotificationReport;
+  }, [goToView, pickFilesAndAdd, pickFolderAndAdd, addDetectedPaths, openNotificationReport]);
 
   useEffect(() => {
     // Subscribe once: async unlistens + Strict Mode remounts used to leak drop listeners.
     const cancelled = { current: false };
     let disposeDrop: (() => void) | undefined;
     let disposeMenu: (() => void) | undefined;
+    let disposeNotifications: (() => void) | undefined;
     let disposeWindow: (() => void) | undefined;
     let disposePersistence: (() => void) | undefined;
     void (async () => {
@@ -201,11 +215,21 @@ export default function App() {
         }),
       )
       .catch((error) => logWarn('bootstrap.menu_listener_failed', { error: String(error) }));
+    void bindNativeNotifications({
+      openReport: (itemId) => openNotificationReportRef.current(itemId),
+    })
+      .then(
+        keepListener(cancelled, (unlisten) => {
+          disposeNotifications = unlisten;
+        }),
+      )
+      .catch((error) => logWarn('bootstrap.notification_listener_failed', { error: String(error) }));
     logInfo('app.started_ui');
     return () => {
       cancelled.current = true;
       disposeDrop?.();
       disposeMenu?.();
+      disposeNotifications?.();
       disposeWindow?.();
       disposePersistence?.();
     };

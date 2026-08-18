@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FileReport, ScanItem } from '@/core/domain/types';
-import { scanPath } from '@/core/native/api';
+import { isWindowFocused, scanPath, showNativeScanNotification } from '@/core/native/api';
 import { useAppStore } from '@/core/state/store';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { detectionCount, engineTotal } from '@/app/utils/format';
@@ -14,6 +14,76 @@ export function useScanRunner() {
   const setReport = useAppStore((state) => state.setReport);
   const setView = useAppStore((state) => state.setView);
   const { showToast } = useToast();
+
+  const openReport = useCallback(
+    (report: FileReport) => {
+      setReport(report);
+      setView('history');
+    },
+    [setReport, setView],
+  );
+
+  const notifyCompleted = useCallback(
+    async (item: ScanItem, report: FileReport) => {
+      const params = {
+        verdict: t(report.verdict),
+        detections: detectionCount(report),
+        engines: engineTotal(report),
+      };
+      const toast = describePreset('scanCompleted', t, params);
+      const action = { label: t('toast.openReport'), onClick: () => openReport(report) };
+      const settings = useAppStore.getState().settings;
+      if (!settings.notificationsEnabled || !settings.notifyOnCompleted) {
+        showToast({ ...toast, action });
+        return;
+      }
+      try {
+        const focused = await isWindowFocused();
+        if (focused) {
+          showToast({ ...toast, action });
+          return;
+        }
+      } catch {
+        /* focus check is best-effort */
+      }
+      try {
+        await showNativeScanNotification({
+          title: toast.title,
+          body: toast.description || toast.title,
+          itemId: item.id,
+          actionLabel: t('toast.openReport'),
+        });
+        logInfo('notifications.native_shown', { item: item.name, verdict: report.verdict });
+      } catch (error) {
+        logWarn('notifications.native_failed', { item: item.name, error: String(error) });
+      }
+    },
+    [openReport, showToast, t],
+  );
+
+  const notifyFailed = useCallback(
+    async (item: ScanItem) => {
+      const settings = useAppStore.getState().settings;
+      if (!settings.notificationsEnabled || !settings.notifyOnFailed) return;
+      try {
+        const focused = await isWindowFocused();
+        if (focused) return;
+      } catch {
+        /* focus check is best-effort */
+      }
+      try {
+        await showNativeScanNotification({
+          title: t('toast.scanFailed.title'),
+          body: t('toast.scanFailed.desc'),
+          itemId: item.id,
+        });
+        logInfo('notifications.native_shown', { item: item.name, failed: true });
+      } catch (error) {
+        logWarn('notifications.native_failed', { item: item.name, error: String(error) });
+      }
+    },
+    [t],
+  );
 
   const runScan = useCallback(
     async (item: ScanItem) => {
@@ -50,13 +120,7 @@ export function useScanRunner() {
         });
         addReport(report);
         setReport(report);
-        showToast(
-          describePreset('scanCompleted', t, {
-            verdict: t(report.verdict),
-            detections: detectionCount(report),
-            engines: engineTotal(report),
-          }),
-        );
+        void notifyCompleted(item, report);
         logInfo('scan.completed', {
           item: item.name,
           analysisId: response.analysisId,
@@ -69,9 +133,10 @@ export function useScanRunner() {
         logError('scan.failed', { item: item.name, path, error: message });
         updateItem(item.id, { status: 'failed', error: message });
         showToast(describePreset('scanFailed', t));
+        void notifyFailed(item);
       }
     },
-    [addReport, setReport, setView, showToast, t, updateItem],
+    [addReport, notifyCompleted, notifyFailed, setReport, setView, showToast, t, updateItem],
   );
 
   const startAll = useCallback(

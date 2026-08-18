@@ -36,6 +36,9 @@ function sanitizeSettings(settings: AppSettings): AppSettings {
     scanImmediately: settings.scanImmediately,
     closeToTray: settings.closeToTray,
     startMinimized: settings.startMinimized,
+    notificationsEnabled: settings.notificationsEnabled,
+    notifyOnCompleted: settings.notifyOnCompleted,
+    notifyOnFailed: settings.notifyOnFailed,
     hasApiKey: false,
   };
 }

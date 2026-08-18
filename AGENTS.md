@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.1.2`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.2.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -118,6 +118,7 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `submit_archive`                                                                             | Walk folder, ZIP to tempfile, then `submit_file`                                            |
 | `get_analysis_status`                                                                        | `GET /analyses/{id}`                                                                        |
 | `get_path_metadata`                                                                          | Size, file count, mtime, `is_dir`                                                           |
+| `notify_scan_result`                                                                         | OS notification for a finished scan; click emits `native:notification` with the item id     |
 | `open_external_url`                                                                          | Open VirusTotal (or other) URLs                                                             |
 | `get_log_level` / `set_log_level` / `get_log_directory` / `open_log_directory` / `log_event` | Logging                                                                                     |
 | `load_persisted_state` / `save_persisted_state` / `clear_persisted_state`                    | App data `state.json`                                                                       |
@@ -133,6 +134,7 @@ Native commands return `Result<T, String>` (or a typed error converted at the bo
 4. `scanPath` calls `submit_file` or `submit_archive`, then polls `get_analysis_status` until `completed` / `failed` or 60 attempts.
 5. Polling in `scanPath` currently uses a **5 second** delay. `settings.pollInterval` is persisted and edited in Settings; wire it through if you change polling.
 6. Result becomes `FileReport` (verdict from `stats.malicious` / `stats.suspicious`) and is stored in `history`.
+7. Completion notifies: toast with a "View report" action when the window is focused, otherwise a native notification (`notify_scan_result`). Clicking the native notification emits `native:notification`, which `notificationBridge.ts` routes to the report page. Gate on `settings.notificationsEnabled` / `notifyOnCompleted` / `notifyOnFailed`.
 
 History is a list plus a report sub-page. `view` stays `history`; `selectedReportId` chooses the sub-page. Nav and the native History menu open the list. Dashboard, Queue, and completed scans open a report by id. Missing ids fall back to the list.
 
@@ -158,7 +160,7 @@ Canonical types live in `src/core/domain/types.ts`:
 
 - `ScanItem` — queue row (`queued` → `uploading` → `scanning` → `completed` | `failed`)
 - `FileReport` / `EngineResult` — history. Optional `fileKind` (older records derive it from the file name). Selection is `selectedReportId`, not a report snapshot.
-- `AppSettings` — theme, accent, language, pollInterval, logLevel, scanImmediately, closeToTray, startMinimized, hasApiKey
+- `AppSettings` — theme, accent, language, pollInterval, logLevel, scanImmediately, closeToTray, startMinimized, notificationsEnabled, notifyOnCompleted, notifyOnFailed, hasApiKey
 - `Verdict` — `clean` | `suspicious` | `malicious` | `unknown`
 
 Keep scan state serializable and UI-independent. Components render; services perform I/O.

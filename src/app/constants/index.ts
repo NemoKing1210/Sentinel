@@ -86,4 +86,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   scanImmediately: true,
   closeToTray: true,
   startMinimized: false,
+  notificationsEnabled: true,
+  notifyOnCompleted: true,
+  notifyOnFailed: true,
 };

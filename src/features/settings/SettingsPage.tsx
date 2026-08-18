@@ -270,6 +270,42 @@ export function SettingsPage({
       <Card className="settings-card">
         <div className="settings-card-head">
           <span className="settings-card-icon">
+            <Icon name="bell" />
+          </span>
+          <div>
+            <h3>{t('notificationsSection')}</h3>
+            <p>{t('notificationsSectionHint')}</p>
+          </div>
+        </div>
+        <div className="settings-list">
+          <Switch
+            className="settings-row"
+            checked={settings.notificationsEnabled}
+            onChange={(value) => setSettings({ notificationsEnabled: value })}
+            label={t('notificationsEnabled')}
+            description={t('notificationsEnabledHint')}
+          />
+          <Switch
+            className="settings-row"
+            disabled={!settings.notificationsEnabled}
+            checked={settings.notifyOnCompleted}
+            onChange={(value) => setSettings({ notifyOnCompleted: value })}
+            label={t('notifyOnCompleted')}
+            description={t('notifyOnCompletedHint')}
+          />
+          <Switch
+            className="settings-row"
+            disabled={!settings.notificationsEnabled}
+            checked={settings.notifyOnFailed}
+            onChange={(value) => setSettings({ notifyOnFailed: value })}
+            label={t('notifyOnFailed')}
+            description={t('notifyOnFailedHint')}
+          />
+        </div>
+      </Card>
+      <Card className="settings-card">
+        <div className="settings-card-head">
+          <span className="settings-card-icon">
             <Icon name="monitor" />
           </span>
           <div>

@@ -1,6 +1,7 @@
 mod chrome;
 mod commands;
 mod logging;
+mod notifications;
 mod persistence;
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,6 +43,7 @@ pub fn run() {
             commands::open_log_directory,
             commands::log_event,
             commands::get_path_metadata,
+            notifications::notify_scan_result,
             persistence::load_persisted_state,
             persistence::save_persisted_state,
             persistence::clear_persisted_state,

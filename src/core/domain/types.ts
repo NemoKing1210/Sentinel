@@ -76,4 +76,7 @@ export interface AppSettings {
   scanImmediately: boolean;
   closeToTray: boolean;
   startMinimized: boolean;
+  notificationsEnabled: boolean;
+  notifyOnCompleted: boolean;
+  notifyOnFailed: boolean;
 }

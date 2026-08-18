@@ -5,6 +5,21 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-08-18
+
+### Added
+
+- Notification settings: master switch plus separate toggles for completed and failed scans
+- Scan results appear as in-app toasts when Sentinel is focused and as OS notifications when it is minimized
+- Clicking a completion notification (or its "Open report" button) focuses Sentinel and opens the report page
+- Native `notify_scan_result` command with per-platform backends (Windows toast activation, Linux D-Bus actions, macOS display)
+
+## [0.1.3] - 2026-08-18
+
+### Changed
+
+- App icon, window title mark, and README logo use the new geometric S mark
+
 ## [0.1.2] - 2026-08-18
 
 ### Added

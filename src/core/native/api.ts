@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { ask, open } from '@tauri-apps/plugin-dialog';
 import type { FileReport, LogLevel, ScanItem } from '../domain/types';
@@ -114,6 +115,28 @@ export async function logEvent(level: LogLevel, event: string, fields?: Record<s
 
 export async function setCloseToTray(enabled: boolean): Promise<void> {
   if (isTauri) await invoke('set_close_to_tray', { enabled });
+}
+
+export async function isWindowFocused(): Promise<boolean> {
+  if (!isTauri) return true;
+  return getCurrentWindow().isFocused();
+}
+
+export interface NativeScanNotification {
+  title: string;
+  body: string;
+  itemId: string;
+  actionLabel?: string;
+}
+
+export async function showNativeScanNotification(notification: NativeScanNotification): Promise<void> {
+  if (!isTauri) return;
+  await invoke('notify_scan_result', {
+    title: notification.title,
+    body: notification.body,
+    itemId: notification.itemId,
+    actionLabel: notification.actionLabel ?? null,
+  });
 }
 
 export async function subscribeToFileDrops(
