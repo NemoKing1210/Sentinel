@@ -5,6 +5,16 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-18
+
+### Added
+
+- Windows Explorer integration: "Scan with Sentinel" context menu entry for files, folders, and folder backgrounds
+- Context menu scans land in the queue and start immediately, respecting the existing API-key gate
+- Integration section in Settings with a toggle that registers or removes the Explorer entry (off by default, Windows only)
+- Multi-selection support via the Explorer verb; second launches are routed through the single-instance handler
+- Shell integration commands (`register_context_menu`, `unregister_context_menu`, `is_context_menu_registered`, `get_pending_scan_paths`)
+
 ## [0.2.0] - 2026-08-18
 
 ### Added

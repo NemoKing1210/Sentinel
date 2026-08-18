@@ -88,6 +88,10 @@ const fr = {
     scanningHint: 'Comment Sentinel suit les analyses en cours.',
     systemSection: 'Système',
     systemSectionHint: 'Comportement de Sentinel sur votre appareil.',
+    integrationSection: 'Intégration',
+    integrationSectionHint: 'Raccourcis système pour analyser en dehors de l’application.',
+    contextMenu: 'Menu contextuel de l’Explorateur',
+    contextMenuHint: 'Ajoute « Analyser avec Sentinel » au menu contextuel des fichiers et dossiers sous Windows.',
     closeToTray: 'Garder dans le bac à la fermeture',
     closeToTrayHint: 'Masquer la fenêtre au lieu de quitter. Quittez via le menu du bac.',
     startMinimized: 'Démarrer réduit',
@@ -318,6 +322,23 @@ const fr = {
       vtOpenFailed: {
         title: 'Impossible d’ouvrir VirusTotal',
         desc: 'Le lien du rapport n’a pas pu être ouvert. Réessayez.',
+      },
+      contextScanStarted: {
+        title_one: 'Analyse de 1 élément depuis l’Explorateur',
+        title_other: 'Analyse de {{count}} éléments depuis l’Explorateur',
+        desc: 'Envoyé à VirusTotal directement depuis le menu contextuel.',
+      },
+      contextMenuOn: {
+        title: 'Entrée de menu ajoutée',
+        desc: 'Sentinel apparaît désormais dans le menu contextuel de l’Explorateur.',
+      },
+      contextMenuOff: {
+        title: 'Entrée de menu supprimée',
+        desc: 'Le raccourci de l’Explorateur a été supprimé.',
+      },
+      contextMenuFailed: {
+        title: 'Mise à jour du menu impossible',
+        desc: 'Sentinel n’a pas pu modifier le registre Windows.',
       },
       openReport: 'Voir le rapport',
       dismiss: 'Fermer',

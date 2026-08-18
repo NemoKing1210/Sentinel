@@ -117,6 +117,29 @@ export async function setCloseToTray(enabled: boolean): Promise<void> {
   if (isTauri) await invoke('set_close_to_tray', { enabled });
 }
 
+export async function isWindowsPlatform(): Promise<boolean> {
+  if (!isTauri) return false;
+  return (await invoke<string>('platform_name')) === 'windows';
+}
+
+export async function registerContextMenu(): Promise<void> {
+  if (isTauri) await invoke('register_context_menu');
+}
+
+export async function unregisterContextMenu(): Promise<void> {
+  if (isTauri) await invoke('unregister_context_menu');
+}
+
+export async function isContextMenuRegistered(): Promise<boolean> {
+  if (!isTauri) return false;
+  return invoke<boolean>('is_context_menu_registered');
+}
+
+export async function getPendingScanPaths(): Promise<string[]> {
+  if (!isTauri) return [];
+  return invoke<string[]>('get_pending_scan_paths');
+}
+
 export async function isWindowFocused(): Promise<boolean> {
   if (!isTauri) return true;
   return getCurrentWindow().isFocused();

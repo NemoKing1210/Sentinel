@@ -79,4 +79,5 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   notifyOnCompleted: boolean;
   notifyOnFailed: boolean;
+  contextMenuEnabled: boolean;
 }

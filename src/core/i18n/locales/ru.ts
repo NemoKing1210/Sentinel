@@ -92,6 +92,10 @@ const ru = {
     scanningHint: 'Как Sentinel отслеживает запущенные проверки.',
     systemSection: 'Система',
     systemSectionHint: 'Как Sentinel ведёт себя на устройстве.',
+    integrationSection: 'Интеграция',
+    integrationSectionHint: 'Системные ярлыки для проверки вне приложения.',
+    contextMenu: 'Контекстное меню проводника',
+    contextMenuHint: 'Добавляет «Проверить с Sentinel» в меню правой кнопки мыши для файлов и папок в Windows.',
     closeToTray: 'Оставлять в трее при закрытии',
     closeToTrayHint: 'Скрывать окно вместо выхода. Завершить работу можно через меню в трее.',
     startMinimized: 'Запускать свёрнутым',
@@ -325,6 +329,23 @@ const ru = {
       vtOpenFailed: {
         title: 'Не удалось открыть VirusTotal',
         desc: 'Ссылку на отчёт открыть не удалось. Попробуйте ещё раз.',
+      },
+      contextScanStarted: {
+        title_one: 'Проверяем 1 объект из проводника',
+        title_other: 'Проверяем {{count}} объектов из проводника',
+        desc: 'Отправлено в VirusTotal прямо из контекстного меню.',
+      },
+      contextMenuOn: {
+        title: 'Пункт меню добавлен',
+        desc: 'Sentinel теперь появляется в контекстном меню проводника.',
+      },
+      contextMenuOff: {
+        title: 'Пункт меню удалён',
+        desc: 'Ярлык в проводнике удалён.',
+      },
+      contextMenuFailed: {
+        title: 'Не удалось обновить меню',
+        desc: 'Sentinel не смог обновить реестр Windows.',
       },
       openReport: 'Открыть отчёт',
       dismiss: 'Закрыть',

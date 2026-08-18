@@ -88,6 +88,10 @@ const pt = {
     scanningHint: 'Como o Sentinel acompanha as análises em execução.',
     systemSection: 'Sistema',
     systemSectionHint: 'Como o Sentinel se comporta no seu dispositivo.',
+    integrationSection: 'Integração',
+    integrationSectionHint: 'Atalhos do sistema para analisar fora do aplicativo.',
+    contextMenu: 'Menu de contexto do Explorer',
+    contextMenuHint: 'Adiciona "Analisar com Sentinel" ao menu de contexto de arquivos e pastas no Windows.',
     closeToTray: 'Manter na bandeja ao fechar',
     closeToTrayHint: 'Ocultar a janela em vez de sair. Saia pelo menu da bandeja.',
     startMinimized: 'Iniciar minimizado',
@@ -318,6 +322,23 @@ const pt = {
       vtOpenFailed: {
         title: 'Não foi possível abrir o VirusTotal',
         desc: 'O link do relatório não pôde ser aberto. Tente novamente.',
+      },
+      contextScanStarted: {
+        title_one: 'Analisando 1 item do Explorer',
+        title_other: 'Analisando {{count}} itens do Explorer',
+        desc: 'Enviado ao VirusTotal diretamente do menu de contexto.',
+      },
+      contextMenuOn: {
+        title: 'Item de menu adicionado',
+        desc: 'O Sentinel agora aparece no menu de contexto do Explorer.',
+      },
+      contextMenuOff: {
+        title: 'Item de menu removido',
+        desc: 'O atalho do Explorer foi removido.',
+      },
+      contextMenuFailed: {
+        title: 'Falha ao atualizar o menu',
+        desc: 'O Sentinel não conseguiu atualizar o registro do Windows.',
       },
       openReport: 'Ver relatório',
       dismiss: 'Fechar',

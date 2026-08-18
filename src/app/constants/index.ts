@@ -89,4 +89,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   notifyOnCompleted: true,
   notifyOnFailed: true,
+  contextMenuEnabled: false,
 };

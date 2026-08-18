@@ -88,6 +88,10 @@ const en = {
     scanningHint: 'How Sentinel keeps track of running scans.',
     systemSection: 'System',
     systemSectionHint: 'How Sentinel behaves on your device.',
+    integrationSection: 'Integration',
+    integrationSectionHint: 'System-level shortcuts for scanning outside the app.',
+    contextMenu: 'Explorer context menu',
+    contextMenuHint: 'Adds "Scan with Sentinel" to the right-click menu for files and folders on Windows.',
     closeToTray: 'Keep in tray when closed',
     closeToTrayHint: 'Hide the window instead of quitting. Quit from the tray menu.',
     startMinimized: 'Start minimized',
@@ -316,6 +320,23 @@ const en = {
       vtOpenFailed: {
         title: 'Couldn’t open VirusTotal',
         desc: 'The report link could not be opened. Try again.',
+      },
+      contextScanStarted: {
+        title_one: 'Scanning 1 item from Explorer',
+        title_other: 'Scanning {{count}} items from Explorer',
+        desc: 'Sent to VirusTotal straight from the context menu.',
+      },
+      contextMenuOn: {
+        title: 'Context menu added',
+        desc: 'Sentinel now appears in the Explorer right-click menu.',
+      },
+      contextMenuOff: {
+        title: 'Context menu removed',
+        desc: 'The Explorer shortcut was removed.',
+      },
+      contextMenuFailed: {
+        title: 'Context menu update failed',
+        desc: 'Sentinel could not update the Windows registry.',
       },
       openReport: 'View report',
       dismiss: 'Dismiss',

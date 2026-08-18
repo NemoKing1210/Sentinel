@@ -88,6 +88,10 @@ const de = {
     scanningHint: 'Wie Sentinel laufende Scans im Blick behält.',
     systemSection: 'System',
     systemSectionHint: 'Wie Sentinel sich auf Ihrem Gerät verhält.',
+    integrationSection: 'Integration',
+    integrationSectionHint: 'Systemverknüpfungen für Scans außerhalb der App.',
+    contextMenu: 'Explorer-Kontextmenü',
+    contextMenuHint: 'Fügt „Mit Sentinel scannen“ zum Rechtsklick-Menü für Dateien und Ordner in Windows hinzu.',
     closeToTray: 'Beim Schließen im Tray behalten',
     closeToTrayHint: 'Fenster ausblenden statt beenden. Beenden Sie über das Tray-Menü.',
     startMinimized: 'Minimiert starten',
@@ -319,6 +323,23 @@ const de = {
       vtOpenFailed: {
         title: 'VirusTotal konnte nicht geöffnet werden',
         desc: 'Der Berichtslink konnte nicht geöffnet werden. Versuchen Sie es erneut.',
+      },
+      contextScanStarted: {
+        title_one: 'Scanne 1 Element aus dem Explorer',
+        title_other: 'Scanne {{count}} Elemente aus dem Explorer',
+        desc: 'Direkt aus dem Kontextmenü an VirusTotal gesendet.',
+      },
+      contextMenuOn: {
+        title: 'Menüeintrag hinzugefügt',
+        desc: 'Sentinel erscheint jetzt im Explorer-Kontextmenü.',
+      },
+      contextMenuOff: {
+        title: 'Menüeintrag entfernt',
+        desc: 'Die Explorer-Verknüpfung wurde entfernt.',
+      },
+      contextMenuFailed: {
+        title: 'Menü konnte nicht aktualisiert werden',
+        desc: 'Sentinel konnte die Windows-Registrierung nicht ändern.',
       },
       openReport: 'Bericht ansehen',
       dismiss: 'Schließen',

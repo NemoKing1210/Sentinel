@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.2.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -71,6 +71,7 @@ src-tauri/src/
   persistence.rs           state.json in app data dir (version 1)
   logging.rs               Daily JSON logs, rotation, level config
   chrome.rs                Native menu + tray
+  shell.rs                 Windows Explorer context menu (HKCU registry verbs) + launch-arg routing
 .github/
   workflows/ci.yml         PR quality gate (lint, format, build, clippy, versions)
   workflows/release.yml    Tag/manual installer builds → draft GitHub Release
@@ -123,6 +124,8 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `get_log_level` / `set_log_level` / `get_log_directory` / `open_log_directory` / `log_event` | Logging                                                                                     |
 | `load_persisted_state` / `save_persisted_state` / `clear_persisted_state`                    | App data `state.json`                                                                       |
 | `set_close_to_tray`                                                                          | Close button hides window when enabled                                                      |
+| `register_context_menu` / `unregister_context_menu` / `is_context_menu_registered`           | Windows Explorer right-click verbs in `HKCU\Software\Classes` (files, folders, background)  |
+| `get_pending_scan_paths`                                                                     | Pops `--scan` paths stashed at launch (first-instance context-menu scans)                   |
 
 Native commands return `Result<T, String>` (or a typed error converted at the boundary). They must not panic on user-controlled input.
 
@@ -160,7 +163,7 @@ Canonical types live in `src/core/domain/types.ts`:
 
 - `ScanItem` — queue row (`queued` → `uploading` → `scanning` → `completed` | `failed`)
 - `FileReport` / `EngineResult` — history. Optional `fileKind` (older records derive it from the file name). Selection is `selectedReportId`, not a report snapshot.
-- `AppSettings` — theme, accent, language, pollInterval, logLevel, scanImmediately, closeToTray, startMinimized, notificationsEnabled, notifyOnCompleted, notifyOnFailed, hasApiKey
+- `AppSettings` — theme, accent, language, pollInterval, logLevel, scanImmediately, closeToTray, startMinimized, notificationsEnabled, notifyOnCompleted, notifyOnFailed, contextMenuEnabled, hasApiKey
 - `Verdict` — `clean` | `suspicious` | `malicious` | `unknown`
 
 Keep scan state serializable and UI-independent. Components render; services perform I/O.

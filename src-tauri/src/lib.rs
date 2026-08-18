@@ -3,9 +3,10 @@ mod commands;
 mod logging;
 mod notifications;
 mod persistence;
+mod shell;
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 
 static CLOSE_TO_TRAY: AtomicBool = AtomicBool::new(true);
 
@@ -16,12 +17,22 @@ fn set_close_to_tray(enabled: bool) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    shell::stash_launch_paths(std::env::args().collect());
     let mut builder = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.unminimize();
                 let _ = window.set_focus();
+            }
+            let paths = shell::collect_scan_args(argv);
+            if !paths.is_empty() {
+                let _ = app.emit("native:context-scan", serde_json::json!({ "paths": paths }));
+                logging::write(
+                    logging::LogLevel::Info,
+                    "shell.second_instance_paths_forwarded",
+                    serde_json::json!({}),
+                );
             }
         }))
         .plugin(tauri_plugin_dialog::init())
@@ -47,6 +58,11 @@ pub fn run() {
             persistence::load_persisted_state,
             persistence::save_persisted_state,
             persistence::clear_persisted_state,
+            shell::register_context_menu,
+            shell::unregister_context_menu,
+            shell::is_context_menu_registered,
+            shell::get_pending_scan_paths,
+            shell::platform_name,
             set_close_to_tray
         ])
         .setup(|app| {
@@ -65,6 +81,15 @@ pub fn run() {
             }
             if let Some(stored) = persistence::read_close_to_tray_setting(app.handle()) {
                 CLOSE_TO_TRAY.store(stored, Ordering::Release);
+            }
+            if persistence::read_setting_bool(app.handle(), "contextMenuEnabled").unwrap_or(false) {
+                if let Err(error) = shell::register_context_menu() {
+                    logging::write(
+                        logging::LogLevel::Warn,
+                        "shell.register_on_start_failed",
+                        serde_json::json!({ "error": error }),
+                    );
+                }
             }
             Ok(())
         })

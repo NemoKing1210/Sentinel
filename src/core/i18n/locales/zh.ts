@@ -86,6 +86,10 @@ const zh = {
     scanningHint: 'Sentinel 如何跟踪正在运行的扫描。',
     systemSection: '系统',
     systemSectionHint: 'Sentinel 在您设备上的行为方式。',
+    integrationSection: '集成',
+    integrationSectionHint: '在应用外部进行扫描的系统快捷方式。',
+    contextMenu: '资源管理器右键菜单',
+    contextMenuHint: '在 Windows 中为文件和文件夹的右键菜单添加「使用 Sentinel 扫描」。',
     closeToTray: '关闭时保留在托盘',
     closeToTrayHint: '隐藏窗口而不是退出。从托盘菜单退出。',
     startMinimized: '最小化启动',
@@ -310,6 +314,23 @@ const zh = {
       vtOpenFailed: {
         title: '无法打开 VirusTotal',
         desc: '无法打开报告链接。请重试。',
+      },
+      contextScanStarted: {
+        title_one: '正在从资源管理器扫描 1 个项目',
+        title_other: '正在从资源管理器扫描 {{count}} 个项目',
+        desc: '已直接从右键菜单发送到 VirusTotal。',
+      },
+      contextMenuOn: {
+        title: '已添加菜单项',
+        desc: 'Sentinel 现在出现在资源管理器右键菜单中。',
+      },
+      contextMenuOff: {
+        title: '已移除菜单项',
+        desc: '资源管理器快捷方式已移除。',
+      },
+      contextMenuFailed: {
+        title: '菜单更新失败',
+        desc: 'Sentinel 无法更新 Windows 注册表。',
       },
       openReport: '查看报告',
       dismiss: '关闭',

@@ -46,6 +46,8 @@ interface SettingsPageProps {
   save: () => void;
   validate: () => void;
   setSettings: (v: Partial<AppSettings>) => void;
+  supportsContextMenu: boolean;
+  setContextMenuEnabled: (enabled: boolean) => Promise<void>;
   changeLanguage: (language: Language) => void;
   setLogLevel: (level: LogLevel) => Promise<void>;
   openLogDirectory: () => Promise<void>;
@@ -65,6 +67,8 @@ export function SettingsPage({
   save,
   validate,
   setSettings,
+  supportsContextMenu,
+  setContextMenuEnabled,
   changeLanguage,
   setLogLevel: changeLogLevel,
   openLogDirectory,
@@ -303,6 +307,28 @@ export function SettingsPage({
           />
         </div>
       </Card>
+      {supportsContextMenu && (
+        <Card className="settings-card">
+          <div className="settings-card-head">
+            <span className="settings-card-icon">
+              <Icon name="external" />
+            </span>
+            <div>
+              <h3>{t('integrationSection')}</h3>
+              <p>{t('integrationSectionHint')}</p>
+            </div>
+          </div>
+          <div className="settings-list">
+            <Switch
+              className="settings-row"
+              checked={settings.contextMenuEnabled}
+              onChange={(value) => void setContextMenuEnabled(value)}
+              label={t('contextMenu')}
+              description={t('contextMenuHint')}
+            />
+          </div>
+        </Card>
+      )}
       <Card className="settings-card">
         <div className="settings-card-head">
           <span className="settings-card-icon">

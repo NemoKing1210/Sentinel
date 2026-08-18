@@ -8,16 +8,20 @@ import {
   detectPaths,
   getApiKey,
   getLogLevel,
+  getPendingScanPaths,
   hasSavedApiKey,
+  isWindowsPlatform,
   openLogDirectory,
   openExternalUrl,
   pathToItem,
   pickFiles,
   pickFolder,
   pickPath,
+  registerContextMenu,
   saveApiKey,
   setLogLevel,
   subscribeToFileDrops,
+  unregisterContextMenu,
   validateApiKey,
 } from '@/core/native/api';
 import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
@@ -35,6 +39,7 @@ import { hydratePersistedState, subscribePersistence } from '@/core/persistence/
 import { applyPersistedWindowState, subscribeWindowState } from '@/core/persistence/windowState';
 import { bindNativeMenu } from '@/core/native/menuBridge';
 import { bindNativeNotifications } from '@/core/native/notificationBridge';
+import { bindContextMenuScans } from '@/core/native/contextMenuBridge';
 
 function keepListener(cancelled: { current: boolean }, assign: (unlisten: () => void) => void) {
   return (unlisten: () => void) => {
@@ -63,6 +68,7 @@ export default function App() {
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [supportsContextMenu, setSupportsContextMenu] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   const goToView = useCallback(
@@ -79,6 +85,7 @@ export default function App() {
   const addDetectedPathsRef = useRef<(items: Array<{ path: string; isFolder: boolean }>) => Promise<void>>(
     async () => undefined,
   );
+  const scanContextPathsRef = useRef<(paths: string[]) => Promise<void>>(async () => undefined);
   const openNotificationReportRef = useRef<(itemId: string) => void>(() => undefined);
 
   const openNotificationReport = useCallback(
@@ -118,6 +125,26 @@ export default function App() {
     [addPaths],
   );
 
+  const scanContextPaths = useCallback(
+    async (paths: string[]) => {
+      const valid = paths.filter(Boolean);
+      if (!valid.length) return;
+      const detected = await detectPaths(valid);
+      const files = detected.filter((item) => !item.isFolder).map((item) => item.path);
+      const folders = detected.filter((item) => item.isFolder).map((item) => item.path);
+      const newItems: ScanItem[] = [];
+      if (files.length) newItems.push(...(await Promise.all(files.map((path) => pathToItem(path, false)))));
+      if (folders.length) newItems.push(...(await Promise.all(folders.map((path) => pathToItem(path, true)))));
+      if (!newItems.length) return;
+      addItems(newItems);
+      setView('queue');
+      showToast(describePreset('contextScanStarted', t, { count: newItems.length }));
+      logInfo('shell.context_scan_started', { items: newItems.map((item) => item.name) });
+      newItems.forEach((item) => void runScan(item));
+    },
+    [addItems, runScan, setView, showToast, t],
+  );
+
   const pickFilesAndAdd = useCallback(async () => {
     try {
       const paths = await pickFiles();
@@ -152,8 +179,9 @@ export default function App() {
     pickFilesAndAddRef.current = pickFilesAndAdd;
     pickFolderAndAddRef.current = pickFolderAndAdd;
     addDetectedPathsRef.current = addDetectedPaths;
+    scanContextPathsRef.current = scanContextPaths;
     openNotificationReportRef.current = openNotificationReport;
-  }, [goToView, pickFilesAndAdd, pickFolderAndAdd, addDetectedPaths, openNotificationReport]);
+  }, [goToView, pickFilesAndAdd, pickFolderAndAdd, addDetectedPaths, scanContextPaths, openNotificationReport]);
 
   useEffect(() => {
     // Subscribe once: async unlistens + Strict Mode remounts used to leak drop listeners.
@@ -161,6 +189,7 @@ export default function App() {
     let disposeDrop: (() => void) | undefined;
     let disposeMenu: (() => void) | undefined;
     let disposeNotifications: (() => void) | undefined;
+    let disposeContextMenu: (() => void) | undefined;
     let disposeWindow: (() => void) | undefined;
     let disposePersistence: (() => void) | undefined;
     void (async () => {
@@ -183,7 +212,15 @@ export default function App() {
         return;
       }
       useAppStore.getState().setHydrated(true);
-      const shouldStartHidden = useAppStore.getState().settings.startMinimized;
+      const pendingContextPaths = await getPendingScanPaths().catch((error) => {
+        logWarn('bootstrap.context_paths_failed', { error: String(error) });
+        return [] as string[];
+      });
+      if (cancelled.current) return;
+      if (pendingContextPaths.length) {
+        await scanContextPathsRef.current(pendingContextPaths);
+      }
+      const shouldStartHidden = useAppStore.getState().settings.startMinimized && !pendingContextPaths.length;
       if (shouldStartHidden) {
         await getCurrentWindow().hide();
       } else {
@@ -224,12 +261,22 @@ export default function App() {
         }),
       )
       .catch((error) => logWarn('bootstrap.notification_listener_failed', { error: String(error) }));
+    void bindContextMenuScans({
+      onPaths: (paths) => void scanContextPathsRef.current(paths),
+    })
+      .then(
+        keepListener(cancelled, (unlisten) => {
+          disposeContextMenu = unlisten;
+        }),
+      )
+      .catch((error) => logWarn('bootstrap.context_menu_listener_failed', { error: String(error) }));
     logInfo('app.started_ui');
     return () => {
       cancelled.current = true;
       disposeDrop?.();
       disposeMenu?.();
       disposeNotifications?.();
+      disposeContextMenu?.();
       disposeWindow?.();
       disposePersistence?.();
     };
@@ -246,6 +293,15 @@ export default function App() {
   }, []);
 
   useNativeTheme(settings.theme);
+
+  useEffect(() => {
+    void isWindowsPlatform()
+      .then(setSupportsContextMenu)
+      .catch((error) => {
+        logWarn('bootstrap.platform_check_failed', { error: String(error) });
+        setSupportsContextMenu(false);
+      });
+  }, []);
 
   useEffect(() => {
     void i18n.changeLanguage(settings.language);
@@ -314,6 +370,25 @@ export default function App() {
     } catch (error) {
       logError('logging.level_change_failed_ui', { level, error: String(error) });
       showToast(describePreset('logLevelFailed', t));
+    }
+  };
+
+  const changeContextMenuEnabled = async (enabled: boolean) => {
+    try {
+      if (enabled) {
+        await registerContextMenu();
+        setSettings({ contextMenuEnabled: true });
+        showToast(describePreset('contextMenuOn', t));
+        logInfo('shell.context_menu_enabled_ui');
+      } else {
+        await unregisterContextMenu();
+        setSettings({ contextMenuEnabled: false });
+        showToast(describePreset('contextMenuOff', t));
+        logInfo('shell.context_menu_disabled_ui');
+      }
+    } catch (error) {
+      logError('shell.context_menu_change_failed_ui', { enabled, error: String(error) });
+      showToast(describePreset('contextMenuFailed', t));
     }
   };
 
@@ -415,6 +490,8 @@ export default function App() {
               save={save}
               validate={validate}
               setSettings={updateSettings}
+              supportsContextMenu={supportsContextMenu}
+              setContextMenuEnabled={changeContextMenuEnabled}
               changeLanguage={(language) => void i18n.changeLanguage(language)}
               setLogLevel={changeLogLevel}
               openLogDirectory={async () => {

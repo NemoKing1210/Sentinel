@@ -39,6 +39,7 @@ function sanitizeSettings(settings: AppSettings): AppSettings {
     notificationsEnabled: settings.notificationsEnabled,
     notifyOnCompleted: settings.notifyOnCompleted,
     notifyOnFailed: settings.notifyOnFailed,
+    contextMenuEnabled: settings.contextMenuEnabled,
     hasApiKey: false,
   };
 }

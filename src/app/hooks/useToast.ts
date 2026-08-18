@@ -60,7 +60,11 @@ export type ToastPreset =
   | 'historyCleared'
   | 'reportRemoved'
   | 'reportMissing'
-  | 'vtOpenFailed';
+  | 'vtOpenFailed'
+  | 'contextScanStarted'
+  | 'contextMenuOn'
+  | 'contextMenuOff'
+  | 'contextMenuFailed';
 
 interface PresetDescriptor {
   icon: string;
@@ -239,6 +243,31 @@ const PRESETS: Record<ToastPreset, PresetDescriptor> = {
     level: 'error',
     titleKey: 'toast.vtOpenFailed.title',
     descKey: 'toast.vtOpenFailed.desc',
+  },
+  contextScanStarted: {
+    icon: 'shield',
+    level: 'info',
+    titleKey: 'toast.contextScanStarted.title',
+    descKey: 'toast.contextScanStarted.desc',
+    duration: 3200,
+  },
+  contextMenuOn: {
+    icon: 'check',
+    level: 'success',
+    titleKey: 'toast.contextMenuOn.title',
+    descKey: 'toast.contextMenuOn.desc',
+  },
+  contextMenuOff: {
+    icon: 'check',
+    level: 'info',
+    titleKey: 'toast.contextMenuOff.title',
+    descKey: 'toast.contextMenuOff.desc',
+  },
+  contextMenuFailed: {
+    icon: 'alert',
+    level: 'error',
+    titleKey: 'toast.contextMenuFailed.title',
+    descKey: 'toast.contextMenuFailed.desc',
   },
 };
 
