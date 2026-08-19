@@ -5,6 +5,14 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-08-19
+
+### Changed
+
+- Tray context menu now shows active scans with progress, recent results with verdicts and detection counts, and navigation items for Dashboard, Queue, History, and Settings
+- Clicking a recent scan in the tray menu opens the report directly
+- Tray menu labels are translated into the current interface language (all 7 languages)
+
 ## [0.3.6] - 2026-08-19
 
 ### Fixed

@@ -1,6 +1,6 @@
 [package]
 name = "sentinel"
-version = "0.3.6"
+version = "0.3.7"
 description = "A focused VirusTotal desktop scanner"
 authors = ["NemoKing"]
 edition = "2021"

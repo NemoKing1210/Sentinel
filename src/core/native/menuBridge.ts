@@ -16,6 +16,7 @@ interface MenuBridgeOptions {
   pickFiles: () => Promise<void> | void;
   pickFolder: () => Promise<void> | void;
   showAbout: () => void;
+  openReport: (itemId: string) => void;
 }
 
 export async function bindNativeMenu(options: MenuBridgeOptions): Promise<UnlistenFn> {
@@ -37,6 +38,11 @@ export async function bindNativeMenu(options: MenuBridgeOptions): Promise<Unlist
     }
     if (id === 'about') {
       options.showAbout();
+      return;
+    }
+    if (id.startsWith('view_report:')) {
+      const itemId = id.slice('view_report:'.length);
+      if (itemId) options.openReport(itemId);
     }
   });
 }

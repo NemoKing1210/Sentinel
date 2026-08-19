@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.6`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.7`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 

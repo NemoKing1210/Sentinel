@@ -22,6 +22,7 @@ import {
   setLogLevel,
   subscribeToFileDrops,
   unregisterContextMenu,
+  updateTrayState,
   validateApiKey,
 } from '@/core/native/api';
 import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
@@ -245,6 +246,7 @@ export default function App() {
       pickFiles: () => pickFilesAndAddRef.current(),
       pickFolder: () => pickFolderAndAddRef.current(),
       showAbout: () => setViewRef.current('settings'),
+      openReport: (itemId) => openNotificationReportRef.current(itemId),
     })
       .then(
         keepListener(cancelled, (unlisten) => {
@@ -285,6 +287,55 @@ export default function App() {
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [view]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const activeItems = items
+        .filter((item) => item.status === 'queued' || item.status === 'uploading' || item.status === 'scanning')
+        .slice(0, 5)
+        .map((item) => ({
+          id: item.id,
+          name: item.name,
+          status: item.status,
+          progress: item.progress,
+        }));
+
+      const recentItems = history.slice(0, 5).map((report) => ({
+        item_id: report.itemId,
+        name: report.name,
+        verdict: report.verdict,
+        detections: report.stats.malicious + report.stats.suspicious,
+        total: report.stats.malicious + report.stats.suspicious + report.stats.undetected + report.stats.harmless,
+      }));
+
+      const labels = {
+        show: t('tray.show'),
+        dashboard: t('tray.dashboard'),
+        queue: t('tray.queue'),
+        queue_count: t('tray.queueCount'),
+        history: t('tray.history'),
+        settings: t('tray.settings'),
+        scan_file: t('tray.scanFile'),
+        scan_folder: t('tray.scanFolder'),
+        active_count: t('tray.activeCount'),
+        recent_count: t('tray.recentCount'),
+        no_active: t('tray.noActive'),
+        no_recent: t('tray.noRecent'),
+        quit: t('tray.quit'),
+        status_queued: t('tray.statusQueued'),
+        status_uploading: t('tray.statusUploading'),
+        status_scanning: t('tray.statusScanning'),
+        verdict_clean: t('tray.verdictClean'),
+        verdict_suspicious: t('tray.verdictSuspicious'),
+        verdict_malicious: t('tray.verdictMalicious'),
+        verdict_unknown: t('tray.verdictUnknown'),
+      };
+
+      void updateTrayState(labels, activeItems, recentItems);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [items, history, t]);
 
   useEffect(() => {
     const blockContextMenu = (event: MouseEvent) => event.preventDefault();

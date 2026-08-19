@@ -6,6 +6,7 @@ mod persistence;
 mod shell;
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use tauri::{Emitter, Manager, WindowEvent};
 
 static CLOSE_TO_TRAY: AtomicBool = AtomicBool::new(true);
@@ -39,6 +40,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init());
 
     builder = builder
+        .manage(Mutex::new(chrome::TrayState::default()))
         .invoke_handler(tauri::generate_handler![
             commands::has_saved_api_key,
             commands::get_api_key,
@@ -63,14 +65,15 @@ pub fn run() {
             shell::is_context_menu_registered,
             shell::get_pending_scan_paths,
             shell::platform_name,
-            set_close_to_tray
+            set_close_to_tray,
+            chrome::update_tray_state
         ])
         .setup(|app| {
             logging::init(app.handle()).map_err(std::io::Error::other)?;
             let menu = chrome::build_app_menu(app.handle())?;
             app.set_menu(menu)?;
             app.on_menu_event(|app, event| {
-                chrome::handle_menu_event(app, event);
+                chrome::handle_app_menu_event(app, event);
             });
             if let Err(error) = chrome::install_tray(app.handle()) {
                 logging::write(

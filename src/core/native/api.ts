@@ -122,6 +122,57 @@ export async function setCloseToTray(enabled: boolean): Promise<void> {
   if (isTauri) await invoke('set_close_to_tray', { enabled });
 }
 
+export interface TrayMenuLabels {
+  show: string;
+  dashboard: string;
+  queue: string;
+  queue_count: string;
+  history: string;
+  settings: string;
+  scan_file: string;
+  scan_folder: string;
+  active_count: string;
+  recent_count: string;
+  no_active: string;
+  no_recent: string;
+  quit: string;
+  status_queued: string;
+  status_uploading: string;
+  status_scanning: string;
+  verdict_clean: string;
+  verdict_suspicious: string;
+  verdict_malicious: string;
+  verdict_unknown: string;
+}
+
+export interface TrayActiveItem {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+}
+
+export interface TrayRecentItem {
+  item_id: string;
+  name: string;
+  verdict: string;
+  detections: number;
+  total: number;
+}
+
+export async function updateTrayState(
+  labels: TrayMenuLabels,
+  active: TrayActiveItem[],
+  recent: TrayRecentItem[],
+): Promise<void> {
+  if (!isTauri) return;
+  await invoke('update_tray_state', {
+    labels: JSON.stringify(labels),
+    active: JSON.stringify(active),
+    recent: JSON.stringify(recent),
+  });
+}
+
 export async function isWindowsPlatform(): Promise<boolean> {
   if (!isTauri) return false;
   return (await invoke<string>('platform_name')) === 'windows';
