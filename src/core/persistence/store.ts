@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAppStore } from '@/core/state/store';
 import { DEFAULT_SETTINGS } from '@/app/constants';
 import type { AppSettings, FileReport, ScanItem } from '@/core/domain/types';
+import { detectPreferredLanguage, isAppLanguage } from '@/core/i18n/resolveLanguage';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { setCloseToTray } from '@/core/native/api';
 
@@ -24,6 +25,10 @@ interface WindowState {
 
 function readWindowState(): WindowState | undefined {
   return useAppStore.getState().windowState ?? undefined;
+}
+
+function resolvePersistedLanguage(value: unknown): AppSettings['language'] {
+  return isAppLanguage(value) ? value : detectPreferredLanguage();
 }
 
 function sanitizeSettings(settings: AppSettings): AppSettings {
@@ -56,12 +61,18 @@ export async function hydratePersistedState(): Promise<boolean> {
   try {
     const payload = await invoke<PersistedState | null>('load_persisted_state');
     if (!payload) {
-      logInfo('persistence.hydrated', { items: 0, history: 0, empty: true });
+      const language = detectPreferredLanguage();
+      useAppStore.setState({
+        settings: { ...useAppStore.getState().settings, language },
+      });
+      logInfo('persistence.hydrated', { items: 0, history: 0, empty: true, language });
       return true;
     }
+    const persisted = payload.settings;
     const settings: AppSettings = {
       ...DEFAULT_SETTINGS,
-      ...(payload.settings ?? {}),
+      ...(persisted ?? {}),
+      language: resolvePersistedLanguage(persisted?.language),
       hasApiKey: useAppStore.getState().settings.hasApiKey,
     };
     useAppStore.setState({

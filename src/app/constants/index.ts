@@ -1,4 +1,13 @@
-import type { AccentColor, AppSettings, Language, LanguageFlag, LogLevel, ThemeMode } from '@/core/domain/types';
+import type {
+  AccentColor,
+  AppSettings,
+  ColorScheme,
+  Language,
+  LanguageFlag,
+  LogLevel,
+  ThemeMode,
+} from '@/core/domain/types';
+import { detectPreferredLanguage } from '@/core/i18n/resolveLanguage';
 
 export const VIEWS = ['dashboard', 'queue', 'history', 'settings'] as const;
 export type View = (typeof VIEWS)[number];
@@ -71,15 +80,15 @@ export const ACCENT_COLORS: AccentOption[] = [
   },
 ];
 
-export function getAccentPalette(accent: AccentColor, theme: ThemeMode): AccentPalette {
+export function getAccentPalette(accent: AccentColor, scheme: ColorScheme): AccentPalette {
   const option = ACCENT_COLORS.find((item) => item.value === accent) ?? ACCENT_COLORS[0];
-  return theme === 'light' ? option.light : option.dark;
+  return scheme === 'light' ? option.light : option.dark;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'dark',
+  theme: 'system',
   accent: 'vt',
-  language: 'en',
+  language: detectPreferredLanguage(),
   pollInterval: 5,
   hasApiKey: false,
   logLevel: 'info',

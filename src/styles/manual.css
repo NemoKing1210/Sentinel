@@ -888,17 +888,6 @@ body::-webkit-scrollbar-thumb:hover,
   border-radius: 22px;
   overflow: hidden;
 }
-.watch-pulse::before {
-  content: '';
-  position: absolute;
-  left: 10px;
-  top: 16px;
-  bottom: 16px;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--tone);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--tone) 55%, transparent);
-}
 button.watch-pulse {
   cursor: pointer;
   transition: background-color 0.2s ease;

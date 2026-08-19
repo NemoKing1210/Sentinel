@@ -79,7 +79,19 @@ mod windows {
     ];
 
     fn shell_key(class: &str) -> String {
+        format!(r"{class}\shell\{VERB}")
+    }
+
+    fn legacy_shell_key(class: &str) -> String {
         format!(r"{CLASSES}\{class}\shell\{VERB}")
+    }
+
+    fn delete_legacy_key(classes: &RegKey, class: &str) -> Result<(), std::io::Error> {
+        match classes.delete_subkey_all(legacy_shell_key(class)) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        }
     }
 
     pub fn register() -> Result<(), String> {
@@ -107,6 +119,10 @@ mod windows {
                 .set_value("", &format!("\"{exe_path}\" --scan \"{argument}\""))
                 .map_err(|error| format!("shell.set_command_failed ({class}): {error}"))?;
         }
+        for (class, _, _) in ENTRIES {
+            delete_legacy_key(&classes, class)
+                .map_err(|error| format!("shell.delete_legacy_key_failed ({class}): {error}"))?;
+        }
         Ok(())
     }
 
@@ -121,6 +137,8 @@ mod windows {
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
                 Err(error) => return Err(format!("shell.delete_key_failed ({class}): {error}")),
             }
+            delete_legacy_key(&classes, class)
+                .map_err(|error| format!("shell.delete_legacy_key_failed ({class}): {error}"))?;
         }
         Ok(())
     }
@@ -131,6 +149,29 @@ mod windows {
             .open_subkey_with_flags(CLASSES, KEY_READ)
             .map_err(|error| format!("shell.open_classes_failed: {error}"))?;
         Ok(classes.open_subkey(shell_key(ENTRIES[0].0)).is_ok())
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn shell_key_is_relative_to_classes() {
+            assert_eq!(shell_key("*"), r"*\shell\SentinelScan");
+            assert_eq!(shell_key("Directory"), r"Directory\shell\SentinelScan");
+            assert_eq!(
+                shell_key(r"Directory\Background"),
+                r"Directory\Background\shell\SentinelScan"
+            );
+        }
+
+        #[test]
+        fn legacy_shell_key_keeps_full_classes_path() {
+            assert_eq!(
+                legacy_shell_key("*"),
+                r"Software\Classes\*\shell\SentinelScan"
+            );
+        }
     }
 }
 

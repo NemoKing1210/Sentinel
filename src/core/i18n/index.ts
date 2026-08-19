@@ -7,13 +7,14 @@ import de from './locales/de';
 import fr from './locales/fr';
 import pt from './locales/pt';
 import zh from './locales/zh';
+import { detectPreferredLanguage, FALLBACK_LANGUAGE } from './resolveLanguage';
 
 const resources = { en, ru, es, de, fr, pt, zh };
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: 'en',
-  fallbackLng: 'en',
+  lng: detectPreferredLanguage(),
+  fallbackLng: FALLBACK_LANGUAGE,
   interpolation: { escapeValue: false },
   returnEmptyString: false,
 });

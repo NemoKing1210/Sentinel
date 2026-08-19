@@ -292,7 +292,7 @@ export default function App() {
     return () => document.removeEventListener('contextmenu', blockContextMenu);
   }, []);
 
-  useNativeTheme(settings.theme);
+  const colorScheme = useNativeTheme(settings.theme);
 
   useEffect(() => {
     void isWindowsPlatform()
@@ -440,7 +440,7 @@ export default function App() {
     [history, setReport, setView],
   );
 
-  const accent = getAccentPalette(settings.accent, settings.theme);
+  const accent = getAccentPalette(settings.accent, colorScheme);
   const accentVars = {
     '--teal': accent.teal,
     '--teal-deep': accent.tealDeep,
@@ -448,7 +448,7 @@ export default function App() {
   } as CSSProperties;
 
   return (
-    <div className={`manual-app ${settings.theme === 'light' ? 'light' : 'dark'}`} style={accentVars}>
+    <div className={`manual-app ${colorScheme}`} style={accentVars}>
       <WindowChrome nav={nav} view={view} setView={goToView} />
       <main ref={mainRef} className="manual-main">
         <div className="page-transition" key={view}>

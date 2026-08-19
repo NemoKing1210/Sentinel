@@ -1,6 +1,7 @@
 export type Language = 'en' | 'ru' | 'es' | 'de' | 'fr' | 'pt' | 'zh';
 export type LanguageFlag = 'us' | 'ru' | 'es' | 'de' | 'fr' | 'pt' | 'cn';
 export type ThemeMode = 'system' | 'light' | 'dark';
+export type ColorScheme = 'light' | 'dark';
 export type AccentColor = 'vt' | 'teal' | 'blue' | 'violet' | 'rose' | 'amber';
 export type LogLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 export type ScanStatus = 'queued' | 'uploading' | 'scanning' | 'completed' | 'failed';

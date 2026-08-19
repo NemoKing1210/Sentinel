@@ -5,6 +5,34 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-08-19
+
+### Changed
+
+- Default theme is System and follows the OS light or dark appearance
+
+### Fixed
+
+- Choosing System in Settings no longer stays dark when the OS is in light mode
+
+## [0.3.3] - 2026-08-19
+
+### Added
+
+- First launch picks the interface language from the OS locale and falls back to English when that language is not available
+
+## [0.3.2] - 2026-08-19
+
+### Fixed
+
+- Windows release builds no longer open an extra console window next to the app
+
+## [0.3.1] - 2026-08-19
+
+### Fixed
+
+- Explorer context menu registration wrote verbs to a doubled `Software\Classes\Software\Classes\...` path, so "Scan with Sentinel" never appeared in Explorer; verbs now register under the correct keys and misplaced legacy keys are cleaned up automatically
+
 ## [0.3.0] - 2026-08-18
 
 ### Added

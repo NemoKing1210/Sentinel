@@ -1,7 +1,7 @@
 {
   "name": "sentinel",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.4",
   "license": "MIT",
   "author": "NemoKing (https://github.com/NemoKing1210)",
   "homepage": "https://github.com/NemoKing1210/Sentinel",
@@ -27,7 +27,7 @@
     "version:minor": "node scripts/bump-version.mjs minor",
     "version:major": "node scripts/bump-version.mjs major",
     "release": "node scripts/release.mjs",
-    "test": "node --test scripts/lib/versions.test.mjs",
+    "test": "node --experimental-strip-types --test scripts/lib/versions.test.mjs src/core/i18n/resolveLanguage.test.ts src/app/utils/theme.test.ts",
     "ci": "npm run lint && npm run format:check && npm run build && npm run check:versions && npm test"
   },
   "engines": {
