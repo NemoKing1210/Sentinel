@@ -99,14 +99,19 @@ export interface ConfirmActionOptions {
 
 export async function confirmAction(options: ConfirmActionOptions): Promise<boolean> {
   if (!isTauri) return window.confirm(options.message);
-  return Boolean(
-    await ask(options.message, {
-      title: options.title,
-      kind: options.kind ?? 'warning',
-      okLabel: options.okLabel,
-      cancelLabel: options.cancelLabel,
-    }),
-  );
+  try {
+    return Boolean(
+      await ask(options.message, {
+        title: options.title,
+        kind: options.kind ?? 'warning',
+        okLabel: options.okLabel,
+        cancelLabel: options.cancelLabel,
+      }),
+    );
+  } catch (error) {
+    void logEvent('error', 'dialog.confirm_failed', { error: String(error) }).catch(() => undefined);
+    return window.confirm(options.message);
+  }
 }
 
 export async function logEvent(level: LogLevel, event: string, fields?: Record<string, unknown>): Promise<void> {

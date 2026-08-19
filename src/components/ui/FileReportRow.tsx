@@ -36,7 +36,11 @@ export function FileReportRow({ report, onOpen, onRemove }: FileReportRowProps) 
               className="icon-button danger"
               aria-label={t('removeReport')}
               title={t('removeReport')}
-              onClick={() => onRemove(report)}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onRemove(report);
+              }}
             >
               <Icon name="close" />
             </button>

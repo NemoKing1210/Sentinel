@@ -5,6 +5,12 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-08-19
+
+### Fixed
+
+- Deleting a report or clearing History now shows a confirmation dialog instead of doing nothing
+
 ## [0.3.5] - 2026-08-19
 
 ### Changed

@@ -15,6 +15,7 @@
     "core:window:allow-unminimize",
     "core:window:allow-is-maximized",
     "core:event:default",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "dialog:allow-ask"
   ]
 }
