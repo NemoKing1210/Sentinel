@@ -105,6 +105,7 @@ export function useScanRunner() {
           ...response.report,
           itemId: item.id,
           name: item.name || response.report.name,
+          path: item.path || response.report.path,
           size: item.size || response.report.size,
           type: item.type || response.report.type,
           fileKind: item.fileKind,

@@ -55,6 +55,7 @@ const fr = {
     type: 'Type',
     details: 'Détails',
     openReport: 'Ouvrir le rapport VirusTotal',
+    openFolder: 'Ouvrir le dossier contenant',
     copy: 'Copier',
     copied: 'Copié',
     report: 'Rapport d’analyse',
@@ -350,8 +351,8 @@ const fr = {
     tray: {
       show: 'Afficher Sentinel',
       dashboard: 'Tableau de bord',
-      queue: 'File d\'attente',
-      queueCount: 'File d\'attente',
+      queue: "File d'attente",
+      queueCount: "File d'attente",
       history: 'Historique',
       settings: 'Paramètres',
       scanFile: 'Scanner un fichier…',

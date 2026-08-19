@@ -54,6 +54,7 @@ export interface EngineResult {
 export interface FileReport {
   itemId: string;
   name: string;
+  path?: string;
   size: number;
   type: string;
   fileKind?: FileKind;

@@ -14,10 +14,11 @@ interface ScanRowProps {
   extra?: ReactNode;
   actions: ReactNode;
   status?: ScanStatus;
+  nativeIcon?: string | null;
   onOpen?: () => void;
 }
 
-export function ScanRow({ name, kind, tone, meta, summary, extra, actions, status, onOpen }: ScanRowProps) {
+export function ScanRow({ name, kind, tone, meta, summary, extra, actions, status, nativeIcon, onOpen }: ScanRowProps) {
   const className = ['surface scan-row', `tone-${tone}`, `kind-${kind}`, status ? `status-${status}` : '']
     .filter(Boolean)
     .join(' ');
@@ -25,7 +26,11 @@ export function ScanRow({ name, kind, tone, meta, summary, extra, actions, statu
   const body = (
     <>
       <div className="scan-row-icon">
-        <Icon name={fileIconName(kind)} />
+        {nativeIcon ? (
+          <img className="scan-row-native-icon" src={nativeIcon} alt="" />
+        ) : (
+          <Icon name={fileIconName(kind)} />
+        )}
       </div>
       <div className="scan-row-main">
         <strong className="scan-row-name" title={name}>

@@ -59,6 +59,7 @@ const ru = {
     type: 'Тип',
     details: 'Подробнее',
     openReport: 'Открыть отчёт VirusTotal',
+    openFolder: 'Открыть папку с файлом',
     copy: 'Копировать',
     copied: 'Скопировано',
     report: 'Отчёт проверки',

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'motion/react';
 import type { FileReport, ScanItem } from '@/core/domain/types';
 import type { View } from '@/app/constants';
+import { useRemoveReport } from '@/app/hooks/useRemoveReport';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DropSymbol, DropZone } from '@/components/ui/DropZone';
@@ -38,6 +39,7 @@ export function DashboardPage({
   setReport,
 }: DashboardPageProps) {
   const { t } = useTranslation();
+  const removeReport = useRemoveReport();
   const recent = history.slice(0, 5);
   const openReport = (report: FileReport) => {
     setReport(report);
@@ -113,7 +115,12 @@ export function DashboardPage({
           <div className="list">
             <AnimatePresence mode="popLayout" initial={false}>
               {recent.map((report) => (
-                <FileReportRow key={report.itemId} report={report} onOpen={openReport} />
+                <FileReportRow
+                  key={report.itemId}
+                  report={report}
+                  onOpen={openReport}
+                  onRemove={(item) => void removeReport(item)}
+                />
               ))}
             </AnimatePresence>
           </div>

@@ -573,3 +573,246 @@ pub async fn open_external_url(url: String, app: tauri::AppHandle) -> Result<(),
         Err(error) => Err(fail("ui.external_url_open_failed", error.to_string())),
     }
 }
+
+#[tauri::command]
+pub fn file_exists(path: String) -> bool {
+    Path::new(&path).exists()
+}
+
+#[tauri::command]
+pub fn open_folder_containing(
+    path: String,
+    #[allow(unused_variables)] app: tauri::AppHandle,
+) -> Result<(), String> {
+    let file_path = Path::new(&path);
+    if !file_path.exists() {
+        return Err(fail(
+            "ui.file_not_found",
+            format!("File does not exist: {path}"),
+        ));
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let result = std::process::Command::new("explorer.exe")
+            .arg("/select,")
+            .arg(file_path.as_os_str())
+            .spawn();
+        match result {
+            Ok(_) => {
+                logging::write(
+                    LogLevel::Info,
+                    "ui.folder_opened",
+                    serde_json::json!({ "path": path }),
+                );
+                Ok(())
+            }
+            Err(error) => Err(fail("ui.open_folder_failed", error.to_string())),
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let parent = file_path
+            .parent()
+            .ok_or_else(|| fail("ui.no_parent_directory", "No parent directory"))?;
+        match app
+            .opener()
+            .open_path(parent.to_string_lossy().as_ref(), None::<&str>)
+        {
+            Ok(()) => {
+                logging::write(
+                    LogLevel::Info,
+                    "ui.folder_opened",
+                    serde_json::json!({ "path": parent.to_string_lossy() }),
+                );
+                Ok(())
+            }
+            Err(error) => Err(fail("ui.open_folder_failed", error.to_string())),
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_file_icon(path: String) -> Result<Option<String>, String> {
+    #[cfg(target_os = "windows")]
+    {
+        extract_file_icon_windows(&path)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = path;
+        Ok(None)
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn extract_file_icon_windows(path: &str) -> Result<Option<String>, String> {
+    use base64::Engine;
+    use windows::core::PCWSTR;
+    use windows::Win32::Storage::FileSystem::FILE_ATTRIBUTE_NORMAL;
+    use windows::Win32::UI::Shell::{SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_LARGEICON};
+    use windows::Win32::UI::WindowsAndMessaging::DestroyIcon;
+
+    let wide_path: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
+
+    let mut info = SHFILEINFOW::default();
+    let result = unsafe {
+        SHGetFileInfoW(
+            PCWSTR(wide_path.as_ptr()),
+            FILE_ATTRIBUTE_NORMAL,
+            Some(&mut info),
+            std::mem::size_of::<SHFILEINFOW>() as u32,
+            SHGFI_ICON | SHGFI_LARGEICON,
+        )
+    };
+
+    if result == 0 || info.hIcon.is_invalid() {
+        return Ok(None);
+    }
+
+    let icon = info.hIcon;
+    let png_data = match hicon_to_png(icon) {
+        Ok(data) => data,
+        Err(_) => {
+            unsafe {
+                let _ = DestroyIcon(icon);
+            }
+            return Ok(None);
+        }
+    };
+    unsafe {
+        let _ = DestroyIcon(icon);
+    }
+
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&png_data);
+    Ok(Some(format!("data:image/png;base64,{}", b64)))
+}
+
+#[cfg(target_os = "windows")]
+fn free_icon_bitmaps(info: &windows::Win32::UI::WindowsAndMessaging::ICONINFO) {
+    use windows::Win32::Graphics::Gdi::DeleteObject;
+    unsafe {
+        if !info.hbmColor.is_invalid() {
+            let _ = DeleteObject(info.hbmColor.into());
+        }
+        if !info.hbmMask.is_invalid() {
+            let _ = DeleteObject(info.hbmMask.into());
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn bitmap_size(handle: windows::Win32::Graphics::Gdi::HBITMAP) -> Result<(i32, i32), String> {
+    use windows::Win32::Graphics::Gdi::{GetObjectW, BITMAP};
+    let mut bitmap = BITMAP::default();
+    let written = unsafe {
+        GetObjectW(
+            handle.into(),
+            std::mem::size_of::<BITMAP>() as i32,
+            Some((&mut bitmap as *mut BITMAP).cast()),
+        )
+    };
+    if written == 0 || bitmap.bmWidth <= 0 || bitmap.bmHeight <= 0 {
+        return Err("GetObjectW failed".to_string());
+    }
+    Ok((bitmap.bmWidth, bitmap.bmHeight.abs()))
+}
+
+#[cfg(target_os = "windows")]
+fn hicon_to_png(icon: windows::Win32::UI::WindowsAndMessaging::HICON) -> Result<Vec<u8>, String> {
+    use windows::Win32::Graphics::Gdi::{
+        CreateCompatibleDC, DeleteDC, GetDIBits, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
+        DIB_RGB_COLORS,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{GetIconInfo, ICONINFO};
+
+    let mut icon_info = ICONINFO::default();
+    unsafe {
+        if GetIconInfo(icon, &mut icon_info).is_err() {
+            return Err("GetIconInfo failed".to_string());
+        }
+    }
+
+    if icon_info.hbmColor.is_invalid() {
+        free_icon_bitmaps(&icon_info);
+        return Err("Icon has no color bitmap".to_string());
+    }
+
+    let (width, height) = match bitmap_size(icon_info.hbmColor) {
+        Ok(size) if size.0 <= 256 && size.1 <= 256 => size,
+        Ok(_) => {
+            free_icon_bitmaps(&icon_info);
+            return Err("Invalid icon dimensions".to_string());
+        }
+        Err(error) => {
+            free_icon_bitmaps(&icon_info);
+            return Err(error);
+        }
+    };
+
+    let hdc = unsafe { CreateCompatibleDC(None) };
+    if hdc.is_invalid() {
+        free_icon_bitmaps(&icon_info);
+        return Err("CreateCompatibleDC failed".to_string());
+    }
+
+    let mut bmi = BITMAPINFO {
+        bmiHeader: BITMAPINFOHEADER {
+            biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+            biWidth: width,
+            biHeight: -height,
+            biPlanes: 1,
+            biBitCount: 32,
+            biCompression: BI_RGB.0 as u32,
+            biSizeImage: 0,
+            biXPelsPerMeter: 0,
+            biYPelsPerMeter: 0,
+            biClrUsed: 0,
+            biClrImportant: 0,
+        },
+        bmiColors: [Default::default()],
+    };
+
+    let mut pixels = vec![0u8; (width * height * 4) as usize];
+    let result = unsafe {
+        GetDIBits(
+            hdc,
+            icon_info.hbmColor,
+            0,
+            height as u32,
+            Some(pixels.as_mut_ptr() as *mut _),
+            &mut bmi,
+            DIB_RGB_COLORS,
+        )
+    };
+
+    unsafe {
+        let _ = DeleteDC(hdc);
+    }
+    free_icon_bitmaps(&icon_info);
+
+    if result == 0 {
+        return Err("GetDIBits failed".to_string());
+    }
+
+    let mut img = image::RgbaImage::new(width as u32, height as u32);
+    for y in 0..height as u32 {
+        for x in 0..width as u32 {
+            let idx = ((y * width as u32 + x) * 4) as usize;
+            let b = pixels[idx];
+            let g = pixels[idx + 1];
+            let r = pixels[idx + 2];
+            let a = pixels[idx + 3];
+            img.put_pixel(x, y, image::Rgba([r, g, b, a]));
+        }
+    }
+
+    let mut png_data = Vec::new();
+    image::DynamicImage::ImageRgba8(img)
+        .write_to(
+            &mut std::io::Cursor::new(&mut png_data),
+            image::ImageFormat::Png,
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(png_data)
+}

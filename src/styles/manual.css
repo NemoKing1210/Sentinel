@@ -2669,8 +2669,13 @@ code {
     background-color 0.18s ease;
 }
 .scan-row-icon .glyph {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+}
+.scan-row-native-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 /* File-kind defaults (lowest precedence for icon color). */
@@ -2843,8 +2848,8 @@ code {
   height: 36px;
 }
 .scan-row-actions .icon-button .glyph {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 .icon-button.danger:hover {
   color: var(--danger);
@@ -3211,8 +3216,13 @@ code {
   background: var(--icon-bg, var(--surface-2));
 }
 .history-report-file-icon .glyph {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+}
+.history-report-native-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 .history-report-title {
   min-width: 0;
@@ -3415,6 +3425,11 @@ code {
   max-width: 100%;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+.history-engine-list .pill .glyph {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
 }
 @media (max-width: 800px) {
   .history-toolbar,

@@ -3485,9 +3485,11 @@ dependencies = [
 
 [[package]]
 name = "sentinel"
-version = "0.3.7"
+version = "0.3.8"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
+ "image",
  "keyring",
  "notify-rust",
  "reqwest 0.12.28",
@@ -3505,6 +3507,7 @@ dependencies = [
  "urlencoding",
  "uuid",
  "walkdir",
+ "windows 0.61.3",
  "winreg 0.52.0",
  "zip",
 ]

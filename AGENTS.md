@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.7`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.8`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -119,6 +119,8 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `submit_archive`                                                                             | Walk folder, ZIP to tempfile, then `submit_file`                                            |
 | `get_analysis_status`                                                                        | `GET /analyses/{id}`                                                                        |
 | `get_path_metadata`                                                                          | Size, file count, mtime, `is_dir`                                                           |
+| `file_exists` / `open_folder_containing`                                                     | Check the original path and reveal it in Explorer / the file manager                        |
+| `get_file_icon`                                                                              | Windows shell icon for a path (PNG data URL); other platforms return `None`                 |
 | `notify_scan_result`                                                                         | OS notification for a finished scan; click emits `native:notification` with the item id     |
 | `open_external_url`                                                                          | Open VirusTotal (or other) URLs                                                             |
 | `get_log_level` / `set_log_level` / `get_log_directory` / `open_log_directory` / `log_event` | Logging                                                                                     |

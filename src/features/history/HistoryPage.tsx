@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FileReport } from '@/core/domain/types';
+import { useRemoveReport } from '@/app/hooks/useRemoveReport';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { confirmAction } from '@/core/native/api';
 import { useAppStore } from '@/core/state/store';
@@ -15,7 +16,7 @@ export function HistoryPage() {
   const history = useAppStore((state) => state.history);
   const selectedReportId = useAppStore((state) => state.selectedReportId);
   const setReport = useAppStore((state) => state.setReport);
-  const removeReport = useAppStore((state) => state.removeReport);
+  const confirmRemove = useRemoveReport();
   const clearHistory = useAppStore((state) => state.clearHistory);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<HistoryFilter>('all');
@@ -37,23 +38,6 @@ export function HistoryPage() {
 
   const openReport = useCallback((report: FileReport) => setReport(report), [setReport]);
   const closeReport = useCallback(() => setReport(null), [setReport]);
-
-  const confirmRemove = useCallback(
-    async (report: FileReport) => {
-      const confirmed = await confirmAction({
-        title: t('removeReportConfirmTitle'),
-        message: t('removeReportConfirm', { name: report.name }),
-        kind: 'warning',
-        okLabel: t('removeReport'),
-        cancelLabel: t('cancel'),
-      });
-      if (!confirmed) return;
-      removeReport(report.itemId);
-      logInfo('history.report_removed', { itemId: report.itemId, name: report.name });
-      showToast(describePreset('reportRemoved', t, { name: report.name }));
-    },
-    [removeReport, showToast, t],
-  );
 
   const confirmClear = useCallback(async () => {
     if (history.length === 0) return;

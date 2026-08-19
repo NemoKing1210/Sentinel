@@ -5,6 +5,21 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-08-19
+
+### Added
+
+- Scan cards can open the original file’s folder when the file is still on disk
+- Scan cards and reports show the Windows file icon for the original path
+
+### Changed
+
+- Overview, Queue, and History scan cards now share the same actions: verdict, open folder, and remove
+
+### Fixed
+
+- File icons on scan cards use the real icon size instead of a cropped, oversized thumbnail
+
 ## [0.3.7] - 2026-08-19
 
 ### Changed

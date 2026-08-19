@@ -372,38 +372,113 @@ pub fn build_tray_menu<R: Runtime>(
 
     let active_submenu = Submenu::new(app, &active_header, true)?;
     if state.active.is_empty() {
-        active_submenu.append(&MenuItem::with_id(app, format!("{TRAY_PREFIX}active_empty"), &labels.no_active, false, None::<&str>)?)?;
+        active_submenu.append(&MenuItem::with_id(
+            app,
+            format!("{TRAY_PREFIX}active_empty"),
+            &labels.no_active,
+            false,
+            None::<&str>,
+        )?)?;
     } else {
         for item in state.active.iter().take(MAX_ACTIVE_ITEMS) {
-            let display = format!("{} — {}", truncate_name(&item.name), status_text(&item.status, item.progress, labels));
-            active_submenu.append(&MenuItem::with_id(app, format!("{TRAY_PREFIX}active:{}", item.id), &display, false, None::<&str>)?)?;
+            let display = format!(
+                "{} — {}",
+                truncate_name(&item.name),
+                status_text(&item.status, item.progress, labels)
+            );
+            active_submenu.append(&MenuItem::with_id(
+                app,
+                format!("{TRAY_PREFIX}active:{}", item.id),
+                &display,
+                false,
+                None::<&str>,
+            )?)?;
         }
     }
 
     let recent_submenu = Submenu::new(app, &recent_header, true)?;
     if state.recent.is_empty() {
-        recent_submenu.append(&MenuItem::with_id(app, format!("{TRAY_PREFIX}recent_empty"), &labels.no_recent, false, None::<&str>)?)?;
+        recent_submenu.append(&MenuItem::with_id(
+            app,
+            format!("{TRAY_PREFIX}recent_empty"),
+            &labels.no_recent,
+            false,
+            None::<&str>,
+        )?)?;
     } else {
         for item in state.recent.iter().take(MAX_RECENT_ITEMS) {
             let icon = verdict_icon(&item.verdict, labels);
-            let display = format!("{icon} {} ({}/{})", truncate_name(&item.name), item.detections, item.total);
+            let display = format!(
+                "{icon} {} ({}/{})",
+                truncate_name(&item.name),
+                item.detections,
+                item.total
+            );
             let report_action = MenuAction::ViewReport(item.item_id.clone());
-            recent_submenu.append(&MenuItem::with_id(app, report_action.tray_id(), &display, true, None::<&str>)?)?;
+            recent_submenu.append(&MenuItem::with_id(
+                app,
+                report_action.tray_id(),
+                &display,
+                true,
+                None::<&str>,
+            )?)?;
         }
     }
 
     Menu::with_items(
         app,
         &[
-            &MenuItem::with_id(app, MenuAction::Show.tray_id(), &labels.show, true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::Show.tray_id(),
+                &labels.show,
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, MenuAction::ViewDashboard.tray_id(), &labels.dashboard, true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::ViewQueue.tray_id(), &queue_label, true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::ViewHistory.tray_id(), &labels.history, true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::ViewSettings.tray_id(), &labels.settings, true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::ViewDashboard.tray_id(),
+                &labels.dashboard,
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::ViewQueue.tray_id(),
+                &queue_label,
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::ViewHistory.tray_id(),
+                &labels.history,
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::ViewSettings.tray_id(),
+                &labels.settings,
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, MenuAction::PickFiles.tray_id(), &labels.scan_file, true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::PickFolder.tray_id(), &labels.scan_folder, true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::PickFiles.tray_id(),
+                &labels.scan_file,
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::PickFolder.tray_id(),
+                &labels.scan_folder,
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
             &active_submenu,
             &recent_submenu,
@@ -417,12 +492,42 @@ fn build_tray_menu_fallback<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Men
     Menu::with_items(
         app,
         &[
-            &MenuItem::with_id(app, MenuAction::Show.tray_id(), "Show Sentinel", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::Show.tray_id(),
+                "Show Sentinel",
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, MenuAction::PickFiles.tray_id(), "Scan file…", true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::PickFolder.tray_id(), "Scan folder…", true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::ViewQueue.tray_id(), "Open queue", true, None::<&str>)?,
-            &MenuItem::with_id(app, MenuAction::ViewHistory.tray_id(), "Open history", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::PickFiles.tray_id(),
+                "Scan file…",
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::PickFolder.tray_id(),
+                "Scan folder…",
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::ViewQueue.tray_id(),
+                "Open queue",
+                true,
+                None::<&str>,
+            )?,
+            &MenuItem::with_id(
+                app,
+                MenuAction::ViewHistory.tray_id(),
+                "Open history",
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
             &PredefinedMenuItem::quit(app, None)?,
         ],

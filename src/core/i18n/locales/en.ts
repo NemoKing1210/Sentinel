@@ -55,6 +55,7 @@ const en = {
     type: 'Type',
     details: 'Details',
     openReport: 'Open VirusTotal report',
+    openFolder: 'Open containing folder',
     copy: 'Copy',
     copied: 'Copied',
     report: 'Scan report',

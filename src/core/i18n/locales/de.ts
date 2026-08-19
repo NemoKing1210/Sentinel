@@ -55,6 +55,7 @@ const de = {
     type: 'Typ',
     details: 'Details',
     openReport: 'VirusTotal-Bericht öffnen',
+    openFolder: 'Enthaltenden Ordner öffnen',
     copy: 'Kopieren',
     copied: 'Kopiert',
     report: 'Scan-Bericht',

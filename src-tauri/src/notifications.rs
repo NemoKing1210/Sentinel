@@ -68,7 +68,8 @@ fn show(
             return false;
         };
         let dir = dir.display().to_string();
-        dir.ends_with(&format!("{SEP}target{SEP}debug")) || dir.ends_with(&format!("{SEP}target{SEP}release"))
+        dir.ends_with(&format!("{SEP}target{SEP}debug"))
+            || dir.ends_with(&format!("{SEP}target{SEP}release"))
     }
 
     let app_id = if running_from_dev_dir() {
@@ -109,11 +110,17 @@ fn show(
     use notify_rust::Notification;
 
     let mut notification = Notification::new();
-    notification.summary(title).body(body).appname("Sentinel").auto_icon();
+    notification
+        .summary(title)
+        .body(body)
+        .appname("Sentinel")
+        .auto_icon();
     if !action_label.is_empty() {
         notification.action("open", action_label);
     }
-    let handle = notification.show().map_err(|error| format!("notifications.show_failed: {error}"))?;
+    let handle = notification
+        .show()
+        .map_err(|error| format!("notifications.show_failed: {error}"))?;
     let app_handle = app.clone();
     let item_id_owned = item_id.to_string();
     std::thread::spawn(move || {

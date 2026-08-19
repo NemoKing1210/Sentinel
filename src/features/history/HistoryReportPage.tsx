@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import type { FileReport } from '@/core/domain/types';
+import { useFileExists } from '@/app/hooks/useFileExists';
+import { useFileIcon } from '@/app/hooks/useFileIcon';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { detectionCount, engineTotal, formatDateTime, formatSize } from '@/app/utils/format';
 import { verdictTone } from '@/app/utils/verdict';
@@ -9,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { fileIconName, Icon } from '@/components/ui/Icon';
 import { StatusIcon } from '@/components/ui/StatusIcon';
-import { openExternalUrl } from '@/core/native/api';
+import { openExternalUrl, openFolderContaining } from '@/core/native/api';
 import { logError } from '@/core/logging';
 import {
   engineCategoryIcon,
@@ -60,6 +62,8 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
   );
   const detections = detectionCount(report);
   const total = engineTotal(report);
+  const nativeIcon = useFileIcon(report.path);
+  const fileStillExists = useFileExists(report.path);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -98,6 +102,11 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
           {t('historyBack')}
         </Button>
         <div className="button-row">
+          {fileStillExists && report.path ? (
+            <Button variant="quiet" icon="folder" onClick={() => void openFolderContaining(report.path!)}>
+              {t('openFolder')}
+            </Button>
+          ) : null}
           <Button variant="outline" icon="external" onClick={() => void openVt()}>
             {t('openReport')}
           </Button>
@@ -110,7 +119,11 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
       <Card className={`history-report-hero kind-${kind} tone-${tone}`}>
         <div className="history-report-heading">
           <span className="history-report-file-icon">
-            <Icon name={fileIconName(kind)} />
+            {nativeIcon ? (
+              <img className="history-report-native-icon" src={nativeIcon} alt="" />
+            ) : (
+              <Icon name={fileIconName(kind)} />
+            )}
           </span>
           <div className="history-report-title">
             <span className="eyebrow">{t('report')}</span>

@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import type { ScanItem } from '@/core/domain/types';
+import { useFileIcon } from '@/app/hooks/useFileIcon';
 import { formatRelativeTime, formatSize } from '@/app/utils/format';
 import { verdictTone } from '@/app/utils/verdict';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { OpenFolderButton } from '@/components/ui/OpenFolderButton';
 import { ScanRow } from '@/components/ui/ScanRow';
 
 interface QueueRowProps {
@@ -15,7 +17,17 @@ interface QueueRowProps {
 
 function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button type="button" className="icon-button danger" onClick={onClick} aria-label={label} title={label}>
+    <button
+      type="button"
+      className="icon-button danger"
+      aria-label={label}
+      title={label}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+    >
       <Icon name="close" />
     </button>
   );
@@ -32,6 +44,7 @@ export function QueueRow({ item, onRunScan, onOpenDetails, onRemove }: QueueRowP
   const countLabel =
     item.isFolder && item.fileCount !== undefined ? t('queueFileCount', { count: item.fileCount }) : null;
   const meta = [item.type, sizeLabel, countLabel, relativeTime].filter(Boolean).join(' · ');
+  const nativeIcon = useFileIcon(item.path);
 
   const extra = isActive ? (
     <div className="scan-row-progress">
@@ -56,6 +69,7 @@ export function QueueRow({ item, onRunScan, onOpenDetails, onRemove }: QueueRowP
       tone={tone}
       meta={meta}
       status={item.status}
+      nativeIcon={nativeIcon}
       summary={item.status === 'completed' ? `${detections}/${engines} ${t('engines')}` : undefined}
       extra={extra}
       onOpen={item.status === 'completed' ? () => onOpenDetails(item) : undefined}
@@ -66,23 +80,19 @@ export function QueueRow({ item, onRunScan, onOpenDetails, onRemove }: QueueRowP
           ) : (
             <span className={`pill ${isActive ? 'teal' : item.status}`}>{t(item.status)}</span>
           )}
+          <OpenFolderButton path={item.path} />
           {item.status === 'failed' ? (
-            <>
-              <Button variant="quiet" icon="refresh" onClick={() => onRunScan(item)}>
-                {t('retry')}
-              </Button>
-              <RemoveButton label={t('removeItem')} onClick={() => onRemove(item.id)} />
-            </>
+            <Button variant="quiet" icon="refresh" onClick={() => onRunScan(item)}>
+              {t('retry')}
+            </Button>
           ) : item.status === 'queued' ? (
-            <>
-              <Button variant="quiet" icon="arrow" onClick={() => onRunScan(item)}>
-                {t('startScan')}
-              </Button>
-              <RemoveButton label={t('removeItem')} onClick={() => onRemove(item.id)} />
-            </>
+            <Button variant="quiet" icon="arrow" onClick={() => onRunScan(item)}>
+              {t('startScan')}
+            </Button>
           ) : isActive ? (
             <span className="spinner" aria-label={t(item.status)} />
           ) : null}
+          {isActive ? null : <RemoveButton label={t('removeItem')} onClick={() => onRemove(item.id)} />}
         </>
       }
     />

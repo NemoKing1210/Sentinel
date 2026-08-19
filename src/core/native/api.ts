@@ -89,6 +89,20 @@ export async function openExternalUrl(url: string): Promise<void> {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+export async function fileExists(path: string): Promise<boolean> {
+  if (!isTauri) return false;
+  return invoke<boolean>('file_exists', { path });
+}
+
+export async function openFolderContaining(path: string): Promise<void> {
+  if (isTauri) await invoke('open_folder_containing', { path });
+}
+
+export async function getFileIcon(path: string): Promise<string | null> {
+  if (!isTauri) return null;
+  return invoke<string | null>('get_file_icon', { path });
+}
+
 export interface ConfirmActionOptions {
   title: string;
   message: string;
@@ -262,6 +276,7 @@ export async function scanPath(
     const report: FileReport = {
       itemId: upload.analysis_id,
       name: path.split(/[\\/]/).pop() || 'upload',
+      path,
       size: 0,
       type: isFolder ? 'application/zip' : 'application/octet-stream',
       sha256: upload.sha256,
@@ -293,6 +308,7 @@ export async function scanPath(
     report: {
       itemId: id,
       name: path.split(/[\\/]/).pop() || 'sample.bin',
+      path,
       size: bytes(348160),
       type: 'application/octet-stream',
       sha256: hash,

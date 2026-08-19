@@ -53,6 +53,7 @@ const zh = {
     type: '类型',
     details: '详情',
     openReport: '打开 VirusTotal 报告',
+    openFolder: '打开所在文件夹',
     copy: '复制',
     copied: '已复制',
     report: '扫描报告',

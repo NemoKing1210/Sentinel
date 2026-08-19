@@ -55,6 +55,7 @@ const es = {
     type: 'Tipo',
     details: 'Detalles',
     openReport: 'Abrir informe de VirusTotal',
+    openFolder: 'Abrir carpeta contenedora',
     copy: 'Copiar',
     copied: 'Copiado',
     report: 'Informe de análisis',

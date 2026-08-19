@@ -1,6 +1,6 @@
 [package]
 name = "sentinel"
-version = "0.3.7"
+version = "0.3.8"
 description = "A focused VirusTotal desktop scanner"
 authors = ["NemoKing"]
 edition = "2021"
@@ -36,6 +36,15 @@ urlencoding = "2"
 [target.'cfg(target_os = "windows")'.dependencies]
 tauri-winrt-notification = "0.8"
 winreg = "0.52"
+windows = { version = "0.61", features = [
+    "Win32_UI_Shell",
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Storage_FileSystem",
+] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+base64 = "0.22"
 
 [target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
 notify-rust = "4"
