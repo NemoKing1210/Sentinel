@@ -1,16 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import type { FileReport, ScanItem } from '@/core/domain/types';
 import type { View } from '@/app/constants';
-import { verdictTone } from '@/app/utils/verdict';
-import { detectionCount, engineTotal, formatDateTime, formatSize } from '@/app/utils/format';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DropSymbol, DropZone } from '@/components/ui/DropZone';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FileReportRow } from '@/components/ui/FileReportRow';
 import { Icon } from '@/components/ui/Icon';
 import { PageTitle } from '@/components/ui/PageTitle';
-import { StatusIcon } from '@/components/ui/StatusIcon';
 import { Switch } from '@/components/ui/Switch';
 import { WatchBoard } from './WatchBoard';
 
@@ -115,30 +113,7 @@ export function DashboardPage({
           <div className="list">
             <AnimatePresence mode="popLayout" initial={false}>
               {recent.map((report) => (
-                <motion.button
-                  type="button"
-                  layout
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="recent-row"
-                  key={report.itemId}
-                  onClick={() => openReport(report)}
-                >
-                  <StatusIcon verdict={report.verdict} />
-                  <span className="row-info">
-                    <strong>{report.name}</strong>
-                    <small>
-                      {formatSize(report.size)} · {formatDateTime(report.scannedAt)}
-                    </small>
-                  </span>
-                  <span className={`pill ${verdictTone(report.verdict)}`}>{t(report.verdict)}</span>
-                  <b>
-                    {detectionCount(report)}/{engineTotal(report)}
-                  </b>
-                  <Icon name="arrow" />
-                </motion.button>
+                <FileReportRow key={report.itemId} report={report} onOpen={openReport} />
               ))}
             </AnimatePresence>
           </div>

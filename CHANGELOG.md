@@ -5,6 +5,12 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-08-19
+
+### Changed
+
+- Scan cards on Overview and Queue now match History: file-type icon, engine summary, and the same compact row layout
+
 ## [0.3.4] - 2026-08-19
 
 ### Changed

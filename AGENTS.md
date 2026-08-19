@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.4`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.5`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -45,7 +45,7 @@ src/
     hooks/                 useToast, useNativeTheme
     utils/                 format, verdict tones, fileKind / MIME
   components/
-    ui/                    Button, Card, Field, Icon, StatusIcon, Switch, Select, …
+    ui/                    Button, Card, Field, Icon, ScanRow, FileReportRow, StatusIcon, Switch, Select, …
     layout/                WindowChrome (frameless title bar + nav), Toast
   core/
     domain/types.ts        Shared domain types
@@ -59,7 +59,7 @@ src/
   features/
     dashboard/             DashboardPage
     queue/                 QueuePage, QueueRow, useScanRunner
-    history/               HistoryPage, HistoryListPage, HistoryReportPage, HistoryRow, historyQuery
+    history/               HistoryPage, HistoryListPage, HistoryReportPage, historyQuery
     settings/              SettingsPage
   styles/
     global.css             Visual primitives

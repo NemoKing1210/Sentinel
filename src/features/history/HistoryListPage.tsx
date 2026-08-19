@@ -4,9 +4,9 @@ import { AnimatePresence } from 'motion/react';
 import type { FileReport } from '@/core/domain/types';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FileReportRow } from '@/components/ui/FileReportRow';
 import { Icon } from '@/components/ui/Icon';
 import { PageTitle } from '@/components/ui/PageTitle';
-import { HistoryRow } from './HistoryRow';
 import { countReportsByVerdict, groupReportsByDay, queryHistory, type HistoryFilter } from './historyQuery';
 
 const FILTERS: { value: HistoryFilter; labelKey: string; tone: string }[] = [
@@ -104,7 +104,7 @@ export function HistoryListPage({
               <div className="history-group-rows">
                 <AnimatePresence mode="popLayout" initial={false}>
                   {group.reports.map((report) => (
-                    <HistoryRow key={report.itemId} report={report} onOpen={onOpen} onRemove={onRemove} />
+                    <FileReportRow key={report.itemId} report={report} onOpen={onOpen} onRemove={onRemove} />
                   ))}
                 </AnimatePresence>
               </div>
