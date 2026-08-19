@@ -118,6 +118,10 @@ const ru = {
     apiAccess: 'Доступ VirusTotal',
     apiKey: 'API-ключ',
     apiKeyHint: 'Хранится в защищённом системном хранилище.',
+    apiKeyHowToTitle: 'Где взять ключ',
+    apiKeyHowToBody:
+      'Создайте бесплатный аккаунт VirusTotal, откройте страницу API-ключа и скопируйте его. Ключ хранится в системном хранилище и не покидает ваше устройство.',
+    apiKeyGetAction: 'Получить API-ключ',
     apiKeyConfigured: 'API-ключ сохранён',
     apiKeyNotConfigured: 'Не настроен',
     save: 'Сохранить изменения',

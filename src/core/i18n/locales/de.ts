@@ -115,6 +115,10 @@ const de = {
     apiAccess: 'VirusTotal-Zugriff',
     apiKey: 'API-Schlüssel',
     apiKeyHint: 'Wird sicher im Schlüsselbund Ihres Betriebssystems gespeichert.',
+    apiKeyHowToTitle: 'Wo bekomme ich den Schlüssel?',
+    apiKeyHowToBody:
+      'Erstellen Sie ein kostenloses VirusTotal-Konto, öffnen Sie die Seite für den API-Schlüssel und kopieren Sie Ihren Schlüssel. Er wird sicher im Schlüsselbund des Systems gespeichert und verlässt Ihr Gerät nicht.',
+    apiKeyGetAction: 'API-Schlüssel abrufen',
     apiKeyConfigured: 'API-Schlüssel gespeichert',
     apiKeyNotConfigured: 'Nicht konfiguriert',
     save: 'Änderungen speichern',

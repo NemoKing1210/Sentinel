@@ -113,6 +113,10 @@ const en = {
     apiAccess: 'VirusTotal access',
     apiKey: 'API key',
     apiKeyHint: 'Stored securely in your operating system keychain.',
+    apiKeyHowToTitle: 'Where to get the key',
+    apiKeyHowToBody:
+      'Create a free VirusTotal account, open the API key page, and copy your key. It is stored in your OS keychain and never leaves your device.',
+    apiKeyGetAction: 'Get API key',
     apiKeyConfigured: 'API key saved',
     apiKeyNotConfigured: 'Not configured',
     save: 'Save changes',

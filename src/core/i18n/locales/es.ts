@@ -115,6 +115,10 @@ const es = {
     apiAccess: 'Acceso a VirusTotal',
     apiKey: 'Clave de API',
     apiKeyHint: 'Se guarda de forma segura en el llavero de tu sistema operativo.',
+    apiKeyHowToTitle: 'Dónde obtener la clave',
+    apiKeyHowToBody:
+      'Crea una cuenta gratuita en VirusTotal, abre la página de la clave de API y cópiala. La clave se guarda en el llavero del sistema y nunca sale de tu dispositivo.',
+    apiKeyGetAction: 'Obtener clave de API',
     apiKeyConfigured: 'Clave de API guardada',
     apiKeyNotConfigured: 'No configurada',
     save: 'Guardar cambios',

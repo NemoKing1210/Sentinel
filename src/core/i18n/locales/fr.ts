@@ -115,6 +115,10 @@ const fr = {
     apiAccess: 'Accès VirusTotal',
     apiKey: 'Clé API',
     apiKeyHint: 'Stockée en toute sécurité dans le trousseau de votre système.',
+    apiKeyHowToTitle: 'Où trouver la clé',
+    apiKeyHowToBody:
+      'Créez un compte VirusTotal gratuit, ouvrez la page des clés API et copiez votre clé. Elle est stockée dans le trousseau du système et ne quitte jamais votre appareil.',
+    apiKeyGetAction: 'Obtenir une clé API',
     apiKeyConfigured: 'Clé API enregistrée',
     apiKeyNotConfigured: 'Non configurée',
     save: 'Enregistrer les modifications',

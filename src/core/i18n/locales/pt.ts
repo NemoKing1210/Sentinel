@@ -115,6 +115,10 @@ const pt = {
     apiAccess: 'Acesso ao VirusTotal',
     apiKey: 'Chave de API',
     apiKeyHint: 'Armazenada com segurança no chaveiro do seu sistema operacional.',
+    apiKeyHowToTitle: 'Onde obter a chave',
+    apiKeyHowToBody:
+      'Crie uma conta gratuita no VirusTotal, abra a página da chave de API e copie a sua chave. Ela fica armazenada no chaveiro do sistema e nunca sai do seu dispositivo.',
+    apiKeyGetAction: 'Obter chave de API',
     apiKeyConfigured: 'Chave de API salva',
     apiKeyNotConfigured: 'Não configurada',
     save: 'Salvar alterações',

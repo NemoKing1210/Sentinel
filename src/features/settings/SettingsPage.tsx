@@ -58,6 +58,8 @@ const REPOSITORY_DISPLAY = PROJECT_META.repositoryUrl
   .replace(/^https?:\/\/(www\.)?github\.com\//, '')
   .replace(/\.git$/, '');
 
+const VT_API_KEY_URL = 'https://www.virustotal.com/gui/my-apikey';
+
 export function SettingsPage({
   settings,
   apiKey,
@@ -215,6 +217,19 @@ export function SettingsPage({
               </Field>
             </div>
           </div>
+        </div>
+        <div className="api-hint" role="note">
+          <span className="api-hint-icon">
+            <Icon name="info" />
+          </span>
+          <div className="api-hint-copy">
+            <strong>{t('apiKeyHowToTitle')}</strong>
+            <p>{t('apiKeyHowToBody')}</p>
+          </div>
+          <button type="button" className="api-hint-link" onClick={() => void openExternalUrl(VT_API_KEY_URL)}>
+            {t('apiKeyGetAction')}
+            <Icon name="external" />
+          </button>
         </div>
         <div className="settings-actions">
           <Button variant="outline" icon="shield" onClick={validate}>

@@ -111,6 +111,10 @@ const zh = {
     apiAccess: 'VirusTotal 访问',
     apiKey: 'API 密钥',
     apiKeyHint: '安全存储在您操作系统的钥匙串中。',
+    apiKeyHowToTitle: '如何获取密钥',
+    apiKeyHowToBody:
+      '创建免费的 VirusTotal 账户，打开 API 密钥页面并复制您的密钥。密钥存储在系统钥匙串中，绝不会离开您的设备。',
+    apiKeyGetAction: '获取 API 密钥',
     apiKeyConfigured: 'API 密钥已保存',
     apiKeyNotConfigured: '未配置',
     save: '保存更改',
