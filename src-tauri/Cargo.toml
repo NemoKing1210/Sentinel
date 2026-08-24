@@ -44,7 +44,7 @@ windows = { version = "0.61", features = [
     "Win32_Storage_FileSystem",
 ] }
 image = { version = "0.25", default-features = false, features = ["png"] }
-base64 = "0.22"
+base64 = "0.23"
 
 [target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
 notify-rust = "4"
