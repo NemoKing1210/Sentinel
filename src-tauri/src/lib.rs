@@ -60,6 +60,7 @@ pub fn run() {
             commands::open_folder_containing,
             commands::get_file_icon,
             commands::get_window_backdrop,
+            commands::get_system_accent,
             notifications::notify_scan_result,
             persistence::load_persisted_state,
             persistence::save_persisted_state,

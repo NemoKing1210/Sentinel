@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppStore } from '@/core/state/store';
-import { getAccentPalette, LANGUAGES, type View } from '@/app/constants';
+import { LANGUAGES, type View } from '@/app/constants';
 import {
   detectPaths,
   getApiKey,
@@ -28,7 +28,9 @@ import {
 import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { useNativeTheme } from '@/app/hooks/useNativeTheme';
+import { useSystemAccent } from '@/app/hooks/useSystemAccent';
 import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
+import { resolveAccentPalette } from '@/app/utils/accent';
 import { useScanRunner } from '@/features/queue/useScanRunner';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { WindowChrome } from '@/components/layout/WindowChrome';
@@ -356,6 +358,7 @@ export default function App() {
   }, []);
 
   const colorScheme = useNativeTheme(settings.theme);
+  const systemAccent = useSystemAccent();
   const backdrop = useWindowBackdrop(settings.theme, colorScheme);
 
   useEffect(() => {
@@ -504,7 +507,7 @@ export default function App() {
     [history, setReport, setView],
   );
 
-  const accent = getAccentPalette(settings.accent, colorScheme);
+  const accent = resolveAccentPalette(settings.accent, colorScheme, systemAccent);
   const accentVars = {
     '--accent': accent.teal,
     '--accent-strong': accent.tealDeep,
@@ -550,6 +553,7 @@ export default function App() {
               <SettingsPage
                 settings={settings}
                 colorScheme={colorScheme}
+                systemAccent={systemAccent}
                 apiKey={apiKey}
                 showApiKey={showApiKey}
                 toggleApiKey={toggleApiKey}
