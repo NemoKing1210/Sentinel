@@ -38,7 +38,7 @@ const STAT_LABEL: Record<StatsKey, string> = {
   harmless: 'harmless',
 };
 
-const engineCardTransition = { duration: 0.22, ease: [0.22, 1, 0.36, 1] } as const;
+const engineCardTransition = { duration: 0.167, ease: [0.1, 0.9, 0.2, 1] } as const;
 
 interface HistoryReportPageProps {
   report: FileReport;
@@ -243,9 +243,9 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
                 <motion.div
                   layout
                   key={engine.name}
-                  initial={{ opacity: 0, y: -14, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
                   transition={engineCardTransition}
                 >
                   <span>{engine.name}</span>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MotionConfig } from 'motion/react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppStore } from '@/core/state/store';
 import { LANGUAGES, type View } from '@/app/constants';
@@ -524,88 +525,90 @@ export default function App() {
   } as CSSProperties;
 
   return (
-    <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
-      <WindowChrome
-        paneExpanded={paneOpen}
-        onTogglePane={togglePane}
-        onBack={reportOpen ? () => setReport(null) : undefined}
-        backLabel={t('historyBack')}
-      />
-      <div className="app-body">
-        {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={() => setPaneOpen(false)} /> : null}
-        <NavigationPane
-          nav={nav}
-          view={view}
-          setView={goToView}
-          mode={navMode}
-          open={paneOpen}
-          onNavigate={() => {
-            if (navMode !== 'expanded') setPaneOpen(false);
-          }}
+    <MotionConfig reducedMotion="user">
+      <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
+        <WindowChrome
+          paneExpanded={paneOpen}
+          onTogglePane={togglePane}
+          onBack={reportOpen ? () => setReport(null) : undefined}
+          backLabel={t('historyBack')}
         />
-        <main ref={mainRef} className="manual-main">
-          <div className="page-transition" key={view}>
-            {view === 'dashboard' && (
-              <DashboardPage
-                items={items}
-                history={history}
-                dragging={dragging}
-                hasApiKey={settings.hasApiKey}
-                scanImmediately={settings.scanImmediately}
-                setScanImmediately={(value) => updateSettings({ scanImmediately: value })}
-                setDragging={setDragging}
-                pickPath={pickPathAndAdd}
-                setView={setView}
-                setReport={setReport}
-              />
-            )}
-            {view === 'queue' && (
-              <QueuePage
-                items={items}
-                dragging={dragging}
-                runScan={runScan}
-                startAll={() => startAll(items)}
-                clearCompleted={clearCompleted}
-                clearQueue={clearQueue}
-                onOpenDetails={openItemDetails}
-                pickPath={pickPathAndAdd}
-                setDragging={setDragging}
-              />
-            )}
-            {view === 'history' && <HistoryPage />}
-            {view === 'settings' && (
-              <SettingsPage
-                settings={settings}
-                colorScheme={colorScheme}
-                systemAccent={systemAccent}
-                apiKey={apiKey}
-                showApiKey={showApiKey}
-                toggleApiKey={toggleApiKey}
-                setApiKey={setApiKey}
-                save={save}
-                validate={validate}
-                setSettings={updateSettings}
-                supportsContextMenu={supportsContextMenu}
-                setContextMenuEnabled={changeContextMenuEnabled}
-                changeLanguage={(language) => void i18n.changeLanguage(language)}
-                setLogLevel={changeLogLevel}
-                openLogDirectory={async () => {
-                  try {
-                    await openLogDirectory();
-                    showToast(describePreset('logFolderOpened', t));
-                    logInfo('logging.directory_opened_ui');
-                  } catch (error) {
-                    logError('logging.directory_open_failed_ui', { error: String(error) });
-                    showToast(describePreset('logFolderFailed', t));
-                  }
-                }}
-                openExternalUrl={(url) => openExternalUrl(url)}
-              />
-            )}
-          </div>
-        </main>
+        <div className="app-body">
+          {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={() => setPaneOpen(false)} /> : null}
+          <NavigationPane
+            nav={nav}
+            view={view}
+            setView={goToView}
+            mode={navMode}
+            open={paneOpen}
+            onNavigate={() => {
+              if (navMode !== 'expanded') setPaneOpen(false);
+            }}
+          />
+          <main ref={mainRef} className="manual-main">
+            <div className="page-transition" key={view}>
+              {view === 'dashboard' && (
+                <DashboardPage
+                  items={items}
+                  history={history}
+                  dragging={dragging}
+                  hasApiKey={settings.hasApiKey}
+                  scanImmediately={settings.scanImmediately}
+                  setScanImmediately={(value) => updateSettings({ scanImmediately: value })}
+                  setDragging={setDragging}
+                  pickPath={pickPathAndAdd}
+                  setView={setView}
+                  setReport={setReport}
+                />
+              )}
+              {view === 'queue' && (
+                <QueuePage
+                  items={items}
+                  dragging={dragging}
+                  runScan={runScan}
+                  startAll={() => startAll(items)}
+                  clearCompleted={clearCompleted}
+                  clearQueue={clearQueue}
+                  onOpenDetails={openItemDetails}
+                  pickPath={pickPathAndAdd}
+                  setDragging={setDragging}
+                />
+              )}
+              {view === 'history' && <HistoryPage />}
+              {view === 'settings' && (
+                <SettingsPage
+                  settings={settings}
+                  colorScheme={colorScheme}
+                  systemAccent={systemAccent}
+                  apiKey={apiKey}
+                  showApiKey={showApiKey}
+                  toggleApiKey={toggleApiKey}
+                  setApiKey={setApiKey}
+                  save={save}
+                  validate={validate}
+                  setSettings={updateSettings}
+                  supportsContextMenu={supportsContextMenu}
+                  setContextMenuEnabled={changeContextMenuEnabled}
+                  changeLanguage={(language) => void i18n.changeLanguage(language)}
+                  setLogLevel={changeLogLevel}
+                  openLogDirectory={async () => {
+                    try {
+                      await openLogDirectory();
+                      showToast(describePreset('logFolderOpened', t));
+                      logInfo('logging.directory_opened_ui');
+                    } catch (error) {
+                      logError('logging.directory_open_failed_ui', { error: String(error) });
+                      showToast(describePreset('logFolderFailed', t));
+                    }
+                  }}
+                  openExternalUrl={(url) => openExternalUrl(url)}
+                />
+              )}
+            </div>
+          </main>
+        </div>
+        <ToastContainer toasts={toasts} onDismiss={dismiss} />
       </div>
-      <ToastContainer toasts={toasts} onDismiss={dismiss} />
-    </div>
+    </MotionConfig>
   );
 }
