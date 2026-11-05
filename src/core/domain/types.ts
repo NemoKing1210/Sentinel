@@ -1,7 +1,5 @@
 export type Language = 'en' | 'ru' | 'es' | 'de' | 'fr' | 'pt' | 'zh';
-export type ThemeMode = 'system' | 'light' | 'dark';
 export type ColorScheme = 'light' | 'dark';
-export type AccentColor = 'system' | 'vt' | 'teal' | 'blue' | 'violet' | 'rose' | 'amber';
 export type LogLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 export type ScanStatus = 'queued' | 'uploading' | 'scanning' | 'completed' | 'failed';
 export type Verdict = 'clean' | 'suspicious' | 'malicious' | 'unknown';
@@ -68,8 +66,6 @@ export interface FileReport {
 }
 
 export interface AppSettings {
-  theme: ThemeMode;
-  accent: AccentColor;
   language: Language;
   pollInterval: number;
   hasApiKey: boolean;

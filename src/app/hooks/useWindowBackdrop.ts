@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Effect, getCurrentWindow } from '@tauri-apps/api/window';
-import type { ColorScheme, ThemeMode } from '@/core/domain/types';
+import type { ColorScheme } from '@/core/domain/types';
 import { getWindowBackdrop } from '@/core/native/api';
 
 export type BackdropMode = 'mica' | 'solid';
@@ -17,17 +17,15 @@ function supportsMica(): Promise<boolean> {
   return micaSupport;
 }
 
-function micaEffect(theme: ThemeMode): Effect {
-  if (theme === 'light') return 'micaLight' as Effect;
-  if (theme === 'dark') return 'micaDark' as Effect;
-  return Effect.Mica;
+function micaEffect(scheme: ColorScheme): Effect {
+  return scheme === 'light' ? ('micaLight' as Effect) : ('micaDark' as Effect);
 }
 
 function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
-export function useWindowBackdrop(theme: ThemeMode, scheme: ColorScheme): BackdropMode {
+export function useWindowBackdrop(scheme: ColorScheme): BackdropMode {
   const [mode, setMode] = useState<BackdropMode>('solid');
 
   useEffect(() => {
@@ -39,7 +37,7 @@ export function useWindowBackdrop(theme: ThemeMode, scheme: ColorScheme): Backdr
       const supported = await supportsMica();
       if (supported) {
         try {
-          await nativeWindow.setEffects({ effects: [micaEffect(theme)] });
+          await nativeWindow.setEffects({ effects: [micaEffect(scheme)] });
           if (active) setMode('mica');
           return;
         } catch {
@@ -57,7 +55,7 @@ export function useWindowBackdrop(theme: ThemeMode, scheme: ColorScheme): Backdr
     return () => {
       active = false;
     };
-  }, [theme, scheme]);
+  }, [scheme]);
 
   return mode;
 }

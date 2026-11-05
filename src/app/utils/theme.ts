@@ -1,5 +1,5 @@
 import type { AccentPalette } from '@/app/constants';
-import type { ColorScheme, ThemeMode } from '@/core/domain/types';
+import type { ColorScheme } from '@/core/domain/types';
 
 function parseHex(color: string): [number, number, number] | null {
   const match = /^#([0-9a-f]{6})$/i.exec(color);
@@ -81,11 +81,4 @@ export function readSystemColorScheme(): ColorScheme {
     return 'dark';
   }
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
-export function resolveColorScheme(theme: ThemeMode): ColorScheme {
-  if (theme === 'light' || theme === 'dark') {
-    return theme;
-  }
-  return readSystemColorScheme();
 }

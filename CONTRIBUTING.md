@@ -76,7 +76,7 @@ Exercise the path you touched, then the shared flows when the change is close to
 - Keychain save / load / validate
 - Upload, polling, retry, and error toasts
 - Persistence across restart (queue, history, settings, window bounds)
-- Tray close, native menu, and single-instance focus
+- Tray close, in-app keyboard shortcuts, and single-instance focus
 - English and Russian copy for new strings
 - Light and dark theme if you changed chrome or CSS
 

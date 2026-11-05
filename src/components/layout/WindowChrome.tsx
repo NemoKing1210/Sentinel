@@ -10,6 +10,25 @@ function currentWindow() {
   return getCurrentWindow();
 }
 
+/**
+ * Caption glyphs from Segoe Fluent Icons, the same codepoints WinUI uses.
+ * They render at exactly 10×10 px with a 1 px stroke, unlike the SVG icon set.
+ */
+const CAPTION_GLYPHS = {
+  minimize: '',
+  maximize: '',
+  restore: '',
+  close: '',
+} as const;
+
+function CaptionGlyph({ name }: { name: keyof typeof CAPTION_GLYPHS }) {
+  return (
+    <span className="caption-glyph" aria-hidden="true">
+      {CAPTION_GLYPHS[name]}
+    </span>
+  );
+}
+
 interface WindowChromeProps {
   paneExpanded: boolean;
   onTogglePane: () => void;
@@ -121,7 +140,7 @@ export function WindowChrome({ paneExpanded, onTogglePane, onBack, backLabel, na
             onClick={() => void currentWindow()?.minimize()}
             aria-label={t('windowMinimize')}
           >
-            <Icon name="minimize" />
+            <CaptionGlyph name="minimize" />
           </button>
         </Tooltip>
         <Tooltip content={maximizeLabel} placement="bottom">
@@ -132,7 +151,7 @@ export function WindowChrome({ paneExpanded, onTogglePane, onBack, backLabel, na
             onClick={() => void currentWindow()?.toggleMaximize()}
             aria-label={maximizeLabel}
           >
-            <Icon name={maximized ? 'restore' : 'maximize'} />
+            <CaptionGlyph name={maximized ? 'restore' : 'maximize'} />
           </button>
         </Tooltip>
         <Tooltip content={t('windowClose')} placement="bottom">
@@ -143,7 +162,7 @@ export function WindowChrome({ paneExpanded, onTogglePane, onBack, backLabel, na
             onClick={() => void currentWindow()?.close()}
             aria-label={t('windowClose')}
           >
-            <Icon name="close" />
+            <CaptionGlyph name="close" />
           </button>
         </Tooltip>
       </div>

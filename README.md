@@ -44,7 +44,7 @@ Maintained by [NemoKing](https://github.com/NemoKing1210) · [NemoKing1210/Senti
 | **History**     | Local reports with engine results and a link to the VirusTotal GUI.                                                                                                                 |
 | **Secrets**     | API key lives in the OS keychain only — never in `localStorage` or `state.json`.                                                                                                    |
 | **Desktop**     | Native menu, system tray, single-instance focus, close-to-tray.                                                                                                                     |
-| **Preferences** | Theme, accent, language, polling interval, structured logs (rotated, 30-day retention).                                                                                             |
+| **Preferences** | Interface language, polling interval, structured logs (rotated, 30-day retention). Theme and accent follow Windows.                                                                 |
 
 UI languages: English, Russian, Spanish, German, French, Portuguese, Chinese.
 

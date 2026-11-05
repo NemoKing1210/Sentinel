@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accentPaletteFromHex, mixHex, relativeLuminance, resolveColorScheme } from './theme.ts';
+import { accentPaletteFromHex, mixHex, readSystemColorScheme, relativeLuminance } from './theme.ts';
 
 function contrast(a: string, b: string): number {
   const la = relativeLuminance(a);
@@ -8,13 +8,8 @@ function contrast(a: string, b: string): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
-test('keeps an explicit light or dark theme', () => {
-  assert.equal(resolveColorScheme('light'), 'light');
-  assert.equal(resolveColorScheme('dark'), 'dark');
-});
-
-test('falls back to dark for system theme when the host has no color scheme', () => {
-  assert.equal(resolveColorScheme('system'), 'dark');
+test('falls back to dark when the host has no color scheme', () => {
+  assert.equal(readSystemColorScheme(), 'dark');
 });
 
 test('mixes an accent tint into the window background', () => {

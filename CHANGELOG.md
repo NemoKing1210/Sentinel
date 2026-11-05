@@ -5,6 +5,49 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-11-05
+
+### Changed
+
+- The “Scan files immediately” option moved from the dashboard drop zone to Settings → Scan, where it sits above the polling interval
+- Window caption icons now use Segoe Fluent Icons at the native 10×10 px size and full-strength color
+
+## [0.6.2] - 2026-11-05
+
+### Changed
+
+- Settings now matches the Windows 11 Settings app: every option is its own card with a leading Fluent icon, 8 px between cards, and 64 px rows
+- Section headers sit directly above their cards and no longer carry a description paragraph
+- The content column is centered at 1000 px, matching the native Settings page width
+- Navigation icons use the native 16 px variant and the selected item is no longer bold
+- Scrollbars are thinner and closer to the Windows overlay scrollbar
+
+## [0.6.1] - 2026-11-05
+
+### Fixed
+
+- The window could be restored off-screen after a restart because minimized windows were saved at the Windows sentinel position (`-32000, -32000`); minimized geometry is no longer persisted
+- Restored window positions are now checked against the connected monitors and the window is recentered when the saved position is unreachable (for example after disconnecting a display)
+
+## [0.6.0] - 2026-11-05
+
+### Changed
+
+- Theme and accent color now always follow Windows; the accent picker and light/dark selector were removed from Settings
+- The Appearance section keeps only the interface language choice and explains that Windows controls the rest
+- Previously saved `theme` and `accent` values are ignored and stripped on the next save
+
+### Removed
+
+- Accent palette options (`vt`, teal, blue, violet, rose, amber) and the `themeChanged` / `accentChanged` toasts
+
+## [0.5.1] - 2026-11-05
+
+### Changed
+
+- Removed the native File/View/Window/Help menu bar; the window now shows only the custom WinUI title bar
+- Moved the menu shortcuts into the app: Ctrl+O (files), Ctrl+Shift+O (folder), Ctrl+1–4 (views), Ctrl+M (minimize), Ctrl+W (close)
+
 ## [0.5.0] - 2026-11-05
 
 ### Added

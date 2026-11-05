@@ -245,22 +245,22 @@
 }
 
 .manual-app ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
 }
 .manual-app ::-webkit-scrollbar-track {
   background: transparent;
 }
 .manual-app ::-webkit-scrollbar-thumb {
   min-height: 32px;
-  border: 4px solid transparent;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--text) 28%, transparent);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 30%, transparent);
   background-clip: padding-box;
 }
 .manual-app ::-webkit-scrollbar-thumb:hover {
-  border-width: 3px;
-  background: color-mix(in srgb, var(--text) 44%, transparent);
+  border-width: 1px;
+  background: color-mix(in srgb, var(--text) 46%, transparent);
   background-clip: padding-box;
 }
 
@@ -378,7 +378,7 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  color: var(--text-secondary);
+  color: var(--text);
   background: transparent;
   cursor: default;
   transition:
@@ -386,9 +386,11 @@
     color 0.12s ease;
 }
 
-.window-control .glyph {
-  width: 10px;
-  height: 10px;
+.caption-glyph {
+  font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets';
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
 }
 
 .window-control:hover {
@@ -397,7 +399,7 @@
 }
 
 .window-control:active {
-  color: var(--text-secondary);
+  color: var(--text);
   background: var(--subtle-pressed);
 }
 
@@ -513,8 +515,8 @@
 }
 
 .nav-link .glyph {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 
 .nav-icon {
@@ -555,7 +557,6 @@
 }
 
 .nav-link.active {
-  font-weight: 600;
   background: var(--subtle-hover);
 }
 
@@ -609,7 +610,7 @@
 
 .page-transition {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1000px;
   margin: 0 auto;
   animation: page-enter 167ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
 }
@@ -632,7 +633,7 @@
 }
 
 .settings-screen {
-  gap: 24px;
+  gap: 32px;
 }
 
 /* ---------------------------------------------------------------- *
@@ -1004,8 +1005,8 @@ h2 {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin: 0 20px 12px;
-  padding: 12px;
+  margin: 0;
+  padding: 12px 16px;
   border: 1px solid var(--info-border);
   border-radius: var(--radius-control);
   background: var(--info-bg);
@@ -1159,12 +1160,6 @@ h2 {
 .drop-hints .glyph {
   width: 14px;
   height: 14px;
-}
-
-.drop-actions {
-  width: min(440px, 100%);
-  margin-top: 12px;
-  text-align: left;
 }
 
 .drop-note {
@@ -2101,45 +2096,47 @@ h2 {
 /* ---------------------------------------------------------------- *
  * Settings
  * ---------------------------------------------------------------- */
-.settings-card {
-  padding: 0;
-  overflow: hidden;
-}
-
 .settings-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .settings-section > h2 {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
 }
 
-.settings-section > p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 16px;
-}
-
 .settings-list {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
+/* Each setting is its own SettingsCard, like the Windows 11 Settings app. */
 .settings-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   min-height: 64px;
-  padding: 12px 20px;
-  border-top: 1px solid var(--divider);
+  padding: 12px 16px;
+}
+
+.settings-row.switch-field {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.settings-row-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--text);
 }
 
 .settings-row-copy {
@@ -2147,6 +2144,11 @@ h2 {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+}
+
+.settings-row-copy,
+.switch-copy {
+  flex: 1 1 auto;
 }
 
 .settings-row-copy strong {
@@ -2173,8 +2175,15 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 20px 16px;
-  border-top: 1px solid var(--divider);
+  padding: 4px 0 0;
+}
+
+.settings-note {
+  margin: 0;
+  padding: 0 2px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .key-status {
@@ -2387,43 +2396,6 @@ h2 {
   color: var(--on-accent);
   background: var(--accent);
   border-color: transparent;
-}
-
-/* Accent swatches */
-.accent-swatches {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.accent-swatch {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  color: var(--on-swatch);
-  background: var(--swatch);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-  cursor: default;
-}
-
-.accent-swatch .glyph {
-  width: 14px;
-  height: 14px;
-}
-
-.accent-swatch:hover {
-  transform: scale(1.08);
-}
-
-.accent-swatch.selected {
-  outline: 2px solid var(--text);
-  outline-offset: 2px;
 }
 
 /* Toggle switch */
@@ -2686,7 +2658,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 20px 12px;
+  padding: 12px 16px;
 }
 
 .about-mark {
@@ -2745,55 +2717,58 @@ h2 {
 }
 
 .about-copy {
-  margin: 0 20px 12px;
+  margin: 0;
+  padding: 0 2px;
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 18px;
 }
 
-.about-link {
+.settings-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   width: 100%;
-  min-height: 40px;
-  padding: 0 20px;
-  border: 0;
-  border-top: 1px solid var(--divider);
+  min-height: 56px;
+  padding: 12px 16px;
   color: var(--text);
-  background: transparent;
   text-align: left;
   cursor: default;
+  transition: background-color 0.12s ease;
 }
 
-.about-link:hover {
+.settings-link:hover {
   background: var(--subtle-hover);
 }
 
-.about-link-label {
+.settings-link-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-link-copy strong {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.settings-link-copy > span {
+  overflow: hidden;
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 16px;
-}
-
-.about-link-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--accent);
-  font-size: 14px;
-  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.about-link-value .glyph {
-  width: 12px;
-  height: 12px;
+.settings-link-chevron {
+  display: grid;
+  place-items: center;
   flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--text-secondary);
 }
 
 /* ---------------------------------------------------------------- *
@@ -3032,13 +3007,13 @@ h2 {
 
   .settings-row {
     align-items: flex-start;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 8px;
   }
 
   .settings-row.switch-field {
     align-items: flex-start;
-    flex-direction: row;
+    flex-wrap: nowrap;
   }
 
   .settings-row.switch-field .switch-control {
@@ -3054,9 +3029,10 @@ h2 {
     align-self: flex-start;
   }
 
-  .settings-control {
+  .settings-row:not(.switch-field) .settings-control {
+    flex: 0 1 calc(100% - 28px);
+    margin-left: 28px;
     justify-content: flex-start;
-    width: 100%;
   }
 
   .field {
@@ -3155,8 +3131,7 @@ h2 {
     background: Canvas;
   }
   .surface,
-  .list-surface,
-  .settings-card {
+  .list-surface {
     border: 1px solid ButtonBorder;
   }
   .manual-app button:focus-visible,
@@ -3190,11 +3165,5 @@ h2 {
   }
   .switch-input:checked + .switch .switch-thumb {
     background: HighlightText;
-  }
-  .accent-swatch {
-    border: 1px solid ButtonBorder;
-    color: CanvasText;
-    background: Canvas;
-    forced-color-adjust: none;
   }
 }

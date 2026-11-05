@@ -12,7 +12,6 @@ const MAX_ACTIVE_ITEMS: usize = 5;
 const MAX_RECENT_ITEMS: usize = 5;
 const MAX_NAME_LENGTH: usize = 35;
 
-const APP_PREFIX: &str = "app:";
 const TRAY_PREFIX: &str = "tray:";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -124,13 +123,6 @@ impl MenuAction {
         }
     }
 
-    fn app_id(&self) -> String {
-        match self {
-            Self::ViewReport(id) => format!("{APP_PREFIX}view_report:{id}"),
-            _ => format!("{}{}", APP_PREFIX, self.name()),
-        }
-    }
-
     fn tray_id(&self) -> String {
         match self {
             Self::ViewReport(id) => format!("{TRAY_PREFIX}view_report:{id}"),
@@ -188,18 +180,6 @@ fn dispatch_action<R: Runtime>(app: &AppHandle<R>, action: MenuAction) {
     }
 }
 
-pub fn handle_app_menu_event<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
-    let id = event.id().as_ref();
-    if !id.starts_with(APP_PREFIX) {
-        return;
-    }
-    let name = &id[APP_PREFIX.len()..];
-    let Some(action) = MenuAction::parse_name(name) else {
-        return;
-    };
-    dispatch_action(app, action);
-}
-
 pub fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
     let id = event.id().as_ref();
     if !id.starts_with(TRAY_PREFIX) {
@@ -210,112 +190,6 @@ pub fn handle_tray_menu_event<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) 
         return;
     };
     dispatch_action(app, action);
-}
-
-pub fn build_app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    let file_menu = Submenu::with_items(
-        app,
-        "File",
-        true,
-        &[
-            &MenuItem::with_id(
-                app,
-                MenuAction::PickFiles.app_id(),
-                "Choose files…",
-                true,
-                Some("CmdOrCtrl+O"),
-            )?,
-            &MenuItem::with_id(
-                app,
-                MenuAction::PickFolder.app_id(),
-                "Choose folder…",
-                true,
-                Some("CmdOrCtrl+Shift+O"),
-            )?,
-            &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(
-                app,
-                MenuAction::OpenLogFolder.app_id(),
-                "Open log folder",
-                true,
-                None::<&str>,
-            )?,
-            &PredefinedMenuItem::separator(app)?,
-            &PredefinedMenuItem::hide(app, Some("CmdOrCtrl+H"))?,
-            &PredefinedMenuItem::hide_others(app, None)?,
-            &MenuItem::with_id(
-                app,
-                MenuAction::Show.app_id(),
-                "Show Sentinel",
-                true,
-                Some("CmdOrCtrl+Shift+S"),
-            )?,
-            &PredefinedMenuItem::separator(app)?,
-            &PredefinedMenuItem::quit(app, Some("CmdOrCtrl+Q"))?,
-        ],
-    )?;
-
-    let view_menu = Submenu::with_items(
-        app,
-        "View",
-        true,
-        &[
-            &MenuItem::with_id(
-                app,
-                MenuAction::ViewDashboard.app_id(),
-                "Dashboard",
-                true,
-                Some("CmdOrCtrl+1"),
-            )?,
-            &MenuItem::with_id(
-                app,
-                MenuAction::ViewQueue.app_id(),
-                "Queue",
-                true,
-                Some("CmdOrCtrl+2"),
-            )?,
-            &MenuItem::with_id(
-                app,
-                MenuAction::ViewHistory.app_id(),
-                "History",
-                true,
-                Some("CmdOrCtrl+3"),
-            )?,
-            &MenuItem::with_id(
-                app,
-                MenuAction::ViewSettings.app_id(),
-                "Settings",
-                true,
-                Some("CmdOrCtrl+4"),
-            )?,
-        ],
-    )?;
-
-    let window_menu = Submenu::with_items(
-        app,
-        "Window",
-        true,
-        &[
-            &PredefinedMenuItem::minimize(app, Some("CmdOrCtrl+M"))?,
-            &PredefinedMenuItem::maximize(app, None)?,
-            &PredefinedMenuItem::close_window(app, Some("CmdOrCtrl+W"))?,
-        ],
-    )?;
-
-    let help_menu = Submenu::with_items(
-        app,
-        "Help",
-        true,
-        &[&MenuItem::with_id(
-            app,
-            MenuAction::About.app_id(),
-            "About Sentinel",
-            true,
-            None::<&str>,
-        )?],
-    )?;
-
-    Menu::with_items(app, &[&file_menu, &view_menu, &window_menu, &help_menu])
 }
 
 fn truncate_name(name: &str) -> String {

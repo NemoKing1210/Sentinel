@@ -51,8 +51,6 @@ export type ToastPreset =
   | 'logFolderOpened'
   | 'logFolderFailed'
   | 'languageChanged'
-  | 'themeChanged'
-  | 'accentChanged'
   | 'pollIntervalChanged'
   | 'queueCleared'
   | 'hashCopied'
@@ -192,8 +190,6 @@ const PRESETS: Record<ToastPreset, PresetDescriptor> = {
     descKey: 'toast.logFolderFailed.desc',
   },
   languageChanged: { icon: 'check', level: 'info', titleKey: 'toast.languageChanged.title', duration: 2400 },
-  themeChanged: { icon: 'check', level: 'info', titleKey: 'toast.themeChanged.title', duration: 2400 },
-  accentChanged: { icon: 'check', level: 'info', titleKey: 'toast.accentChanged.title', duration: 2400 },
   pollIntervalChanged: {
     icon: 'check',
     level: 'info',

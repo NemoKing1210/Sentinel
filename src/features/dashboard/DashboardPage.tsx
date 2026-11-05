@@ -10,7 +10,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FileReportRow } from '@/components/ui/FileReportRow';
 import { Icon } from '@/components/ui/Icon';
 import { PageTitle } from '@/components/ui/PageTitle';
-import { Switch } from '@/components/ui/Switch';
 import { WatchBoard } from './WatchBoard';
 
 interface DashboardPageProps {
@@ -18,8 +17,6 @@ interface DashboardPageProps {
   history: FileReport[];
   dragging: boolean;
   hasApiKey: boolean;
-  scanImmediately: boolean;
-  setScanImmediately: (v: boolean) => void;
   setDragging: (v: boolean) => void;
   pickPath: () => Promise<void>;
   setView: (view: View) => void;
@@ -31,8 +28,6 @@ export function DashboardPage({
   history,
   dragging,
   hasApiKey,
-  scanImmediately,
-  setScanImmediately,
   setDragging,
   pickPath,
   setView,
@@ -80,15 +75,6 @@ export function DashboardPage({
             <Icon name="clock" />
             {t('warningLarge')}
           </span>
-        </div>
-        <div className="drop-actions">
-          <Switch
-            checked={scanImmediately}
-            onChange={setScanImmediately}
-            label={t('scanImmediately')}
-            description={t('scanImmediatelyHint')}
-            ariaLabel={t('scanImmediately')}
-          />
         </div>
         <span className="drop-note">
           {t('publicApi')} · {hasApiKey ? t('statusReady') : t('statusNeedsKey')}

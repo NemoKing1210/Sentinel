@@ -75,11 +75,6 @@ pub fn run() {
         ])
         .setup(|app| {
             logging::init(app.handle()).map_err(std::io::Error::other)?;
-            let menu = chrome::build_app_menu(app.handle())?;
-            app.set_menu(menu)?;
-            app.on_menu_event(|app, event| {
-                chrome::handle_app_menu_event(app, event);
-            });
             if let Err(error) = chrome::install_tray(app.handle()) {
                 logging::write(
                     logging::LogLevel::Warn,

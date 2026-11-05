@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Icon } from './Icon';
 
 interface SwitchProps {
   checked: boolean;
@@ -8,9 +9,19 @@ interface SwitchProps {
   ariaLabel?: string;
   disabled?: boolean;
   className?: string;
+  icon?: string;
 }
 
-export function Switch({ checked, onChange, label, description, ariaLabel, disabled = false, className }: SwitchProps) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+  description,
+  ariaLabel,
+  disabled = false,
+  className,
+  icon,
+}: SwitchProps) {
   const hasCopy = Boolean(label || description);
   const classes = ['switch-field'];
   if (disabled) classes.push('disabled');
@@ -18,6 +29,11 @@ export function Switch({ checked, onChange, label, description, ariaLabel, disab
 
   return (
     <label className={classes.join(' ')}>
+      {icon ? (
+        <span className="settings-row-icon">
+          <Icon name={icon} size={20} />
+        </span>
+      ) : null}
       {hasCopy ? (
         <span className="switch-copy">
           {label ? <strong>{label}</strong> : null}

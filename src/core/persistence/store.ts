@@ -33,8 +33,6 @@ function resolvePersistedLanguage(value: unknown): AppSettings['language'] {
 
 function sanitizeSettings(settings: AppSettings): AppSettings {
   return {
-    theme: settings.theme,
-    accent: settings.accent,
     language: settings.language,
     pollInterval: settings.pollInterval,
     logLevel: settings.logLevel,
@@ -70,9 +68,11 @@ export async function hydratePersistedState(): Promise<boolean> {
     }
     const persisted = payload.settings;
     const settings: AppSettings = {
-      ...DEFAULT_SETTINGS,
-      ...(persisted ?? {}),
-      language: resolvePersistedLanguage(persisted?.language),
+      ...sanitizeSettings({
+        ...DEFAULT_SETTINGS,
+        ...(persisted ?? {}),
+        language: resolvePersistedLanguage(persisted?.language),
+      }),
       hasApiKey: useAppStore.getState().settings.hasApiKey,
     };
     useAppStore.setState({

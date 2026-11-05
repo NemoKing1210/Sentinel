@@ -1,18 +1,28 @@
-import { getCurrentWindow, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
+import { availableMonitors, getCurrentWindow, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
 import { useAppStore, type WindowState } from '@/core/state/store';
+import { isMinimizedWindowPosition, isVisibleOnAnyMonitor } from '@/app/utils/windowBounds';
 import { logInfo } from '@/core/logging';
 
 const SAVE_DELAY_MS = 400;
+const MIN_WINDOW_SIZE = 200;
+const FALLBACK_WIDTH = 1320;
+const FALLBACK_HEIGHT = 860;
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 async function snapshot(): Promise<WindowState | null> {
   const window = getCurrentWindow();
   try {
-    const [size, position, maximized] = await Promise.all([
+    const [size, position, maximized, minimized] = await Promise.all([
       window.outerSize(),
       window.outerPosition(),
       window.isMaximized(),
+      window.isMinimized(),
     ]);
+    // Minimized windows sit at the Windows sentinel position; saving it would
+    // restore the window off-screen on the next launch.
+    if (minimized || isMinimizedWindowPosition(position.x, position.y)) {
+      return null;
+    }
     return {
       width: size.width,
       height: size.height,
@@ -39,11 +49,28 @@ export async function applyPersistedWindowState(): Promise<void> {
   if (!stored) return;
   const window = getCurrentWindow();
   try {
+    let recenter = false;
     if (typeof stored.x === 'number' && typeof stored.y === 'number') {
-      await window.setPosition(new PhysicalPosition(stored.x, stored.y));
+      if (isMinimizedWindowPosition(stored.x, stored.y)) {
+        recenter = true;
+        logInfo('window_state.position_skipped_minimized', { x: stored.x, y: stored.y });
+      } else {
+        const width = stored.width > MIN_WINDOW_SIZE ? stored.width : FALLBACK_WIDTH;
+        const height = stored.height > MIN_WINDOW_SIZE ? stored.height : FALLBACK_HEIGHT;
+        const monitors = await availableMonitors().catch(() => []);
+        if (isVisibleOnAnyMonitor({ x: stored.x, y: stored.y, width, height }, monitors)) {
+          await window.setPosition(new PhysicalPosition(stored.x, stored.y));
+        } else {
+          recenter = true;
+          logInfo('window_state.position_off_screen', { x: stored.x, y: stored.y });
+        }
+      }
     }
-    if (stored.width > 200 && stored.height > 200) {
+    if (stored.width > MIN_WINDOW_SIZE && stored.height > MIN_WINDOW_SIZE) {
       await window.setSize(new PhysicalSize(stored.width, stored.height));
+    }
+    if (recenter) {
+      await window.center().catch((error) => logInfo('window_state.recenter_failed', { error: String(error) }));
     }
     if (stored.maximized) {
       await window.maximize();

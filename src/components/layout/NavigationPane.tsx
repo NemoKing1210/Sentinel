@@ -75,7 +75,7 @@ export function NavigationPane({ nav, view, setView, mode, open, onNavigate }: N
         aria-label={item.label}
       >
         <span className="nav-icon">
-          <Icon name={item.icon} size={20} />
+          <Icon name={item.icon} size={16} />
           {!open && item.count ? <span className="nav-badge-dot" aria-hidden="true" /> : null}
         </span>
         <span className="nav-label">{item.label}</span>

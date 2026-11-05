@@ -27,12 +27,13 @@ import {
   validateApiKey,
 } from '@/core/native/api';
 import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
+import { useAppShortcuts } from '@/app/hooks/useAppShortcuts';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { useNativeTheme } from '@/app/hooks/useNativeTheme';
 import { useNavigationMode } from '@/app/hooks/useNavigationMode';
 import { useSystemAccent } from '@/app/hooks/useSystemAccent';
 import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
-import { resolveAccentPalette } from '@/app/utils/accent';
+import { resolveSystemAccentPalette } from '@/app/utils/accent';
 import { shouldRevealWindow, shouldStartHidden } from '@/app/utils/windowReveal';
 import type { NavigationMode } from '@/app/utils/navigation';
 import { useScanRunner } from '@/features/queue/useScanRunner';
@@ -189,6 +190,8 @@ export default function App() {
       showToast(describePreset('pathPickFailed', t));
     }
   }, [addDetectedPaths, showToast, t]);
+
+  useAppShortcuts({ onPickFiles: pickFilesAndAdd, onPickFolder: pickFolderAndAdd, onView: goToView });
 
   useEffect(() => {
     setViewRef.current = goToView;
@@ -367,9 +370,9 @@ export default function App() {
     return () => document.removeEventListener('contextmenu', blockContextMenu);
   }, []);
 
-  const colorScheme = useNativeTheme(settings.theme);
+  const colorScheme = useNativeTheme();
   const systemAccent = useSystemAccent();
-  const backdrop = useWindowBackdrop(settings.theme, colorScheme);
+  const backdrop = useWindowBackdrop(colorScheme);
   const navMode = useNavigationMode();
   const [paneOverride, setPaneOverride] = useState<{ mode: NavigationMode; open: boolean } | null>(null);
   const navToggleRef = useRef<HTMLButtonElement>(null);
@@ -501,16 +504,6 @@ export default function App() {
         }),
       );
     }
-    if (patch.theme) {
-      showToast(
-        describePreset('themeChanged', t, {
-          theme: t(patch.theme),
-        }),
-      );
-    }
-    if (patch.accent) {
-      showToast(describePreset('accentChanged', t));
-    }
     if (patch.pollInterval !== undefined) {
       showToast(describePreset('pollIntervalChanged', t, { interval: patch.pollInterval }));
     }
@@ -538,7 +531,7 @@ export default function App() {
     [history, setReport, setView],
   );
 
-  const accent = resolveAccentPalette(settings.accent, colorScheme, systemAccent);
+  const accent = resolveSystemAccentPalette(systemAccent, colorScheme);
   const reportOpen = view === 'history' && Boolean(selectedReportId);
   const accentVars = {
     '--accent': accent.teal,
@@ -576,8 +569,6 @@ export default function App() {
                   history={history}
                   dragging={dragging}
                   hasApiKey={settings.hasApiKey}
-                  scanImmediately={settings.scanImmediately}
-                  setScanImmediately={(value) => updateSettings({ scanImmediately: value })}
                   setDragging={setDragging}
                   pickPath={pickPathAndAdd}
                   setView={setView}
@@ -601,8 +592,6 @@ export default function App() {
               {view === 'settings' && (
                 <SettingsPage
                   settings={settings}
-                  colorScheme={colorScheme}
-                  systemAccent={systemAccent}
                   apiKey={apiKey}
                   showApiKey={showApiKey}
                   toggleApiKey={toggleApiKey}

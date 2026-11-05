@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.5.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.6.3`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -41,8 +41,8 @@ src/
   main.tsx                 React mount, i18n + CSS
   App.tsx                  Composition root: bootstrap, navigation, toasts, DnD
   app/
-    constants/             Views, defaults, accent palettes, poll presets
-    hooks/                 useToast, useNativeTheme, useWindowBackdrop, useSystemAccent, useNavigationMode
+    constants/             Views, defaults, poll presets
+    hooks/                 useToast, useNativeTheme, useWindowBackdrop, useSystemAccent, useNavigationMode, useAppShortcuts
     utils/                 format, verdict tones, fileKind / MIME, navigation (modes, breakpoints)
   components/
     ui/                    Button, Card, Field, Icon, ScanRow, FileReportRow, StatusIcon, Switch, Select, Tooltip, …
@@ -50,7 +50,7 @@ src/
   core/
     domain/types.ts        Shared domain types
     native/api.ts          Frontend ↔ native boundary
-    native/menuBridge.ts   Native menu events → view / pickers
+    native/menuBridge.ts   Tray menu events → view / pickers
     state/store.ts         Zustand app state
     persistence/           Hydrate/save state.json; window bounds
     i18n/index.ts          i18next init, loads all locale files
@@ -70,7 +70,7 @@ src-tauri/src/
   commands.rs              Keychain, VT upload/poll, path metadata, URLs
   persistence.rs           state.json in app data dir (version 1)
   logging.rs               Daily JSON logs, rotation, level config
-  chrome.rs                Native menu + tray
+  chrome.rs                System tray icon and menu
   shell.rs                 Windows Explorer context menu (HKCU registry verbs) + launch-arg routing
 .github/
   workflows/ci.yml         PR quality gate (lint, format, build, clippy, versions)
@@ -101,7 +101,7 @@ Feature modules must not import other features. When a screen outgrows one file,
 
 - Hydration (`hydratePersistedState`) and persistence subscription
 - Window bounds restore/subscribe
-- Native menu binding
+- Tray menu binding and in-app keyboard shortcuts
 - Drag-and-drop via `subscribeToFileDrops`
 - Screen switching (`view`: `dashboard` | `queue` | `history` | `settings`)
 - Toast host
@@ -144,7 +144,7 @@ Native commands return `Result<T, String>` (or a typed error converted at the bo
 6. Result becomes `FileReport` (verdict from `stats.malicious` / `stats.suspicious`) and is stored in `history`.
 7. Completion notifies: toast with a "View report" action when the window is focused, otherwise a native notification (`notify_scan_result`). Clicking the native notification emits `native:notification`, which `notificationBridge.ts` routes to the report page. Gate on `settings.notificationsEnabled` / `notifyOnCompleted` / `notifyOnFailed`.
 
-History is a list plus a report sub-page. `view` stays `history`; `selectedReportId` chooses the sub-page. Nav and the native History menu open the list. Dashboard, Queue, and completed scans open a report by id. Missing ids fall back to the list.
+History is a list plus a report sub-page. `view` stays `history`; `selectedReportId` chooses the sub-page. Nav and the tray History item open the list. Dashboard, Queue, and completed scans open a report by id. Missing ids fall back to the list.
 
 In-flight items (`uploading` / `scanning`) are saved as `failed` with `interrupted_by_restart` on persist so a crash does not revive a fake running state.
 
@@ -161,14 +161,14 @@ In-flight items (`uploading` / `scanning`) are saved as `failed` with `interrupt
 - `WindowChrome` mirrors native states: restore glyph when maximized, dimmed title and controls when the window is inactive, tooltips, and a back button on reports.
 - `NavigationPane` follows WinUI NavigationView: **320 px expanded** at ≥ 1008 px, **48 px compact rail** at 641–1007 px, and an **overlay pane** (scrim + hamburger) at ≤ 640 px. Roving tabindex with Arrow/Home/End.
 - Close can hide to tray (`CLOSE_TO_TRAY`).
-- Native menu and tray emit `native:menu`; `menuBridge.ts` maps ids to views and pickers.
+- No native menu bar; `useAppShortcuts` provides Ctrl+O, Ctrl+Shift+O, Ctrl+1–4, Ctrl+M, and Ctrl+W. The tray menu emits `native:menu`; `menuBridge.ts` maps ids to views and pickers.
 - `tauri-plugin-single-instance` focuses the existing window.
 
 ### Design tokens
 
 The UI follows WinUI / Fluent Design. Tokens are declared once in the `.manual-app` / `.manual-app.light` blocks of `src/styles/manual.css`; components consume them instead of hardcoding colours.
 
-- Accent: `--accent`, `--accent-strong`, `--on-accent` — set inline by `App.tsx` from `resolveAccentPalette` (`settings.accent`, default `'system'` → Windows accent via `get_system_accent`, refreshed on focus). Never hardcode an accent hex in a component or rule; use these or their derived tokens.
+- Accent: `--accent`, `--accent-strong`, `--on-accent` — set inline by `App.tsx` from `resolveSystemAccentPalette` (Windows accent via `get_system_accent`, refreshed on focus). The light/dark scheme and Mica variant also follow the OS; Sentinel has no theme or accent picker. Never hardcode an accent hex in a component or rule; use these or their derived tokens.
 - Accent-derived: `--accent-hover`, `--accent-pressed`, `--accent-soft`, `--accent-soft-strong`.
 - Layers and strokes: `--card-bg`, `--card-stroke`, `--control-bg`, `--control-bg-hover`, `--control-bg-pressed`, `--control-stroke`, `--control-stroke-strong`, `--subtle-hover`, `--subtle-pressed`, `--divider`.
 - Text: `--text`, `--text-secondary`, `--text-tertiary`, `--text-disabled`.
@@ -186,7 +186,7 @@ Canonical types live in `src/core/domain/types.ts`:
 
 - `ScanItem` — queue row (`queued` → `uploading` → `scanning` → `completed` | `failed`)
 - `FileReport` / `EngineResult` — history. Optional `fileKind` (older records derive it from the file name). Selection is `selectedReportId`, not a report snapshot.
-- `AppSettings` — theme, accent, language, pollInterval, logLevel, scanImmediately, closeToTray, startMinimized, notificationsEnabled, notifyOnCompleted, notifyOnFailed, contextMenuEnabled, hasApiKey
+- `AppSettings` — language, pollInterval, logLevel, scanImmediately, closeToTray, startMinimized, notificationsEnabled, notifyOnCompleted, notifyOnFailed, contextMenuEnabled, hasApiKey. Theme and accent are not settings: they always follow the OS.
 - `Verdict` — `clean` | `suspicious` | `malicious` | `unknown`
 
 Keep scan state serializable and UI-independent. Components render; services perform I/O.

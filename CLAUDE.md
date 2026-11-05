@@ -66,7 +66,7 @@ Features must not import other features.
 ## Architecture (short)
 
 - Pages render Zustand state. I/O lives in `core/native`, `core/persistence`, and feature hooks (`useScanRunner`).
-- Window: `useWindowBackdrop` applies real Mica on Windows 11 (`get_window_backdrop`, build ≥ 22000) and falls back to a solid Fluent backdrop. `settings.accent` defaults to `'system'`; `useSystemAccent` + `resolveAccentPalette` derive contrast-safe `--accent` / `--on-accent`.
+- Window: `useWindowBackdrop` applies real Mica on Windows 11 (`get_window_backdrop`, build ≥ 22000) and falls back to a solid Fluent backdrop. Theme and accent always follow Windows; `useNativeTheme` + `useSystemAccent` + `resolveSystemAccentPalette` derive the color scheme and contrast-safe `--accent` / `--on-accent`.
 - `NavigationPane` has three WinUI modes: 320 px expanded (≥ 1008 px), 48 px compact rail (641–1007 px), overlay pane (≤ 640 px). Breakpoints and keyboard math live in `app/utils/navigation.ts`.
 - New Tauri commands: implement in the matching Rust module → register in `lib.rs` → wrap in `api.ts` → call from a hook/`App.tsx`. Visual components never `invoke`.
 - Scan: absolute paths → `pathToItem` → `submit_file` or `submit_archive` (folder → ZIP) → poll `get_analysis_status`. File cap 650 MB; ≤32 MB uses `/files`, larger uses `/files/upload_url`.
@@ -94,7 +94,7 @@ Default to patch when unsure. Keep `package.json`, `package-lock.json`, `src-tau
 7. No `any` in new TypeScript. Small functions, explicit types.
 8. Do not commit secrets, `dist/`, `src-tauri/target/`, `.env`, or OS temp files.
 9. Log every change in `CHANGELOG.md` and bump SemVer (patch for small changes).
-10. Never hardcode an accent hex. Derive it with `resolveAccentPalette` from `settings.accent` (default `'system'`) and use the `--accent*` / `--on-accent` tokens.
+10. Never hardcode an accent hex. Derive it with `resolveSystemAccentPalette` from the OS accent and use the `--accent*` / `--on-accent` tokens. Do not add theme or accent pickers; both follow Windows.
 
 ## Naming
 

@@ -1,18 +1,8 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppSettings, ColorScheme, Language, LogLevel } from '@/core/domain/types';
-import {
-  ACCENT_COLORS,
-  getAccentPalette,
-  LANGUAGES,
-  LOG_LEVELS,
-  POLL_INTERVAL_MAX,
-  POLL_INTERVAL_MIN,
-  POLL_INTERVALS,
-  THEME_MODES,
-} from '@/app/constants';
+import type { AppSettings, Language, LogLevel } from '@/core/domain/types';
+import { LANGUAGES, LOG_LEVELS, POLL_INTERVAL_MAX, POLL_INTERVAL_MIN, POLL_INTERVALS } from '@/app/constants';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Field } from '@/components/ui/Field';
 import { Icon } from '@/components/ui/Icon';
 import { PageTitle } from '@/components/ui/PageTitle';
@@ -20,12 +10,9 @@ import { Select } from '@/components/ui/Select';
 import { StepperInput } from '@/components/ui/StepperInput';
 import { Switch } from '@/components/ui/Switch';
 import { PROJECT_META } from '@/app/utils/packageMeta';
-import { resolveAccentPalette } from '@/app/utils/accent';
 
 interface SettingsPageProps {
   settings: AppSettings;
-  colorScheme: ColorScheme;
-  systemAccent: string | null;
   apiKey: string;
   showApiKey: boolean;
   toggleApiKey: () => Promise<void>;
@@ -47,20 +34,45 @@ const REPOSITORY_DISPLAY = PROJECT_META.repositoryUrl
 
 const VT_API_KEY_URL = 'https://www.virustotal.com/gui/my-apikey';
 
-function SettingsSection({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+/**
+ * One Settings-style group: a section header directly above its cards, like the
+ * Windows 11 Settings app (no description paragraph under the header).
+ */
+function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="settings-section">
       <h2>{title}</h2>
-      <p>{hint}</p>
-      <Card className="settings-card">{children}</Card>
+      <div className="settings-list">{children}</div>
     </section>
+  );
+}
+
+interface SettingsRowProps {
+  icon: string;
+  title: string;
+  description?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}
+
+/** A single SettingsCard: leading icon, title/description, control on the right. */
+function SettingsRow({ icon, title, description, children, className = '' }: SettingsRowProps) {
+  return (
+    <div className={`settings-row surface${className ? ` ${className}` : ''}`}>
+      <span className="settings-row-icon">
+        <Icon name={icon} size={20} />
+      </span>
+      <div className="settings-row-copy">
+        <strong>{title}</strong>
+        {description ? <span>{description}</span> : null}
+      </div>
+      {children ? <div className="settings-control">{children}</div> : null}
+    </div>
   );
 }
 
 export function SettingsPage({
   settings,
-  colorScheme,
-  systemAccent,
   apiKey,
   showApiKey,
   toggleApiKey,
@@ -76,149 +88,57 @@ export function SettingsPage({
   openExternalUrl,
 }: SettingsPageProps) {
   const { t } = useTranslation();
-  const systemAccentLabel = t('accentSystem');
-  const systemPalette = resolveAccentPalette('system', colorScheme, systemAccent);
   return (
     <div className="screen settings-screen">
       <PageTitle title={t('settingsTitle')} subtitle={t('settingsSubtitle')} />
-      <SettingsSection title={t('appearance')} hint={t('appearanceHint')}>
-        <div className="settings-list">
-          <div className="settings-row">
-            <div className="settings-row-copy">
-              <strong>{t('accentColor')}</strong>
-              <span>{t('accentColorHint')}</span>
-            </div>
-            <div className="settings-control">
-              <div className="accent-swatches" role="radiogroup" aria-label={t('accentColor')}>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={settings.accent === 'system'}
-                  aria-label={systemAccentLabel}
-                  title={systemAccentLabel}
-                  className={`accent-swatch${settings.accent === 'system' ? ' selected' : ''}`}
-                  style={
-                    {
-                      '--swatch': systemPalette.teal,
-                      '--swatch-deep': systemPalette.tealDeep,
-                      '--on-swatch': systemPalette.onTeal,
-                    } as CSSProperties
-                  }
-                  onClick={() => setSettings({ accent: 'system' })}
-                >
-                  {settings.accent === 'system' ? <Icon name="check" /> : null}
-                </button>
-                {ACCENT_COLORS.map((option) => {
-                  const label = t(`accent${option.value[0].toUpperCase()}${option.value.slice(1)}`);
-                  const isSelected = settings.accent === option.value;
-                  const palette = getAccentPalette(option.value, colorScheme);
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      aria-label={label}
-                      title={label}
-                      className={`accent-swatch${isSelected ? ' selected' : ''}`}
-                      style={
-                        {
-                          '--swatch': palette.teal,
-                          '--swatch-deep': palette.tealDeep,
-                          '--on-swatch': palette.onTeal,
-                        } as CSSProperties
-                      }
-                      onClick={() => setSettings({ accent: option.value })}
-                    >
-                      {isSelected ? <Icon name="check" /> : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <div className="settings-row">
-            <div className="settings-row-copy">
-              <strong>{t('theme')}</strong>
-              <span>{t('themeHint')}</span>
-            </div>
-            <div className="settings-control">
-              <div className="segment-group" role="radiogroup" aria-label={t('theme')}>
-                {THEME_MODES.map((mode) => {
-                  const isSelected = settings.theme === mode;
-                  const icon = mode === 'system' ? 'monitor' : mode === 'light' ? 'sun' : 'moon';
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      className={`segment${isSelected ? ' selected' : ''}`}
-                      onClick={() => setSettings({ theme: mode })}
-                    >
-                      <Icon name={icon} />
-                      {t(mode)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <div className="settings-row">
-            <div className="settings-row-copy">
-              <strong>{t('language')}</strong>
-              <span>{t('languageHint')}</span>
-            </div>
-            <div className="settings-control">
-              <Field label="">
-                <Select<Language>
-                  value={settings.language}
-                  options={LANGUAGES.map((language) => ({
-                    value: language.value,
-                    label: language.label,
-                  }))}
-                  ariaLabel={t('language')}
-                  onChange={(language) => {
-                    setSettings({ language });
-                    changeLanguage(language);
-                  }}
-                />
-              </Field>
-            </div>
-          </div>
-        </div>
+      <SettingsSection title={t('appearance')}>
+        <SettingsRow icon="language" title={t('language')} description={t('languageHint')}>
+          <Field label="">
+            <Select<Language>
+              value={settings.language}
+              options={LANGUAGES.map((language) => ({
+                value: language.value,
+                label: language.label,
+              }))}
+              ariaLabel={t('language')}
+              onChange={(language) => {
+                setSettings({ language });
+                changeLanguage(language);
+              }}
+            />
+          </Field>
+        </SettingsRow>
+        <p className="settings-note">{t('appearanceHint')}</p>
       </SettingsSection>
-      <SettingsSection title={t('apiAccess')} hint={t('apiKeyHint')}>
-        <div className="settings-list">
-          <div className="settings-row">
-            <div className="settings-row-copy">
-              <strong>{t('apiKey')}</strong>
-              <span className={`key-status ${settings.hasApiKey ? 'on' : ''}`}>
-                {settings.hasApiKey ? t('apiKeyConfigured') : t('apiKeyNotConfigured')}
-              </span>
+      <SettingsSection title={t('apiAccess')}>
+        <SettingsRow
+          icon="key"
+          title={t('apiKey')}
+          description={
+            <span className={`key-status ${settings.hasApiKey ? 'on' : ''}`}>
+              {settings.hasApiKey ? t('apiKeyConfigured') : t('apiKeyNotConfigured')}
+            </span>
+          }
+        >
+          <Field label="">
+            <div className="input-with-action">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                placeholder={settings.hasApiKey ? '••••••••••••••••' : 'VT_API_KEY'}
+              />
+              <button
+                type="button"
+                className="field-action"
+                onClick={() => void toggleApiKey()}
+                aria-label={showApiKey ? t('hideApiKey') : t('showApiKey')}
+              >
+                <Icon name={showApiKey ? 'eyeOff' : 'eye'} />
+              </button>
             </div>
-            <div className="settings-control">
-              <Field label="">
-                <div className="input-with-action">
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    value={apiKey}
-                    onChange={(event) => setApiKey(event.target.value)}
-                    placeholder={settings.hasApiKey ? '••••••••••••••••' : 'VT_API_KEY'}
-                  />
-                  <button
-                    type="button"
-                    className="field-action"
-                    onClick={() => void toggleApiKey()}
-                    aria-label={showApiKey ? t('hideApiKey') : t('showApiKey')}
-                  >
-                    <Icon name={showApiKey ? 'eyeOff' : 'eye'} />
-                  </button>
-                </div>
-              </Field>
-            </div>
-          </div>
-        </div>
+          </Field>
+        </SettingsRow>
         <div className="api-hint" role="note">
           <span className="api-hint-icon">
             <Icon name="info" />
@@ -241,131 +161,119 @@ export function SettingsPage({
           </Button>
         </div>
       </SettingsSection>
-      <SettingsSection title={t('scanSection')} hint={t('scanningHint')}>
-        <div className="settings-list">
-          <div className="settings-row">
-            <div className="settings-row-copy">
-              <strong>{t('polling')}</strong>
-              <span>{t('pollingHint')}</span>
-            </div>
-            <div className="settings-control">
-              <div className="poll-stepper">
-                <StepperInput
-                  value={settings.pollInterval}
-                  min={POLL_INTERVAL_MIN}
-                  max={POLL_INTERVAL_MAX}
-                  unit={t('sec')}
-                  ariaLabel={t('polling')}
-                  increaseLabel={t('increase')}
-                  decreaseLabel={t('decrease')}
-                  onChange={(value) => setSettings({ pollInterval: value })}
-                />
-                <div className="poll-presets" role="group" aria-label={t('pollingPresets')}>
-                  {POLL_INTERVALS.map((interval) => (
-                    <button
-                      key={interval}
-                      type="button"
-                      className={`poll-preset${settings.pollInterval === interval ? ' selected' : ''}`}
-                      title={`${interval} ${t('sec')}`}
-                      onClick={() => setSettings({ pollInterval: interval })}
-                    >
-                      {interval}
-                    </button>
-                  ))}
-                </div>
-              </div>
+      <SettingsSection title={t('scanSection')}>
+        <Switch
+          className="settings-row surface"
+          icon="upload"
+          checked={settings.scanImmediately}
+          onChange={(value) => setSettings({ scanImmediately: value })}
+          label={t('scanImmediately')}
+          description={t('scanImmediatelyHint')}
+        />
+        <SettingsRow icon="clock" title={t('polling')} description={t('pollingHint')}>
+          <div className="poll-stepper">
+            <StepperInput
+              value={settings.pollInterval}
+              min={POLL_INTERVAL_MIN}
+              max={POLL_INTERVAL_MAX}
+              unit={t('sec')}
+              ariaLabel={t('polling')}
+              increaseLabel={t('increase')}
+              decreaseLabel={t('decrease')}
+              onChange={(value) => setSettings({ pollInterval: value })}
+            />
+            <div className="poll-presets" role="group" aria-label={t('pollingPresets')}>
+              {POLL_INTERVALS.map((interval) => (
+                <button
+                  key={interval}
+                  type="button"
+                  className={`poll-preset${settings.pollInterval === interval ? ' selected' : ''}`}
+                  title={`${interval} ${t('sec')}`}
+                  onClick={() => setSettings({ pollInterval: interval })}
+                >
+                  {interval}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+        </SettingsRow>
       </SettingsSection>
-      <SettingsSection title={t('notificationsSection')} hint={t('notificationsSectionHint')}>
-        <div className="settings-list">
-          <Switch
-            className="settings-row"
-            checked={settings.notificationsEnabled}
-            onChange={(value) => setSettings({ notificationsEnabled: value })}
-            label={t('notificationsEnabled')}
-            description={t('notificationsEnabledHint')}
-          />
-          <Switch
-            className="settings-row"
-            disabled={!settings.notificationsEnabled}
-            checked={settings.notifyOnCompleted}
-            onChange={(value) => setSettings({ notifyOnCompleted: value })}
-            label={t('notifyOnCompleted')}
-            description={t('notifyOnCompletedHint')}
-          />
-          <Switch
-            className="settings-row"
-            disabled={!settings.notificationsEnabled}
-            checked={settings.notifyOnFailed}
-            onChange={(value) => setSettings({ notifyOnFailed: value })}
-            label={t('notifyOnFailed')}
-            description={t('notifyOnFailedHint')}
-          />
-        </div>
+      <SettingsSection title={t('notificationsSection')}>
+        <Switch
+          className="settings-row surface"
+          icon="bell"
+          checked={settings.notificationsEnabled}
+          onChange={(value) => setSettings({ notificationsEnabled: value })}
+          label={t('notificationsEnabled')}
+          description={t('notificationsEnabledHint')}
+        />
+        <Switch
+          className="settings-row surface"
+          icon="info"
+          disabled={!settings.notificationsEnabled}
+          checked={settings.notifyOnCompleted}
+          onChange={(value) => setSettings({ notifyOnCompleted: value })}
+          label={t('notifyOnCompleted')}
+          description={t('notifyOnCompletedHint')}
+        />
+        <Switch
+          className="settings-row surface"
+          icon="alert"
+          disabled={!settings.notificationsEnabled}
+          checked={settings.notifyOnFailed}
+          onChange={(value) => setSettings({ notifyOnFailed: value })}
+          label={t('notifyOnFailed')}
+          description={t('notifyOnFailedHint')}
+        />
       </SettingsSection>
       {supportsContextMenu && (
-        <SettingsSection title={t('integrationSection')} hint={t('integrationSectionHint')}>
-          <div className="settings-list">
-            <Switch
-              className="settings-row"
-              checked={settings.contextMenuEnabled}
-              onChange={(value) => void setContextMenuEnabled(value)}
-              label={t('contextMenu')}
-              description={t('contextMenuHint')}
-            />
-          </div>
+        <SettingsSection title={t('integrationSection')}>
+          <Switch
+            className="settings-row surface"
+            icon="folderOpen"
+            checked={settings.contextMenuEnabled}
+            onChange={(value) => void setContextMenuEnabled(value)}
+            label={t('contextMenu')}
+            description={t('contextMenuHint')}
+          />
         </SettingsSection>
       )}
-      <SettingsSection title={t('systemSection')} hint={t('systemSectionHint')}>
-        <div className="settings-list">
-          <Switch
-            className="settings-row"
-            checked={settings.closeToTray}
-            onChange={(value) => setSettings({ closeToTray: value })}
-            label={t('closeToTray')}
-            description={t('closeToTrayHint')}
-          />
-          <Switch
-            className="settings-row"
-            checked={settings.startMinimized}
-            onChange={(value) => setSettings({ startMinimized: value })}
-            label={t('startMinimized')}
-            description={t('startMinimizedHint')}
-          />
-        </div>
+      <SettingsSection title={t('systemSection')}>
+        <Switch
+          className="settings-row surface"
+          icon="minimize"
+          checked={settings.closeToTray}
+          onChange={(value) => setSettings({ closeToTray: value })}
+          label={t('closeToTray')}
+          description={t('closeToTrayHint')}
+        />
+        <Switch
+          className="settings-row surface"
+          icon="monitor"
+          checked={settings.startMinimized}
+          onChange={(value) => setSettings({ startMinimized: value })}
+          label={t('startMinimized')}
+          description={t('startMinimizedHint')}
+        />
       </SettingsSection>
-      <SettingsSection title={t('logging')} hint={t('loggingHint')}>
-        <div className="settings-list">
-          <div className="settings-row">
-            <div className="settings-row-copy">
-              <strong>{t('logLevel')}</strong>
-              <span>{t('logLevelHint')}</span>
-            </div>
-            <div className="settings-control">
-              <Field label="">
-                <Select<LogLevel>
-                  value={settings.logLevel}
-                  options={LOG_LEVELS.map((level) => ({
-                    value: level,
-                    label: t(`log${level[0].toUpperCase()}${level.slice(1)}`),
-                  }))}
-                  ariaLabel={t('logLevel')}
-                  onChange={(level) => void changeLogLevel(level)}
-                />
-              </Field>
-            </div>
-          </div>
-        </div>
-        <div className="settings-actions">
-          <Button variant="outline" icon="folder" onClick={() => void openLogDirectory()}>
-            {t('openLogs')}
-          </Button>
-        </div>
+      <SettingsSection title={t('logging')}>
+        <SettingsRow icon="doc" title={t('logLevel')} description={t('logLevelHint')}>
+          <Field label="">
+            <Select<LogLevel>
+              value={settings.logLevel}
+              options={LOG_LEVELS.map((level) => ({
+                value: level,
+                label: t(`log${level[0].toUpperCase()}${level.slice(1)}`),
+              }))}
+              ariaLabel={t('logLevel')}
+              onChange={(level) => void changeLogLevel(level)}
+            />
+          </Field>
+        </SettingsRow>
+        <SettingsLink icon="folderOpen" title={t('openLogs')} onClick={() => void openLogDirectory()} />
       </SettingsSection>
-      <SettingsSection title={t('about')} hint={t('aboutHint')}>
-        <div className="about-identity">
+      <SettingsSection title={t('about')}>
+        <div className="about-identity surface">
           <span className="about-mark">
             <Icon name="shield" size={24} />
           </span>
@@ -383,35 +291,56 @@ export function SettingsPage({
           </div>
         </div>
         <p className="about-copy">{t('aboutDescription')}</p>
-        <div className="settings-list">
-          <AboutLink
-            label={t('author')}
-            value={PROJECT_META.authorName}
-            onClick={() => void openExternalUrl(PROJECT_META.authorUrl)}
-          />
-          <AboutLink
-            label={t('repository')}
-            value={REPOSITORY_DISPLAY}
-            onClick={() => void openExternalUrl(PROJECT_META.repositoryUrl)}
-          />
-          <AboutLink
-            label={t('issues')}
-            value={t('issuesAction')}
-            onClick={() => void openExternalUrl(PROJECT_META.issuesUrl)}
-          />
-        </div>
+        <SettingsLink
+          icon="person"
+          title={t('author')}
+          value={PROJECT_META.authorName}
+          onClick={() => void openExternalUrl(PROJECT_META.authorUrl)}
+        />
+        <SettingsLink
+          icon="code"
+          title={t('repository')}
+          value={REPOSITORY_DISPLAY}
+          onClick={() => void openExternalUrl(PROJECT_META.repositoryUrl)}
+        />
+        <SettingsLink
+          icon="alert"
+          title={t('issues')}
+          value={t('issuesAction')}
+          onClick={() => void openExternalUrl(PROJECT_META.issuesUrl)}
+        />
       </SettingsSection>
     </div>
   );
 }
 
-function AboutLink({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
+interface SettingsLinkProps {
+  icon?: string;
+  title: string;
+  value?: string;
+  onClick: () => void;
+}
+
+/** A navigational settings card with a chevron, like the clickable rows in Settings. */
+function SettingsLink({ icon, title, value, onClick }: SettingsLinkProps) {
   return (
-    <button type="button" className="about-link" onClick={onClick} aria-label={`${label}: ${value}`}>
-      <span className="about-link-label">{label}</span>
-      <span className="about-link-value">
-        {value}
-        <Icon name="external" />
+    <button
+      type="button"
+      className="settings-link surface"
+      onClick={onClick}
+      aria-label={value ? `${title}: ${value}` : title}
+    >
+      {icon ? (
+        <span className="settings-row-icon">
+          <Icon name={icon} size={20} />
+        </span>
+      ) : null}
+      <span className="settings-link-copy">
+        <strong>{title}</strong>
+        {value ? <span>{value}</span> : null}
+      </span>
+      <span className="settings-link-chevron" aria-hidden="true">
+        <Icon name="chevronRight" size={16} />
       </span>
     </button>
   );
