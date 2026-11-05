@@ -1,4 +1,4 @@
-import type { EngineResult, FileKind, FileReport } from '@/core/domain/types';
+import type { EngineCategory, EngineResult, FileKind, FileReport } from '@/core/domain/types';
 import { detectFileKind } from '@/app/utils/fileKind';
 
 export type HistoryFilter = 'all' | 'malicious' | 'suspicious' | 'clean';
@@ -30,8 +30,11 @@ const ENGINE_RANK: Record<string, number> = {
   undetected: 2,
   harmless: 3,
   'type-unsupported': 4,
+  failure: 5,
+  timeout: 5,
+  'confirmed-timeout': 5,
 };
-const ENGINE_RANK_FALLBACK = 5;
+const ENGINE_RANK_FALLBACK = 6;
 
 export function reportKind(report: FileReport): FileKind {
   return report.fileKind ?? detectFileKind(report.name);
@@ -137,23 +140,39 @@ export function queryEngines(engines: EngineResult[], filter: EngineFilter, quer
   return sortEngines(filterEngines(engines, filter, query));
 }
 
-export function engineCategoryLabelKey(category: EngineResult['category']): string {
+export function engineCategoryLabelKey(category: EngineCategory): string {
   if (category === 'type-unsupported') return 'typeUnsupported';
+  if (category === 'failure') return 'failed';
+  if (category === 'timeout' || category === 'confirmed-timeout') return 'timeout';
   return category;
 }
 
-export function enginePillTone(category: EngineResult['category']): string {
-  if (category === 'malicious') return 'malicious';
-  if (category === 'suspicious') return 'suspicious';
-  if (category === 'harmless') return 'harmless';
-  return 'muted';
+/**
+ * Engines that cannot analyse a file sometimes return one of these strings as
+ * their "result" while keeping the `undetected` category. They mean "no
+ * verdict", so they stay neutral instead of turning green.
+ */
+const ENGINE_FAILURE_RESULT = /^(failure|error|timeout|unrated|unsupported|unknown|unable to process.*)$/i;
+
+export function enginePillTone(engine: EngineResult): string {
+  switch (engine.category) {
+    case 'malicious':
+      return 'malicious';
+    case 'suspicious':
+      return 'suspicious';
+    case 'harmless':
+      return 'harmless';
+    case 'undetected':
+      return engine.result && ENGINE_FAILURE_RESULT.test(engine.result.trim()) ? 'muted' : 'undetected';
+    default:
+      return 'muted';
+  }
 }
 
-export function engineCategoryIcon(category: EngineResult['category']): string {
+export function engineCategoryIcon(category: EngineCategory): string {
   if (category === 'malicious') return 'danger';
   if (category === 'suspicious') return 'alert';
-  if (category === 'harmless') return 'success';
-  if (category === 'undetected') return 'success';
+  if (category === 'harmless' || category === 'undetected') return 'success';
   return 'info';
 }
 

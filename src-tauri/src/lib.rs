@@ -1,3 +1,4 @@
+mod browser;
 mod chrome;
 mod commands;
 mod logging;
@@ -50,6 +51,10 @@ pub fn run() {
             commands::submit_archive,
             commands::get_analysis_status,
             commands::open_external_url,
+            browser::open_internal_browser,
+            browser::set_internal_browser_bounds,
+            browser::internal_browser_action,
+            browser::close_internal_browser,
             commands::get_log_level,
             commands::set_log_level,
             commands::get_log_directory,

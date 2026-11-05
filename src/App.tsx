@@ -7,7 +7,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppStore } from '@/core/state/store';
 import { LANGUAGES, type View } from '@/app/constants';
 import { PageTransition } from '@/app/navigation/PageTransition';
-import { ROUTES, reportIdFromPath, resolveView } from '@/app/navigation/routes';
+import { ROUTES, isBrowserPath, reportIdFromPath, resolveView } from '@/app/navigation/routes';
 import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import {
   detectPaths,
@@ -46,6 +46,7 @@ import { ToastContainer } from '@/components/layout/Toast';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { QueuePage } from '@/features/queue/QueuePage';
 import { HistoryPage } from '@/features/history/HistoryPage';
+import { InternalBrowserPage } from '@/features/history/InternalBrowserPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { hydratePersistedState, subscribePersistence } from '@/core/persistence/store';
 import { applyPersistedWindowState, subscribeWindowState } from '@/core/persistence/windowState';
@@ -67,9 +68,13 @@ export default function App() {
   const { t, i18n } = useTranslation();
   const settings = useAppStore((state) => state.settings);
   const location = useLocation();
-  const { goToView, openReport: navigateToReport } = useAppNavigate();
+  const { goToView, openReport: navigateToReport, backToReport } = useAppNavigate();
   const activeView = resolveView(location.pathname) ?? 'dashboard';
   const historyReportId = reportIdFromPath(location.pathname);
+  const browserMode = isBrowserPath(location.pathname);
+  const browserParams = new URLSearchParams(location.search);
+  const browserUrl = browserParams.get('url') ?? '';
+  const browserBack = browserParams.get('back') ?? '';
   const items = useAppStore((state) => state.items);
   const addItems = useAppStore((state) => state.addItems);
   const clearItems = useAppStore((state) => state.clearItems);
@@ -527,8 +532,8 @@ export default function App() {
         <WindowChrome />
         <div className="app-body">
           <NavigationPane nav={nav} view={activeView} setView={goToView} />
-          <main ref={mainRef} className="manual-main">
-            <PageTransition routeKey={location.pathname}>
+          <main ref={mainRef} className={`manual-main${browserMode ? ' browser-mode' : ''}`}>
+            <PageTransition routeKey={location.pathname} fill={browserMode}>
               <Routes location={location}>
                 <Route path="/" element={<Navigate to={ROUTES.dashboard} replace />} />
                 <Route
@@ -564,6 +569,19 @@ export default function App() {
                 <Route
                   path={`${ROUTES.history}/:reportId`}
                   element={<HistoryPage reportId={historyReportId} search={location.search} />}
+                />
+                <Route
+                  path={`${ROUTES.history}/:reportId/browser`}
+                  element={
+                    browserUrl && historyReportId ? (
+                      <InternalBrowserPage
+                        url={browserUrl}
+                        onClose={() => backToReport(historyReportId, browserBack)}
+                      />
+                    ) : (
+                      <Navigate to={ROUTES.history} replace />
+                    )
+                  }
                 />
                 <Route
                   path={ROUTES.settings}

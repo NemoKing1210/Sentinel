@@ -522,6 +522,138 @@
   margin: 0 auto;
 }
 
+.page-transition-fill {
+  height: 100%;
+  max-width: none;
+}
+
+/* The embedded browser owns the whole content area and never scrolls. */
+.manual-main.browser-mode {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- *
+ * Embedded VirusTotal browser
+ * ---------------------------------------------------------------- */
+.internal-browser-screen {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 22px 20px;
+}
+
+.internal-browser-bar {
+  flex: 0 0 auto;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.internal-browser-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.internal-browser-divider {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 18px;
+  background: var(--divider);
+}
+
+.internal-browser-nav .icon-button:disabled {
+  color: var(--text-disabled);
+  background: transparent;
+}
+
+.internal-browser-address {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--card-stroke);
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: var(--control-bg);
+  font-size: 13px;
+}
+
+.internal-browser-address .glyph {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+}
+
+.internal-browser-address span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.internal-browser-spinner {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  border-width: 1.5px;
+}
+
+.internal-browser-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-stroke);
+  border-radius: var(--radius-surface);
+  /* The native webview is a square surface over this frame; a white backdrop
+     leaked out as a bright 1 px edge wherever its bounds were rounded. */
+  background: var(--bg);
+}
+
+.internal-browser-host {
+  position: absolute;
+  inset: 0;
+}
+
+.internal-browser-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  color: var(--text);
+  text-align: center;
+  background: var(--bg);
+}
+
+.internal-browser-fallback .glyph {
+  color: var(--text-tertiary);
+}
+
+.internal-browser-fallback strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.internal-browser-fallback p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .screen {
   display: flex;
   flex-direction: column;
@@ -829,7 +961,8 @@ h2 {
 .status-text.harmless,
 .status-text.success,
 .engine-status.success,
-.engine-status.harmless {
+.engine-status.harmless,
+.engine-status.undetected {
   color: var(--success);
 }
 
@@ -990,12 +1123,11 @@ h2 {
   justify-content: center;
   gap: 8px;
   text-align: center;
-  border: 1px dashed var(--control-stroke-strong);
+  border: 1px solid var(--card-stroke);
   background: var(--card-bg);
 }
 
 .drop-card.dragging {
-  border-style: solid;
   border-color: var(--accent);
 }
 
@@ -1074,7 +1206,6 @@ h2 {
   justify-content: center;
   gap: 8px;
   text-align: center;
-  border-style: dashed;
 }
 
 .queue-empty h3 {
@@ -2886,6 +3017,19 @@ h2 {
   .nav-pane {
     flex-basis: 220px;
     width: 220px;
+  }
+
+  .internal-browser-screen {
+    padding: 12px 14px 14px;
+  }
+
+  .internal-browser-bar {
+    gap: 6px;
+  }
+
+  .internal-browser-label,
+  .internal-browser-divider {
+    display: none;
   }
 
   .page-title {

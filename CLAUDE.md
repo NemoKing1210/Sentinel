@@ -75,6 +75,7 @@ Features must not import other features.
 - New Tauri commands: implement in the matching Rust module → register in `lib.rs` → wrap in `api.ts` → call from a hook/`App.tsx`. Visual components never `invoke`.
 - Scan: absolute paths → `pathToItem` → `submit_file` or `submit_archive` (folder → ZIP) → poll `get_analysis_status`. File cap 650 MB; ≤32 MB uses `/files`, larger uses `/files/upload_url`.
 - `settings.pollInterval` is persisted in Settings; `scanPath` currently polls every **5s**. Wire it through if you change polling.
+- `settings.reportOpenTarget` (`internal` | `external`) controls "Open VirusTotal report". Internal opens `/history/:reportId/browser`, where React draws the toolbar and `src-tauri/src/browser.rs` positions a native child webview over the placeholder.
 - API key: OS keychain only. `sanitizeSettings` writes `hasApiKey: false` to `state.json`. Never log the key.
 
 ## Versioning

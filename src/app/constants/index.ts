@@ -38,4 +38,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notifyOnCompleted: true,
   notifyOnFailed: true,
   contextMenuEnabled: false,
+  reportOpenTarget: 'internal',
 };

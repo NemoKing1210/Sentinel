@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { View } from '@/app/constants';
-import { reportPath, ROUTES, viewPath } from './routes';
+import { browserPath, reportPath, ROUTES, viewPath } from './routes';
 
 export interface AppNavigation {
   goToView: (view: View) => void;
   openReport: (itemId: string) => void;
   backToHistory: () => void;
+  openBrowser: (itemId: string, url: string) => void;
+  backToReport: (itemId: string, search: string) => void;
 }
 
 /**
@@ -43,5 +45,26 @@ export function useAppNavigate(): AppNavigation {
     navigate({ pathname: ROUTES.history, search: searchRef.current });
   }, [navigate]);
 
-  return useMemo(() => ({ goToView, openReport, backToHistory }), [backToHistory, goToView, openReport]);
+  const openBrowser = useCallback(
+    (itemId: string, url: string) => {
+      // Keep the list filters that opened the report so closing the browser
+      // returns to the same report, and Back restores the list.
+      const params = new URLSearchParams({ url });
+      if (searchRef.current) params.set('back', searchRef.current);
+      navigate({ pathname: browserPath(itemId), search: params.toString() });
+    },
+    [navigate],
+  );
+
+  const backToReport = useCallback(
+    (itemId: string, search: string) => {
+      navigate({ pathname: reportPath(itemId), search });
+    },
+    [navigate],
+  );
+
+  return useMemo(
+    () => ({ goToView, openReport, backToHistory, openBrowser, backToReport }),
+    [backToHistory, backToReport, goToView, openBrowser, openReport],
+  );
 }

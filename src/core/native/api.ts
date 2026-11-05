@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { ask, open } from '@tauri-apps/plugin-dialog';
-import type { FileReport, LogLevel, ScanItem } from '../domain/types';
+import type { EngineCategory, FileReport, LogLevel, ScanItem } from '../domain/types';
 import { detectFileKind, detectMimeType } from '@/app/utils/fileKind';
 
 const isTauri = Boolean((window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
@@ -87,6 +88,64 @@ export async function openExternalUrl(url: string): Promise<void> {
     return;
   }
   window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+export function isNativeRuntime(): boolean {
+  return isTauri;
+}
+
+export interface InternalBrowserBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type InternalBrowserAction = 'back' | 'forward' | 'reload';
+
+export interface InternalBrowserLoad {
+  url: string;
+  phase: 'started' | 'finished';
+}
+
+/**
+ * The embedded webview is a native surface owned by Rust, so open/close calls
+ * must not overtake each other (React Strict Mode mounts effects twice).
+ */
+let browserQueue: Promise<unknown> = Promise.resolve();
+
+function enqueueBrowserCommand<T>(command: () => Promise<T>): Promise<T> {
+  const run = browserQueue.then(command, command);
+  browserQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+export function openInternalBrowser(url: string, bounds: InternalBrowserBounds): Promise<void> {
+  if (!isTauri) return Promise.resolve();
+  return enqueueBrowserCommand(() => invoke('open_internal_browser', { url, bounds }));
+}
+
+export function setInternalBrowserBounds(bounds: InternalBrowserBounds): Promise<void> {
+  if (!isTauri) return Promise.resolve();
+  return enqueueBrowserCommand(() => invoke('set_internal_browser_bounds', { bounds }));
+}
+
+export function internalBrowserAction(action: InternalBrowserAction): Promise<void> {
+  if (!isTauri) return Promise.resolve();
+  return enqueueBrowserCommand(() => invoke('internal_browser_action', { action }));
+}
+
+export function closeInternalBrowser(): Promise<void> {
+  if (!isTauri) return Promise.resolve();
+  return enqueueBrowserCommand(() => invoke('close_internal_browser'));
+}
+
+export async function listenInternalBrowserLoad(handler: (event: InternalBrowserLoad) => void): Promise<() => void> {
+  if (!isTauri) return () => undefined;
+  return listen<InternalBrowserLoad>('internal-browser:page-load', (event) => handler(event.payload));
 }
 
 export async function fileExists(path: string): Promise<boolean> {
@@ -267,6 +326,22 @@ export interface ScanProgress {
   onProgress?: (progress: number) => void;
 }
 
+const ENGINE_CATEGORIES: ReadonlySet<string> = new Set([
+  'malicious',
+  'suspicious',
+  'undetected',
+  'harmless',
+  'type-unsupported',
+  'failure',
+  'timeout',
+  'confirmed-timeout',
+]);
+
+/** VirusTotal may add categories; an unknown one must not read as "clean". */
+function toEngineCategory(value: unknown): EngineCategory {
+  return typeof value === 'string' && ENGINE_CATEGORIES.has(value) ? (value as EngineCategory) : 'failure';
+}
+
 export async function scanPath(
   path: string,
   isFolder = false,
@@ -306,7 +381,7 @@ export async function scanPath(
       },
       engines: results.map((result) => ({
         name: result.engine_name || 'Unknown',
-        category: result.category || 'undetected',
+        category: toEngineCategory(result.category),
         result: result.result || null,
         update: result.engine_update || '',
       })),

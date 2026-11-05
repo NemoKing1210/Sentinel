@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.6.7`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.7.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -27,6 +27,7 @@ Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing12
 | State    | Zustand (`src/core/state/store.ts`)                                                                      |
 | i18n     | i18next + react-i18next, catalogs in `src/core/i18n/locales/` (`en`, `ru`, `es`, `de`, `fr`, `pt`, `zh`) |
 | Native   | Rust 2021, Tauri 2, plugins: dialog, opener, single-instance, tray                                       |
+| Browser  | Native child webview (`tauri` `unstable` feature) positioned over the app shell for VirusTotal reports   |
 | HTTP     | `reqwest` (rustls) to `https://www.virustotal.com/api/v3`                                                |
 | Secrets  | `keyring` service `sentinel-virustotal`, account `api-key`                                               |
 
@@ -60,7 +61,7 @@ src/
   features/
     dashboard/             DashboardPage
     queue/                 QueuePage, QueueRow, useScanRunner
-    history/               HistoryPage, HistoryListPage, HistoryReportPage, historyQuery
+    history/               HistoryPage, HistoryListPage, HistoryReportPage, InternalBrowserPage, historyQuery
     settings/              SettingsPage
   styles/
     global.css             Visual primitives
@@ -69,6 +70,7 @@ src-tauri/src/
   main.rs                  Thin entry: sentinel_lib::run()
   lib.rs                   Plugins, command table, tray close, setup
   commands.rs              Keychain, VT upload/poll, path metadata, URLs
+  browser.rs               Embedded report browser (child webview lifecycle, bounds, navigation)
   persistence.rs           state.json in app data dir (version 1)
   logging.rs               Daily JSON logs, rotation, level config
   chrome.rs                System tray icon and menu
@@ -104,7 +106,7 @@ Feature modules must not import other features. When a screen outgrows one file,
 - Window bounds restore/subscribe
 - Tray menu binding and in-app keyboard shortcuts
 - Drag-and-drop via `subscribeToFileDrops`
-- Route table (`react-router-dom` HashRouter): `/dashboard`, `/queue`, `/history`, `/history/:reportId`, `/settings`
+- Route table (`react-router-dom` HashRouter): `/dashboard`, `/queue`, `/history`, `/history/:reportId`, `/history/:reportId/browser`, `/settings`
 - Toast host
 - Scan runner (`useScanRunner`)
 
@@ -124,7 +126,9 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `file_exists` / `open_folder_containing`                                                     | Check the original path and reveal it in Explorer / the file manager                        |
 | `get_file_icon`                                                                              | Windows shell icon for a path (PNG data URL); other platforms return `None`                 |
 | `notify_scan_result`                                                                         | OS notification for a finished scan; click emits `native:notification` with the item id     |
-| `open_external_url`                                                                          | Open VirusTotal (or other) URLs                                                             |
+| `open_external_url`                                                                          | Open VirusTotal (or other) URLs in the default browser                                      |
+| `open_internal_browser` / `close_internal_browser`                                           | Create/close the embedded VirusTotal child webview; seeds only `https://*.virustotal.com`   |
+| `set_internal_browser_bounds` / `internal_browser_action`                                    | Follow the React placeholder rect; run back/forward/reload in the embedded page             |
 | `get_log_level` / `set_log_level` / `get_log_directory` / `open_log_directory` / `log_event` | Logging                                                                                     |
 | `load_persisted_state` / `save_persisted_state` / `clear_persisted_state`                    | App data `state.json`                                                                       |
 | `set_close_to_tray`                                                                          | Close button hides window when enabled                                                      |
@@ -150,6 +154,8 @@ Native commands return `Result<T, String>` (or a typed error converted at the bo
 `react-router-dom` (`HashRouter`) owns navigation; there is no `view` or `selectedReportId` in Zustand. Paths live in `src/app/navigation/routes.ts`, and features call `useAppNavigate()` (`goToView`, `openReport`, `backToHistory`) instead of mutating navigation state.
 
 History is a list plus a report sub-page: `/history` and `/history/:reportId`. Filters and search live in the query string (`?filter=`, `?q=`), so the report route preserves them and Back restores the list exactly as it was left. Nav and the tray History item open the list. Dashboard, Queue, completed scans, and notifications open a report by id. Missing ids show `reportMissing` and fall back to the list once persistence has hydrated.
+
+`settings.reportOpenTarget` (`internal` | `external`, default `internal`) chooses where "Open VirusTotal report" goes. `internal` opens `/history/:reportId/browser?url=…&back=<list query>`: `InternalBrowserPage` draws the toolbar in React, and `browser.rs` positions a native child webview over the empty frame (190 ms after mount so the page transition settles). The webview is closed when the route unmounts; the toolbar's "Open in browser" uses `open_external_url`.
 
 `PageTransition` (motion) keys route animation by `pathname`, so every route change — including list → report — enters with the Fluent 167 ms / 8 px motion and exits with a short fade. Route params are passed to `HistoryPage` as props: during an exit animation the old page is re-rendered after the location changed, and reading router context there would render the next page inside the outgoing one.
 

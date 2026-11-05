@@ -5,6 +5,23 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-05
+
+### Changed
+
+- The dashboard drop area and the empty queue use a solid Fluent outline instead of a dashed one
+
+### Added
+
+- "Open VirusTotal report" can now open the report in a built-in browser instead of leaving Sentinel
+- The built-in browser has back, forward, reload, an address bar, and an “Open in browser” action for the system default browser
+- Settings → Reports chooses between the built-in browser and the default browser; the choice is persisted
+- Engine results in a report are color-coded: clean engines are green, suspicious amber, malicious red, and engines that returned no verdict stay neutral
+
+### Fixed
+
+- The built-in browser no longer shows a bright white edge around the embedded page; the frame keeps a subtle Fluent stroke on the app backdrop
+
 ## [0.6.7] - 2026-11-05
 
 ### Changed

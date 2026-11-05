@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppSettings, Language, LogLevel } from '@/core/domain/types';
+import type { AppSettings, Language, LogLevel, ReportOpenTarget } from '@/core/domain/types';
 import { LANGUAGES, LOG_LEVELS, POLL_INTERVAL_MAX, POLL_INTERVAL_MIN, POLL_INTERVALS } from '@/app/constants';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -196,6 +196,21 @@ export function SettingsPage({
               ))}
             </div>
           </div>
+        </SettingsRow>
+      </SettingsSection>
+      <SettingsSection title={t('reportsSection')}>
+        <SettingsRow icon="history" title={t('reportOpenTarget')} description={t('reportOpenTargetHint')}>
+          <Field label="">
+            <Select<ReportOpenTarget>
+              value={settings.reportOpenTarget}
+              options={[
+                { value: 'internal', label: t('reportOpenInternal') },
+                { value: 'external', label: t('reportOpenExternal') },
+              ]}
+              ariaLabel={t('reportOpenTarget')}
+              onChange={(reportOpenTarget) => setSettings({ reportOpenTarget })}
+            />
+          </Field>
         </SettingsRow>
       </SettingsSection>
       <SettingsSection title={t('notificationsSection')}>

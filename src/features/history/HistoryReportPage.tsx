@@ -12,8 +12,10 @@ import { Card } from '@/components/ui/Card';
 import { fileIconName, Icon } from '@/components/ui/Icon';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { StatusIcon } from '@/components/ui/StatusIcon';
+import { useAppNavigate } from '@/app/navigation/useAppNavigate';
+import { useAppStore } from '@/core/state/store';
 import { openExternalUrl, openFolderContaining } from '@/core/native/api';
-import { logError } from '@/core/logging';
+import { logError, logInfo } from '@/core/logging';
 import {
   engineCategoryLabelKey,
   enginePillTone,
@@ -56,6 +58,8 @@ interface HistoryReportPageProps {
 export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPageProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { openBrowser } = useAppNavigate();
+  const reportOpenTarget = useAppStore((state) => state.settings.reportOpenTarget);
   const [engineQuery, setEngineQuery] = useState('');
   const [engineFilter, setEngineFilter] = useState<EngineFilter>('all');
   const kind = reportKind(report);
@@ -93,6 +97,11 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
   };
 
   const openVt = async () => {
+    if (reportOpenTarget === 'internal') {
+      logInfo('history.vt_open_internal', { itemId: report.itemId });
+      openBrowser(report.itemId, report.vtUrl);
+      return;
+    }
     try {
       await openExternalUrl(report.vtUrl);
     } catch (error) {
@@ -246,7 +255,7 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
                   transition={engineCardTransition}
                 >
                   <span>{engine.name}</span>
-                  <small className={`engine-status ${enginePillTone(engine.category)}`}>
+                  <small className={`engine-status ${enginePillTone(engine)}`}>
                     {engine.result || t(engineCategoryLabelKey(engine.category))}
                   </small>
                 </motion.div>

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { reportIdFromPath, reportPath, resolveView, viewPath } from './routes.ts';
+import { browserPath, isBrowserPath, reportIdFromPath, reportPath, resolveView, viewPath } from './routes.ts';
 
 test('builds paths for primary views', () => {
   assert.equal(viewPath('dashboard'), '/dashboard');
@@ -22,10 +22,20 @@ test('extracts the report id from a history detail path', () => {
   assert.equal(reportIdFromPath('/history/'), null);
 });
 
+test('builds and detects the embedded report browser path', () => {
+  assert.equal(browserPath('abc-123'), '/history/abc-123/browser');
+  assert.equal(browserPath('id with/slash'), '/history/id%20with%2Fslash/browser');
+  assert.equal(isBrowserPath('/history/abc-123/browser'), true);
+  assert.equal(isBrowserPath('/history/abc-123'), false);
+  assert.equal(isBrowserPath('/history'), false);
+  assert.equal(isBrowserPath('/settings'), false);
+});
+
 test('resolves the active view from a pathname', () => {
   assert.equal(resolveView('/dashboard'), 'dashboard');
   assert.equal(resolveView('/history'), 'history');
   assert.equal(resolveView('/history/abc-123'), 'history');
+  assert.equal(resolveView('/history/abc-123/browser'), 'history');
   assert.equal(resolveView('/settings/'), 'settings');
   assert.equal(resolveView('/'), null);
   assert.equal(resolveView('/unknown'), null);

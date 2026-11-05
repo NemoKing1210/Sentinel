@@ -43,6 +43,7 @@ function sanitizeSettings(settings: AppSettings): AppSettings {
     notifyOnCompleted: settings.notifyOnCompleted,
     notifyOnFailed: settings.notifyOnFailed,
     contextMenuEnabled: settings.contextMenuEnabled,
+    reportOpenTarget: settings.reportOpenTarget === 'external' ? 'external' : 'internal',
     hasApiKey: false,
   };
 }

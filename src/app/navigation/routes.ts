@@ -23,6 +23,17 @@ export function reportPath(itemId: string): string {
   return `${ROUTES.history}/${encodeURIComponent(itemId)}`;
 }
 
+/** Embedded VirusTotal browser for one report, e.g. `/history/abc/browser`. */
+export function browserPath(itemId: string): string {
+  return `${reportPath(itemId)}/browser`;
+}
+
+/** True for a report's embedded-browser route. */
+export function isBrowserPath(pathname: string): boolean {
+  const [, view, itemId, section] = pathname.split('/');
+  return view === 'history' && Boolean(itemId) && section === 'browser';
+}
+
 /** Resolves the primary view for a location such as `/history/abc` → `history`. */
 export function resolveView(pathname: string): View | null {
   const [segment] = pathname.split('/').filter(Boolean);

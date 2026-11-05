@@ -3,6 +3,7 @@ export type ColorScheme = 'light' | 'dark';
 export type LogLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 export type ScanStatus = 'queued' | 'uploading' | 'scanning' | 'completed' | 'failed';
 export type Verdict = 'clean' | 'suspicious' | 'malicious' | 'unknown';
+export type ReportOpenTarget = 'internal' | 'external';
 
 export type FileKind =
   | 'folder'
@@ -41,9 +42,19 @@ export interface ScanItem {
   createdAt: string;
 }
 
+export type EngineCategory =
+  | 'malicious'
+  | 'suspicious'
+  | 'undetected'
+  | 'harmless'
+  | 'type-unsupported'
+  | 'failure'
+  | 'timeout'
+  | 'confirmed-timeout';
+
 export interface EngineResult {
   name: string;
-  category: 'malicious' | 'suspicious' | 'undetected' | 'harmless' | 'type-unsupported';
+  category: EngineCategory;
   result: string | null;
   update: string;
 }
@@ -77,4 +88,5 @@ export interface AppSettings {
   notifyOnCompleted: boolean;
   notifyOnFailed: boolean;
   contextMenuEnabled: boolean;
+  reportOpenTarget: ReportOpenTarget;
 }
