@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.3.8`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.5.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -23,7 +23,7 @@ Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing12
 | -------- | -------------------------------------------------------------------------------------------------------- |
 | Frontend | React 19 + TypeScript + Vite 6                                                                           |
 | UI kit   | **Custom CSS**, not MUI. Primitives in `src/components/ui/`                                              |
-| Icons    | `@heroicons/react` 24/outline, mapped in `src/components/ui/Icon.tsx`                                    |
+| Icons    | `@fluentui/react-icons` (Fluent System Icons), mapped in `src/components/ui/Icon.tsx`                    |
 | State    | Zustand (`src/core/state/store.ts`)                                                                      |
 | i18n     | i18next + react-i18next, catalogs in `src/core/i18n/locales/` (`en`, `ru`, `es`, `de`, `fr`, `pt`, `zh`) |
 | Native   | Rust 2021, Tauri 2, plugins: dialog, opener, single-instance, tray                                       |
@@ -42,11 +42,11 @@ src/
   App.tsx                  Composition root: bootstrap, navigation, toasts, DnD
   app/
     constants/             Views, defaults, accent palettes, poll presets
-    hooks/                 useToast, useNativeTheme
-    utils/                 format, verdict tones, fileKind / MIME
+    hooks/                 useToast, useNativeTheme, useWindowBackdrop, useSystemAccent, useNavigationMode
+    utils/                 format, verdict tones, fileKind / MIME, navigation (modes, breakpoints)
   components/
-    ui/                    Button, Card, Field, Icon, ScanRow, FileReportRow, StatusIcon, Switch, Select, …
-    layout/                WindowChrome (frameless title bar + nav), Toast
+    ui/                    Button, Card, Field, Icon, ScanRow, FileReportRow, StatusIcon, Switch, Select, Tooltip, …
+    layout/                WindowChrome (title bar), NavigationPane, Toast
   core/
     domain/types.ts        Shared domain types
     native/api.ts          Frontend ↔ native boundary
@@ -76,6 +76,7 @@ src-tauri/src/
   workflows/ci.yml         PR quality gate (lint, format, build, clippy, versions)
   workflows/release.yml    Tag/manual installer builds → draft GitHub Release
   actions/setup            Shared Node/Rust/Linux setup
+docs/superpowers/          Design specs and implementation plans
 scripts/                   Version bump, changelog extract, release tag
 ```
 
@@ -128,6 +129,8 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `set_close_to_tray`                                                                          | Close button hides window when enabled                                                      |
 | `register_context_menu` / `unregister_context_menu` / `is_context_menu_registered`           | Windows Explorer right-click verbs in `HKCU\Software\Classes` (files, folders, background)  |
 | `get_pending_scan_paths`                                                                     | Pops `--scan` paths stashed at launch (first-instance context-menu scans)                   |
+| `get_window_backdrop`                                                                        | Windows build number → whether Mica is available (Windows 11 build ≥ 22000)                 |
+| `get_system_accent`                                                                          | Windows system accent as `#rrggbb` (`UISettings`, DWM registry fallback)                    |
 
 Native commands return `Result<T, String>` (or a typed error converted at the boundary). They must not panic on user-controlled input.
 
@@ -154,10 +157,28 @@ In-flight items (`uploading` / `scanning`) are saved as `failed` with `interrupt
 
 ### Desktop chrome
 
-- Frameless window; `WindowChrome` handles caption, nav, min/max/close.
+- Frameless window; `WindowChrome` draws the WinUI title bar and caption buttons, `NavigationPane` renders the left navigation rail.
+- `WindowChrome` mirrors native states: restore glyph when maximized, dimmed title and controls when the window is inactive, tooltips, and a back button on reports.
+- `NavigationPane` follows WinUI NavigationView: **320 px expanded** at ≥ 1008 px, **48 px compact rail** at 641–1007 px, and an **overlay pane** (scrim + hamburger) at ≤ 640 px. Roving tabindex with Arrow/Home/End.
 - Close can hide to tray (`CLOSE_TO_TRAY`).
 - Native menu and tray emit `native:menu`; `menuBridge.ts` maps ids to views and pickers.
 - `tauri-plugin-single-instance` focuses the existing window.
+
+### Design tokens
+
+The UI follows WinUI / Fluent Design. Tokens are declared once in the `.manual-app` / `.manual-app.light` blocks of `src/styles/manual.css`; components consume them instead of hardcoding colours.
+
+- Accent: `--accent`, `--accent-strong`, `--on-accent` — set inline by `App.tsx` from `resolveAccentPalette` (`settings.accent`, default `'system'` → Windows accent via `get_system_accent`, refreshed on focus). Never hardcode an accent hex in a component or rule; use these or their derived tokens.
+- Accent-derived: `--accent-hover`, `--accent-pressed`, `--accent-soft`, `--accent-soft-strong`.
+- Layers and strokes: `--card-bg`, `--card-stroke`, `--control-bg`, `--control-bg-hover`, `--control-bg-pressed`, `--control-stroke`, `--control-stroke-strong`, `--subtle-hover`, `--subtle-pressed`, `--divider`.
+- Text: `--text`, `--text-secondary`, `--text-tertiary`, `--text-disabled`.
+- Flyouts: `--flyout-bg` plus `--shadow-flyout` for the Acrylic-style surface used by menus and toasts.
+- Semantic tones: `--success`, `--warning`, `--danger` (with `*-soft` fills) for verdicts and statuses. Do not replace these with the accent.
+- Categorical file tones: `--kind-*` (with light-theme overrides) for file-type icons. They follow the theme, not the accent.
+- Radii: `--radius-control` (4 px), `--radius-surface` (8 px). Typography: `--font-body`, `--font-display`, `--font-mono`.
+- Backdrop: `useWindowBackdrop` asks `get_window_backdrop` and applies real Mica (`micaLight` / `micaDark`) on Windows 11. On Windows 10, or if `setEffects` fails, it clears effects and paints the solid Fluent backdrop (`#202020` / `#f3f3f3`).
+- Focus: two-tone `box-shadow` from `--focus-inner` / `--focus-outer`; hover/pressed fills use the Fluent layer tokens.
+- Icons: `Icon.tsx` maps Fluent System Icons with 16 / 20 / 24 px variants; pass `size` rather than resizing in CSS.
 
 ## Domain types
 
@@ -202,7 +223,7 @@ Keep scan state serializable and UI-independent. Components render; services per
 
 **New string:** add the same key under every language in `src/core/i18n/locales/` (`en`, `ru`, `es`, `de`, `fr`, `pt`, `zh`).
 
-**New icon:** map a Heroicons 24/outline component in `Icon.tsx`; do not import Heroicons from feature files.
+**New icon:** map the Fluent System Icons 16/20/24 variants in `Icon.tsx` (pass `size`); do not import icon components from feature files.
 
 **New setting:** extend `AppSettings` + `DEFAULT_SETTINGS`, persist via `sanitizeSettings`, and keep `hasApiKey` out of disk.
 
