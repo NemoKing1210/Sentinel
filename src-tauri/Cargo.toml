@@ -28,7 +28,7 @@ tokio = { version = "1", features = ["time"] }
 keyring = { version = "3", features = ["windows-native", "apple-native", "linux-native"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 sha2 = "0.10"
-zip = "2.2"
+zip = "8.6"
 tempfile = "3"
 walkdir = "2"
 urlencoding = "2"
