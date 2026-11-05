@@ -86,6 +86,7 @@ const ru = {
     accentAmber: 'Янтарный',
     accentSystem: 'Акцент Windows',
     toggleNavigation: 'Навигация',
+    windowRestore: 'Восстановить',
     system: 'Системная',
     light: 'Светлая',
     dark: 'Тёмная',

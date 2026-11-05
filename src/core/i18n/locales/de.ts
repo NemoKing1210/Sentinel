@@ -82,6 +82,7 @@ const de = {
     accentAmber: 'Bernstein',
     accentSystem: 'Windows-Akzentfarbe',
     toggleNavigation: 'Navigation',
+    windowRestore: 'Wiederherstellen',
     system: 'System',
     light: 'Hell',
     dark: 'Dunkel',

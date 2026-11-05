@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import logo from '@/assets/logo.png';
@@ -13,10 +13,56 @@ function currentWindow() {
 interface WindowChromeProps {
   paneExpanded: boolean;
   onTogglePane: () => void;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
-export function WindowChrome({ paneExpanded, onTogglePane }: WindowChromeProps) {
+export function WindowChrome({ paneExpanded, onTogglePane, onBack, backLabel }: WindowChromeProps) {
   const { t } = useTranslation();
+  const [maximized, setMaximized] = useState(false);
+  const [focused, setFocused] = useState(true);
+
+  useEffect(() => {
+    const win = currentWindow();
+    if (!win) return;
+    let active = true;
+    let unlistenResized: (() => void) | undefined;
+    let unlistenFocus: (() => void) | undefined;
+
+    const syncMaximized = () => {
+      void win
+        .isMaximized()
+        .then((value) => {
+          if (active) setMaximized(value);
+        })
+        .catch(() => undefined);
+    };
+
+    syncMaximized();
+    void win
+      .onResized(syncMaximized)
+      .then((stop) => {
+        if (active) unlistenResized = stop;
+        else stop();
+      })
+      .catch(() => undefined);
+    void win
+      .onFocusChanged(({ payload }) => {
+        if (active) setFocused(payload);
+      })
+      .then((stop) => {
+        if (active) unlistenFocus = stop;
+        else stop();
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+      unlistenResized?.();
+      unlistenFocus?.();
+    };
+  }, []);
+
   const isInteractiveTarget = (target: EventTarget | null) =>
     target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [role="button"]'));
   const startDragging = (event: MouseEvent<HTMLElement>) => {
@@ -25,8 +71,16 @@ export function WindowChrome({ paneExpanded, onTogglePane }: WindowChromeProps) 
   const toggleMaximize = (event: MouseEvent<HTMLElement>) => {
     if (!isInteractiveTarget(event.target)) void currentWindow()?.toggleMaximize();
   };
+
+  const maximizeLabel = maximized ? t('windowRestore') : t('windowMaximize');
+  const backText = backLabel ?? t('historyBack');
+
   return (
-    <header className="window-chrome" onMouseDown={startDragging} onDoubleClick={toggleMaximize}>
+    <header
+      className={`window-chrome${focused ? '' : ' inactive'}`}
+      onMouseDown={startDragging}
+      onDoubleClick={toggleMaximize}
+    >
       <Tooltip content={t('toggleNavigation')} placement="bottom">
         <button
           type="button"
@@ -39,38 +93,57 @@ export function WindowChrome({ paneExpanded, onTogglePane }: WindowChromeProps) 
           <Icon name="menu" size={16} />
         </button>
       </Tooltip>
+      {onBack ? (
+        <Tooltip content={backText} placement="bottom">
+          <button
+            type="button"
+            className="window-back"
+            aria-label={backText}
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={onBack}
+          >
+            <Icon name="back" size={16} />
+          </button>
+        </Tooltip>
+      ) : null}
       <span className="window-title">
         <img src={logo} alt="" className="window-logo" width={16} height={16} draggable={false} />
         <span>Sentinel</span>
       </span>
       <div className="window-controls">
-        <button
-          type="button"
-          className="window-control"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => void currentWindow()?.minimize()}
-          aria-label={t('windowMinimize')}
-        >
-          <Icon name="minimize" />
-        </button>
-        <button
-          type="button"
-          className="window-control"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => void currentWindow()?.toggleMaximize()}
-          aria-label={t('windowMaximize')}
-        >
-          <Icon name="maximize" />
-        </button>
-        <button
-          type="button"
-          className="window-control close"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => void currentWindow()?.close()}
-          aria-label={t('windowClose')}
-        >
-          <Icon name="close" />
-        </button>
+        <Tooltip content={t('windowMinimize')} placement="bottom">
+          <button
+            type="button"
+            className="window-control"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={() => void currentWindow()?.minimize()}
+            aria-label={t('windowMinimize')}
+          >
+            <Icon name="minimize" />
+          </button>
+        </Tooltip>
+        <Tooltip content={maximizeLabel} placement="bottom">
+          <button
+            type="button"
+            className="window-control"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={() => void currentWindow()?.toggleMaximize()}
+            aria-label={maximizeLabel}
+          >
+            <Icon name={maximized ? 'restore' : 'maximize'} />
+          </button>
+        </Tooltip>
+        <Tooltip content={t('windowClose')} placement="bottom">
+          <button
+            type="button"
+            className="window-control close"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={() => void currentWindow()?.close()}
+            aria-label={t('windowClose')}
+          >
+            <Icon name="close" />
+          </button>
+        </Tooltip>
       </div>
     </header>
   );

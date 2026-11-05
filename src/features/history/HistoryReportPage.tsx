@@ -97,9 +97,6 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
   return (
     <div className="screen history-screen history-report-screen">
       <div className="history-report-nav">
-        <Button variant="quiet" icon="back" onClick={onBack}>
-          {t('historyBack')}
-        </Button>
         <div className="button-row">
           {fileStillExists && report.path ? (
             <Button variant="quiet" icon="folder" onClick={() => void openFolderContaining(report.path!)}>

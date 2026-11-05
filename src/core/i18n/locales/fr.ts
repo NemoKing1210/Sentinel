@@ -82,6 +82,7 @@ const fr = {
     accentAmber: 'Ambre',
     accentSystem: 'Couleur d’accentuation de Windows',
     toggleNavigation: 'Navigation',
+    windowRestore: 'Restaurer',
     system: 'Système',
     light: 'Clair',
     dark: 'Sombre',

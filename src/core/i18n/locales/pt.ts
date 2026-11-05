@@ -82,6 +82,7 @@ const pt = {
     accentAmber: 'Âmbar',
     accentSystem: 'Cor de destaque do Windows',
     toggleNavigation: 'Navegação',
+    windowRestore: 'Restaurar',
     system: 'Sistema',
     light: 'Claro',
     dark: 'Escuro',

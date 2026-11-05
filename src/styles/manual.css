@@ -307,6 +307,38 @@
   background: var(--subtle-hover);
 }
 
+.window-back {
+  width: 40px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  margin-right: 4px;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+.window-back:hover {
+  background: var(--subtle-hover);
+}
+
+.window-chrome.inactive .window-title,
+.window-chrome.inactive .window-control,
+.window-chrome.inactive .window-nav-toggle,
+.window-chrome.inactive .window-back {
+  color: var(--text-disabled);
+}
+
+.window-chrome.inactive .window-control:hover {
+  color: var(--text-secondary);
+}
+
+.window-chrome.inactive .window-control.close:hover {
+  color: #ffffff;
+  background: #c42b1c;
+}
+
 .window-controls > .tooltip-anchor {
   display: flex;
   height: 100%;
@@ -1711,7 +1743,7 @@ h2 {
 .history-report-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
 }
