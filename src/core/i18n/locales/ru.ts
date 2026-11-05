@@ -84,6 +84,7 @@ const ru = {
     accentViolet: 'Фиолетовый',
     accentRose: 'Розовый',
     accentAmber: 'Янтарный',
+    accentSystem: 'Акцент Windows',
     system: 'Системная',
     light: 'Светлая',
     dark: 'Тёмная',
@@ -106,6 +107,9 @@ const ru = {
     sec: 'сек',
     increase: 'Увеличить',
     decrease: 'Уменьшить',
+    windowMinimize: 'Свернуть',
+    windowMaximize: 'Развернуть',
+    windowClose: 'Закрыть',
     pollingPresets: 'Быстрый выбор',
     notificationsSection: 'Уведомления',
     notificationsSectionHint:

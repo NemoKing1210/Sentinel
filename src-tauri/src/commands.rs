@@ -866,3 +866,58 @@ mod window_backdrop_tests {
         assert!(backdrop_for_build(22621));
     }
 }
+
+#[tauri::command]
+pub fn get_system_accent() -> Result<String, String> {
+    system_accent().ok_or_else(|| "system accent unavailable".to_string())
+}
+
+fn hex_from_rgb(r: u8, g: u8, b: u8) -> String {
+    format!("#{r:02x}{g:02x}{b:02x}")
+}
+
+fn accent_from_registry_value(value: u32) -> String {
+    hex_from_rgb(((value >> 16) & 0xff) as u8, ((value >> 8) & 0xff) as u8, (value & 0xff) as u8)
+}
+
+#[cfg(target_os = "windows")]
+fn accent_from_ui_settings() -> Option<String> {
+    use windows::UI::ViewManagement::{UIColorType, UISettings};
+
+    let settings = UISettings::new().ok()?;
+    let color = settings.GetColorValue(UIColorType::Accent).ok()?;
+    Some(hex_from_rgb(color.R, color.G, color.B))
+}
+
+#[cfg(target_os = "windows")]
+fn accent_from_registry() -> Option<String> {
+    use winreg::enums::HKEY_CURRENT_USER;
+    use winreg::RegKey;
+
+    let key = RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey(r"Software\Microsoft\Windows\DWM")
+        .ok()?;
+    let value: u32 = key.get_value("ColorizationColor").ok()?;
+    Some(accent_from_registry_value(value))
+}
+
+#[cfg(target_os = "windows")]
+fn system_accent() -> Option<String> {
+    accent_from_ui_settings().or_else(accent_from_registry)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn system_accent() -> Option<String> {
+    None
+}
+
+#[cfg(test)]
+mod system_accent_tests {
+    use super::*;
+
+    #[test]
+    fn reads_rgb_from_dwm_argb() {
+        assert_eq!(accent_from_registry_value(0xC40078D4), "#0078d4");
+        assert_eq!(accent_from_registry_value(0xFFC42B1C), "#c42b1c");
+    }
+}

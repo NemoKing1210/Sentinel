@@ -7,9 +7,10 @@ import FRFlag from 'country-flag-icons/react/3x2/FR';
 import PTFlag from 'country-flag-icons/react/3x2/PT';
 import RUFlag from 'country-flag-icons/react/3x2/RU';
 import USFlag from 'country-flag-icons/react/3x2/US';
-import type { AppSettings, Language, LanguageFlag, LogLevel } from '@/core/domain/types';
+import type { AppSettings, ColorScheme, Language, LanguageFlag, LogLevel } from '@/core/domain/types';
 import {
   ACCENT_COLORS,
+  getAccentPalette,
   LANGUAGES,
   LOG_LEVELS,
   POLL_INTERVAL_MAX,
@@ -26,6 +27,7 @@ import { Select } from '@/components/ui/Select';
 import { StepperInput } from '@/components/ui/StepperInput';
 import { Switch } from '@/components/ui/Switch';
 import { PROJECT_META } from '@/app/utils/packageMeta';
+import { resolveAccentPalette } from '@/app/utils/accent';
 
 const LANGUAGE_FLAG_ICONS: Record<LanguageFlag, ReactElement> = {
   us: <USFlag className="flag-icon" aria-hidden="true" />,
@@ -39,6 +41,8 @@ const LANGUAGE_FLAG_ICONS: Record<LanguageFlag, ReactElement> = {
 
 interface SettingsPageProps {
   settings: AppSettings;
+  colorScheme: ColorScheme;
+  systemAccent: string | null;
   apiKey: string;
   showApiKey: boolean;
   toggleApiKey: () => Promise<void>;
@@ -62,6 +66,8 @@ const VT_API_KEY_URL = 'https://www.virustotal.com/gui/my-apikey';
 
 export function SettingsPage({
   settings,
+  colorScheme,
+  systemAccent,
   apiKey,
   showApiKey,
   toggleApiKey,
@@ -77,6 +83,8 @@ export function SettingsPage({
   openExternalUrl,
 }: SettingsPageProps) {
   const { t } = useTranslation();
+  const systemAccentLabel = t('accentSystem');
+  const systemPalette = resolveAccentPalette('system', colorScheme, systemAccent);
   return (
     <div className="screen settings-screen">
       <PageTitle title={t('settingsTitle')} subtitle={t('settingsSubtitle')} />
@@ -98,9 +106,28 @@ export function SettingsPage({
             </div>
             <div className="settings-control">
               <div className="accent-swatches" role="radiogroup" aria-label={t('accentColor')}>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={settings.accent === 'system'}
+                  aria-label={systemAccentLabel}
+                  title={systemAccentLabel}
+                  className={`accent-swatch${settings.accent === 'system' ? ' selected' : ''}`}
+                  style={
+                    {
+                      '--swatch': systemPalette.teal,
+                      '--swatch-deep': systemPalette.tealDeep,
+                      '--on-swatch': systemPalette.onTeal,
+                    } as CSSProperties
+                  }
+                  onClick={() => setSettings({ accent: 'system' })}
+                >
+                  {settings.accent === 'system' ? <Icon name="check" /> : null}
+                </button>
                 {ACCENT_COLORS.map((option) => {
                   const label = t(`accent${option.value[0].toUpperCase()}${option.value.slice(1)}`);
                   const isSelected = settings.accent === option.value;
+                  const palette = getAccentPalette(option.value, colorScheme);
                   return (
                     <button
                       key={option.value}
@@ -112,9 +139,9 @@ export function SettingsPage({
                       className={`accent-swatch${isSelected ? ' selected' : ''}`}
                       style={
                         {
-                          '--swatch': option.dark.teal,
-                          '--swatch-deep': option.dark.tealDeep,
-                          '--on-swatch': option.dark.onTeal,
+                          '--swatch': palette.teal,
+                          '--swatch-deep': palette.tealDeep,
+                          '--on-swatch': palette.onTeal,
                         } as CSSProperties
                       }
                       onClick={() => setSettings({ accent: option.value })}

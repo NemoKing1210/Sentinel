@@ -80,6 +80,7 @@ const de = {
     accentViolet: 'Violett',
     accentRose: 'Rosa',
     accentAmber: 'Bernstein',
+    accentSystem: 'Windows-Akzentfarbe',
     system: 'System',
     light: 'Hell',
     dark: 'Dunkel',
@@ -102,6 +103,9 @@ const de = {
     sec: 's',
     increase: 'Erhöhen',
     decrease: 'Verringern',
+    windowMinimize: 'Minimieren',
+    windowMaximize: 'Maximieren',
+    windowClose: 'Schließen',
     pollingPresets: 'Schnellauswahl',
     notificationsSection: 'Benachrichtigungen',
     notificationsSectionHint:

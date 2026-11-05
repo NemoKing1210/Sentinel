@@ -80,6 +80,7 @@ const fr = {
     accentViolet: 'Violet',
     accentRose: 'Rose',
     accentAmber: 'Ambre',
+    accentSystem: 'Couleur d’accentuation de Windows',
     system: 'Système',
     light: 'Clair',
     dark: 'Sombre',
@@ -102,6 +103,9 @@ const fr = {
     sec: 's',
     increase: 'Augmenter',
     decrease: 'Diminuer',
+    windowMinimize: 'Réduire',
+    windowMaximize: 'Agrandir',
+    windowClose: 'Fermer',
     pollingPresets: 'Préréglages rapides',
     notificationsSection: 'Notifications',
     notificationsSectionHint:

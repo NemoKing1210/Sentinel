@@ -51,7 +51,7 @@ export const ACCENT_COLORS: AccentOption[] = [
   {
     value: 'vt',
     dark: { teal: '#86aaf9', tealDeep: '#86aaf9', onTeal: '#0d1233' },
-    light: { teal: '#86aaf9', tealDeep: '#86aaf9', onTeal: '#0d1233' },
+    light: { teal: '#1c56c9', tealDeep: '#1749b0', onTeal: '#ffffff' },
   },
   {
     value: 'teal',
@@ -87,7 +87,7 @@ export function getAccentPalette(accent: AccentColor, scheme: ColorScheme): Acce
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
-  accent: 'vt',
+  accent: 'system',
   language: detectPreferredLanguage(),
   pollInterval: 5,
   hasApiKey: false,

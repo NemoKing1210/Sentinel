@@ -113,6 +113,11 @@ export async function getWindowBackdrop(): Promise<WindowBackdropInfo> {
   return invoke<WindowBackdropInfo>('get_window_backdrop');
 }
 
+export async function getSystemAccent(): Promise<string> {
+  if (!isTauri) return '#0078d4';
+  return invoke<string>('get_system_accent');
+}
+
 export interface ConfirmActionOptions {
   title: string;
   message: string;

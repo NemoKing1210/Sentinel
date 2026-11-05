@@ -80,6 +80,7 @@ const pt = {
     accentViolet: 'Violeta',
     accentRose: 'Rosa',
     accentAmber: 'Âmbar',
+    accentSystem: 'Cor de destaque do Windows',
     system: 'Sistema',
     light: 'Claro',
     dark: 'Escuro',
@@ -102,6 +103,9 @@ const pt = {
     sec: 's',
     increase: 'Aumentar',
     decrease: 'Diminuir',
+    windowMinimize: 'Minimizar',
+    windowMaximize: 'Maximizar',
+    windowClose: 'Fechar',
     pollingPresets: 'Predefinições rápidas',
     notificationsSection: 'Notificações',
     notificationsSectionHint:
