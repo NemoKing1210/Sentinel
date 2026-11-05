@@ -816,3 +816,53 @@ fn hicon_to_png(icon: windows::Win32::UI::WindowsAndMessaging::HICON) -> Result<
 
     Ok(png_data)
 }
+
+#[derive(Serialize)]
+pub struct WindowBackdrop {
+    pub mica: bool,
+    pub build: u32,
+}
+
+fn backdrop_for_build(build: u32) -> bool {
+    build >= 22000
+}
+
+#[cfg(target_os = "windows")]
+fn windows_build_number() -> u32 {
+    use winreg::enums::HKEY_LOCAL_MACHINE;
+    use winreg::RegKey;
+
+    RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+        .and_then(|key| key.get_value::<String, _>("CurrentBuildNumber"))
+        .ok()
+        .and_then(|value| value.trim().parse().ok())
+        .unwrap_or(0)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn windows_build_number() -> u32 {
+    0
+}
+
+#[tauri::command]
+pub fn get_window_backdrop() -> WindowBackdrop {
+    let build = windows_build_number();
+    WindowBackdrop {
+        mica: cfg!(target_os = "windows") && backdrop_for_build(build),
+        build,
+    }
+}
+
+#[cfg(test)]
+mod window_backdrop_tests {
+    use super::*;
+
+    #[test]
+    fn mica_requires_windows_11() {
+        assert!(!backdrop_for_build(19045));
+        assert!(!backdrop_for_build(21999));
+        assert!(backdrop_for_build(22000));
+        assert!(backdrop_for_build(22621));
+    }
+}
