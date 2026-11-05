@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accentPaletteFromHex, mixHex, resolveColorScheme } from './theme.ts';
+import { accentPaletteFromHex, mixHex, relativeLuminance, resolveColorScheme } from './theme.ts';
+
+function contrast(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
 
 test('keeps an explicit light or dark theme', () => {
   assert.equal(resolveColorScheme('light'), 'light');
@@ -40,4 +46,19 @@ test('derives a readable light palette from the Windows accent', () => {
 test('keeps text readable on extreme accent values', () => {
   assert.equal(accentPaletteFromHex('#ffffff', 'dark').onTeal, '#000000');
   assert.equal(accentPaletteFromHex('#000000', 'light').onTeal, '#ffffff');
+});
+
+test('keeps a bright accent readable as text on the light background', () => {
+  const palette = accentPaletteFromHex('#ffeb3b', 'light');
+  assert.ok(contrast(palette.teal, '#f3f3f3') >= 4.5, `contrast was ${contrast(palette.teal, '#f3f3f3')}`);
+});
+
+test('keeps a dark accent readable as text on the dark background', () => {
+  const palette = accentPaletteFromHex('#000000', 'dark');
+  assert.ok(contrast(palette.teal, '#202020') >= 4.5, `contrast was ${contrast(palette.teal, '#202020')}`);
+});
+
+test('leaves already readable accents unchanged', () => {
+  assert.equal(accentPaletteFromHex('#0078d4', 'dark').teal, '#66aee5');
+  assert.equal(accentPaletteFromHex('#0078d4', 'light').teal, '#006cbf');
 });
