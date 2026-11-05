@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Sentinel",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "identifier": "dev.sentinel.scanner",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -13,13 +13,13 @@
     "windows": [
       {
         "title": "Sentinel",
-        "backgroundColor": "#111716",
+        "backgroundColor": "#202020",
         "decorations": false,
-        "shadow": false,
+        "shadow": true,
         "width": 1320,
         "height": 860,
-        "minWidth": 960,
-        "minHeight": 680,
+        "minWidth": 560,
+        "minHeight": 560,
         "resizable": true
       }
     ],

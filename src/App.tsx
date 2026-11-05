@@ -28,9 +28,11 @@ import {
 import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { useNativeTheme } from '@/app/hooks/useNativeTheme';
+import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
 import { useScanRunner } from '@/features/queue/useScanRunner';
 import { logError, logInfo, logWarn } from '@/core/logging';
-import { WindowChrome, type NavItem } from '@/components/layout/WindowChrome';
+import { WindowChrome } from '@/components/layout/WindowChrome';
+import { NavigationPane, type NavItem } from '@/components/layout/NavigationPane';
 import { ToastContainer } from '@/components/layout/Toast';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { QueuePage } from '@/features/queue/QueuePage';
@@ -79,6 +81,12 @@ export default function App() {
     },
     [setReport, setView],
   );
+
+  const revealWindow = useCallback(() => {
+    if (useAppStore.getState().settings.startMinimized) return;
+    if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return;
+    void getCurrentWindow().show();
+  }, []);
 
   const setViewRef = useRef(goToView);
   const pickFilesAndAddRef = useRef<() => Promise<void>>(async () => undefined);
@@ -230,7 +238,11 @@ export default function App() {
       if (cancelled.current) return;
       disposePersistence = subscribePersistence();
       disposeWindow = subscribeWindowState();
-    })().catch((error) => logWarn('bootstrap.hydration_failed', { error: String(error) }));
+    })()
+      .catch((error) => logWarn('bootstrap.hydration_failed', { error: String(error) }))
+      .finally(() => {
+        if (!cancelled.current) revealWindow();
+      });
     void subscribeToFileDrops(async (paths) => {
       if (!paths.length) return;
       await addDetectedPathsRef.current(await detectPaths(paths));
@@ -282,7 +294,7 @@ export default function App() {
       disposeWindow?.();
       disposePersistence?.();
     };
-  }, []);
+  }, [revealWindow]);
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -344,6 +356,7 @@ export default function App() {
   }, []);
 
   const colorScheme = useNativeTheme(settings.theme);
+  const backdrop = useWindowBackdrop(settings.theme, colorScheme);
 
   useEffect(() => {
     void isWindowsPlatform()
@@ -493,73 +506,77 @@ export default function App() {
 
   const accent = getAccentPalette(settings.accent, colorScheme);
   const accentVars = {
-    '--teal': accent.teal,
-    '--teal-deep': accent.tealDeep,
-    '--on-teal': accent.onTeal,
+    '--accent': accent.teal,
+    '--accent-strong': accent.tealDeep,
+    '--on-accent': accent.onTeal,
   } as CSSProperties;
 
   return (
-    <div className={`manual-app ${colorScheme}`} style={accentVars}>
-      <WindowChrome nav={nav} view={view} setView={goToView} />
-      <main ref={mainRef} className="manual-main">
-        <div className="page-transition" key={view}>
-          {view === 'dashboard' && (
-            <DashboardPage
-              items={items}
-              history={history}
-              dragging={dragging}
-              hasApiKey={settings.hasApiKey}
-              scanImmediately={settings.scanImmediately}
-              setScanImmediately={(value) => updateSettings({ scanImmediately: value })}
-              setDragging={setDragging}
-              pickPath={pickPathAndAdd}
-              setView={setView}
-              setReport={setReport}
-            />
-          )}
-          {view === 'queue' && (
-            <QueuePage
-              items={items}
-              dragging={dragging}
-              runScan={runScan}
-              startAll={() => startAll(items)}
-              clearCompleted={clearCompleted}
-              clearQueue={clearQueue}
-              onOpenDetails={openItemDetails}
-              pickPath={pickPathAndAdd}
-              setDragging={setDragging}
-            />
-          )}
-          {view === 'history' && <HistoryPage />}
-          {view === 'settings' && (
-            <SettingsPage
-              settings={settings}
-              apiKey={apiKey}
-              showApiKey={showApiKey}
-              toggleApiKey={toggleApiKey}
-              setApiKey={setApiKey}
-              save={save}
-              validate={validate}
-              setSettings={updateSettings}
-              supportsContextMenu={supportsContextMenu}
-              setContextMenuEnabled={changeContextMenuEnabled}
-              changeLanguage={(language) => void i18n.changeLanguage(language)}
-              setLogLevel={changeLogLevel}
-              openLogDirectory={async () => {
-                try {
-                  await openLogDirectory();
-                  showToast(describePreset('logFolderOpened', t));
-                  logInfo('logging.directory_opened_ui');
-                } catch (error) {
-                  logError('logging.directory_open_failed_ui', { error: String(error) });
-                  showToast(describePreset('logFolderFailed', t));
-                }
-              }}
-              openExternalUrl={(url) => openExternalUrl(url)}
-            />
-          )}
-        </div>
-      </main>
+    <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
+      <WindowChrome />
+      <div className="app-body">
+        <NavigationPane nav={nav} view={view} setView={goToView} />
+        <main ref={mainRef} className="manual-main">
+          <div className="page-transition" key={view}>
+            {view === 'dashboard' && (
+              <DashboardPage
+                items={items}
+                history={history}
+                dragging={dragging}
+                hasApiKey={settings.hasApiKey}
+                scanImmediately={settings.scanImmediately}
+                setScanImmediately={(value) => updateSettings({ scanImmediately: value })}
+                setDragging={setDragging}
+                pickPath={pickPathAndAdd}
+                setView={setView}
+                setReport={setReport}
+              />
+            )}
+            {view === 'queue' && (
+              <QueuePage
+                items={items}
+                dragging={dragging}
+                runScan={runScan}
+                startAll={() => startAll(items)}
+                clearCompleted={clearCompleted}
+                clearQueue={clearQueue}
+                onOpenDetails={openItemDetails}
+                pickPath={pickPathAndAdd}
+                setDragging={setDragging}
+              />
+            )}
+            {view === 'history' && <HistoryPage />}
+            {view === 'settings' && (
+              <SettingsPage
+                settings={settings}
+                colorScheme={colorScheme}
+                apiKey={apiKey}
+                showApiKey={showApiKey}
+                toggleApiKey={toggleApiKey}
+                setApiKey={setApiKey}
+                save={save}
+                validate={validate}
+                setSettings={updateSettings}
+                supportsContextMenu={supportsContextMenu}
+                setContextMenuEnabled={changeContextMenuEnabled}
+                changeLanguage={(language) => void i18n.changeLanguage(language)}
+                setLogLevel={changeLogLevel}
+                openLogDirectory={async () => {
+                  try {
+                    await openLogDirectory();
+                    showToast(describePreset('logFolderOpened', t));
+                    logInfo('logging.directory_opened_ui');
+                  } catch (error) {
+                    logError('logging.directory_open_failed_ui', { error: String(error) });
+                    showToast(describePreset('logFolderFailed', t));
+                  }
+                }}
+                openExternalUrl={(url) => openExternalUrl(url)}
+              />
+            )}
+          </div>
+        </main>
+      </div>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     </div>
   );

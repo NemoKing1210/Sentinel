@@ -103,6 +103,16 @@ export async function getFileIcon(path: string): Promise<string | null> {
   return invoke<string | null>('get_file_icon', { path });
 }
 
+export interface WindowBackdropInfo {
+  mica: boolean;
+  build: number;
+}
+
+export async function getWindowBackdrop(): Promise<WindowBackdropInfo> {
+  if (!isTauri) return { mica: false, build: 0 };
+  return invoke<WindowBackdropInfo>('get_window_backdrop');
+}
+
 export interface ConfirmActionOptions {
   title: string;
   message: string;

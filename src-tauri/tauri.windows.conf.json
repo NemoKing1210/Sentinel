@@ -1,0 +1,19 @@
+{
+  "app": {
+    "windows": [
+      {
+        "title": "Sentinel",
+        "backgroundColor": "#00000000",
+        "decorations": false,
+        "shadow": true,
+        "transparent": true,
+        "visible": false,
+        "width": 1320,
+        "height": 860,
+        "minWidth": 560,
+        "minHeight": 560,
+        "resizable": true
+      }
+    ]
+  }
+}
