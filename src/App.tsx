@@ -68,6 +68,7 @@ export default function App() {
   const clearItems = useAppStore((state) => state.clearItems);
   const clearCompletedItems = useAppStore((state) => state.clearCompletedItems);
   const history = useAppStore((state) => state.history);
+  const selectedReportId = useAppStore((state) => state.selectedReportId);
   const setReport = useAppStore((state) => state.setReport);
   const setSettings = useAppStore((state) => state.setSettings);
   const { toasts, showToast, dismiss } = useToast();
@@ -515,6 +516,7 @@ export default function App() {
   );
 
   const accent = resolveAccentPalette(settings.accent, colorScheme, systemAccent);
+  const reportOpen = view === 'history' && Boolean(selectedReportId);
   const accentVars = {
     '--accent': accent.teal,
     '--accent-strong': accent.tealDeep,
@@ -523,7 +525,12 @@ export default function App() {
 
   return (
     <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
-      <WindowChrome paneExpanded={paneOpen} onTogglePane={togglePane} />
+      <WindowChrome
+        paneExpanded={paneOpen}
+        onTogglePane={togglePane}
+        onBack={reportOpen ? () => setReport(null) : undefined}
+        backLabel={t('historyBack')}
+      />
       <div className="app-body">
         {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={() => setPaneOpen(false)} /> : null}
         <NavigationPane

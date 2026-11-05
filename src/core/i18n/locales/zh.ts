@@ -80,6 +80,7 @@ const zh = {
     accentAmber: '琥珀色',
     accentSystem: 'Windows 主题色',
     toggleNavigation: '导航',
+    windowRestore: '还原',
     system: '系统',
     light: '浅色',
     dark: '深色',

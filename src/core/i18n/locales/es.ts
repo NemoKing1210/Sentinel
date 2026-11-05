@@ -82,6 +82,7 @@ const es = {
     accentAmber: 'Ámbar',
     accentSystem: 'Color de énfasis de Windows',
     toggleNavigation: 'Navegación',
+    windowRestore: 'Restaurar',
     system: 'Sistema',
     light: 'Claro',
     dark: 'Oscuro',
