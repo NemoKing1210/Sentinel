@@ -291,6 +291,27 @@
   user-select: none;
 }
 
+.window-nav-toggle {
+  width: 40px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  margin-right: 4px;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+.window-nav-toggle:hover {
+  background: var(--subtle-hover);
+}
+
+.window-controls > .tooltip-anchor {
+  display: flex;
+  height: 100%;
+}
+
 .window-title {
   display: inline-flex;
   align-items: center;
@@ -361,20 +382,62 @@
  * App shell — NavigationView
  * ---------------------------------------------------------------- */
 .app-body {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
 }
 
 .nav-pane {
-  flex: 0 0 256px;
-  width: 256px;
+  flex: 0 0 48px;
+  width: 48px;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 4px 8px 8px;
+  padding: 4px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.nav-pane.open {
+  flex-basis: 320px;
+  width: 320px;
+  padding: 4px 8px 8px;
+}
+
+.nav-pane.overlay {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: 320px;
+  background: var(--flyout-bg);
+  box-shadow: var(--shadow-flyout);
+}
+
+.nav-pane.closed:not(.minimal) {
+  flex: 0 0 48px;
+  width: 48px;
+}
+
+.nav-pane.minimal.closed,
+.nav-pane.overlay.closed {
+  display: none;
+}
+
+.nav-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.nav-pane .tooltip-anchor {
+  display: block;
+  width: 100%;
+}
+
+.nav-item {
+  width: 100%;
 }
 
 .nav-group {
@@ -397,10 +460,10 @@
 .nav-link {
   position: relative;
   width: 100%;
-  min-height: 40px;
+  min-height: 36px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 0 12px;
   border: 0;
   border-radius: var(--radius-control);
@@ -416,8 +479,36 @@
 }
 
 .nav-link .glyph {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
+}
+
+.nav-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.nav-badge-dot {
+  position: absolute;
+  top: -1px;
+  right: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.nav-pane:not(.open) .nav-link {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}
+
+.nav-pane:not(.open) .nav-label,
+.nav-pane:not(.open) .nav-link b {
+  display: none;
 }
 
 .nav-link:hover {
@@ -431,6 +522,11 @@
 
 .nav-link.active {
   font-weight: 600;
+  background: var(--subtle-hover);
+}
+
+.nav-link.active .glyph {
+  color: var(--accent);
 }
 
 .nav-link.active::before {
@@ -2878,27 +2974,6 @@ h2 {
  * Compact / responsive
  * ---------------------------------------------------------------- */
 @media (max-width: 900px) {
-  .nav-pane {
-    flex-basis: 48px;
-    width: 48px;
-    padding: 4px;
-  }
-
-  .nav-link {
-    justify-content: center;
-    gap: 0;
-    padding: 0;
-  }
-
-  .nav-label,
-  .nav-link b {
-    display: none;
-  }
-
-  .nav-divider {
-    margin: 8px 4px;
-  }
-
   .manual-main {
     padding: 20px 20px 40px;
   }

@@ -28,9 +28,11 @@ import {
 import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { useNativeTheme } from '@/app/hooks/useNativeTheme';
+import { useNavigationMode } from '@/app/hooks/useNavigationMode';
 import { useSystemAccent } from '@/app/hooks/useSystemAccent';
 import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
 import { resolveAccentPalette } from '@/app/utils/accent';
+import type { NavigationMode } from '@/app/utils/navigation';
 import { useScanRunner } from '@/features/queue/useScanRunner';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { WindowChrome } from '@/components/layout/WindowChrome';
@@ -360,6 +362,11 @@ export default function App() {
   const colorScheme = useNativeTheme(settings.theme);
   const systemAccent = useSystemAccent();
   const backdrop = useWindowBackdrop(settings.theme, colorScheme);
+  const navMode = useNavigationMode();
+  const [paneOverride, setPaneOverride] = useState<{ mode: NavigationMode; open: boolean } | null>(null);
+  const paneOpen = paneOverride?.mode === navMode ? paneOverride.open : navMode === 'expanded';
+  const setPaneOpen = (open: boolean) => setPaneOverride({ mode: navMode, open });
+  const togglePane = () => setPaneOverride({ mode: navMode, open: !paneOpen });
 
   useEffect(() => {
     void isWindowsPlatform()
@@ -516,9 +523,19 @@ export default function App() {
 
   return (
     <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
-      <WindowChrome />
+      <WindowChrome paneExpanded={paneOpen} onTogglePane={togglePane} />
       <div className="app-body">
-        <NavigationPane nav={nav} view={view} setView={goToView} />
+        {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={() => setPaneOpen(false)} /> : null}
+        <NavigationPane
+          nav={nav}
+          view={view}
+          setView={goToView}
+          mode={navMode}
+          open={paneOpen}
+          onNavigate={() => {
+            if (navMode !== 'expanded') setPaneOpen(false);
+          }}
+        />
         <main ref={mainRef} className="manual-main">
           <div className="page-transition" key={view}>
             {view === 'dashboard' && (

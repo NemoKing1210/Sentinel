@@ -81,6 +81,7 @@ const en = {
     accentRose: 'Rose',
     accentAmber: 'Amber',
     accentSystem: 'Windows accent',
+    toggleNavigation: 'Navigation',
     system: 'System',
     light: 'Light',
     dark: 'Dark',

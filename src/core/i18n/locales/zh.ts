@@ -79,6 +79,7 @@ const zh = {
     accentRose: '玫红',
     accentAmber: '琥珀色',
     accentSystem: 'Windows 主题色',
+    toggleNavigation: '导航',
     system: '系统',
     light: '浅色',
     dark: '深色',
