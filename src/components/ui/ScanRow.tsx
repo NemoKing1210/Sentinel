@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import type { FileKind, ScanStatus } from '@/core/domain/types';
 import { fileIconName, Icon } from './Icon';
 
-const rowTransition = { duration: 0.22, ease: [0.22, 1, 0.36, 1] } as const;
+const rowTransition = { duration: 0.167, ease: [0.1, 0.9, 0.2, 1] } as const;
 
 interface ScanRowProps {
   name: string;
@@ -46,9 +46,9 @@ export function ScanRow({ name, kind, tone, meta, summary, extra, actions, statu
   return (
     <motion.section
       layout
-      initial={{ opacity: 0, y: -14, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
       transition={rowTransition}
       className={className}
     >

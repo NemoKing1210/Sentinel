@@ -28,7 +28,11 @@ body {
   -webkit-user-select: none;
 }
 input,
-textarea {
+textarea,
+code,
+.history-hash-row code,
+.history-report-title h2,
+.scan-row-name {
   user-select: text;
   -webkit-user-select: text;
 }
