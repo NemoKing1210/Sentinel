@@ -70,7 +70,6 @@ const en = {
     settingsSubtitle: 'How Sentinel looks, connects, and keeps records.',
     appearance: 'Appearance',
     appearanceHint: 'Windows controls the theme and accent color. Choose the interface language here.',
-    toggleNavigation: 'Navigation',
     windowRestore: 'Restore down',
     language: 'Language',
     languageHint: 'Interface language for Sentinel.',

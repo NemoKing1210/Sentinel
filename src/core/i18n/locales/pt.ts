@@ -70,7 +70,6 @@ const pt = {
     settingsSubtitle: 'Como o Sentinel se parece, se conecta e mantém registros.',
     appearance: 'Aparência',
     appearanceHint: 'O Windows controla o tema e a cor de destaque. Escolha aqui o idioma da interface.',
-    toggleNavigation: 'Navegação',
     windowRestore: 'Restaurar',
     language: 'Idioma',
     languageHint: 'Idioma da interface do Sentinel.',

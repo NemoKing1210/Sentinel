@@ -34,8 +34,8 @@ Before finishing a change: `npm run build` and `cargo check --manifest-path src-
 ```
 src/App.tsx                composition root (hydrate, DnD, menu, toasts, views)
 src/app/                   constants, hooks, pure utils
-src/app/utils/navigation.ts      NavigationView modes + keyboard index math
-src/app/hooks/             useWindowBackdrop (Mica), useSystemAccent, useNavigationMode
+src/app/utils/navigation.ts      Keyboard index math for the navigation pane
+src/app/hooks/             useWindowBackdrop (Mica), useSystemAccent
 src/components/ui/         presentational widgets — not MUI
 src/components/ui/Tooltip.tsx    Fluent delayed tooltip (portal)
 src/components/layout/     WindowChrome, NavigationPane, Toast
@@ -67,7 +67,7 @@ Features must not import other features.
 
 - Pages render Zustand state. I/O lives in `core/native`, `core/persistence`, and feature hooks (`useScanRunner`).
 - Window: `useWindowBackdrop` applies real Mica on Windows 11 (`get_window_backdrop`, build ≥ 22000) and falls back to a solid Fluent backdrop. Theme and accent always follow Windows; `useNativeTheme` + `useSystemAccent` + `resolveSystemAccentPalette` derive the color scheme and contrast-safe `--accent` / `--on-accent`.
-- `NavigationPane` has three WinUI modes: 320 px expanded (≥ 1008 px), 48 px compact rail (641–1007 px), overlay pane (≤ 640 px). Breakpoints and keyboard math live in `app/utils/navigation.ts`.
+- `NavigationPane` is a fixed 320 px WinUI pane; it cannot be collapsed. Keyboard index math lives in `app/utils/navigation.ts`.
 - New Tauri commands: implement in the matching Rust module → register in `lib.rs` → wrap in `api.ts` → call from a hook/`App.tsx`. Visual components never `invoke`.
 - Scan: absolute paths → `pathToItem` → `submit_file` or `submit_archive` (folder → ZIP) → poll `get_analysis_status`. File cap 650 MB; ≤32 MB uses `/files`, larger uses `/files/upload_url`.
 - `settings.pollInterval` is persisted in Settings; `scanPath` currently polls every **5s**. Wire it through if you change polling.

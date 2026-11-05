@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.6.3`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.6.4`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -42,8 +42,8 @@ src/
   App.tsx                  Composition root: bootstrap, navigation, toasts, DnD
   app/
     constants/             Views, defaults, poll presets
-    hooks/                 useToast, useNativeTheme, useWindowBackdrop, useSystemAccent, useNavigationMode, useAppShortcuts
-    utils/                 format, verdict tones, fileKind / MIME, navigation (modes, breakpoints)
+    hooks/                 useToast, useNativeTheme, useWindowBackdrop, useSystemAccent, useAppShortcuts
+    utils/                 format, verdict tones, fileKind / MIME, navigation (keyboard index math)
   components/
     ui/                    Button, Card, Field, Icon, ScanRow, FileReportRow, StatusIcon, Switch, Select, Tooltip, …
     layout/                WindowChrome (title bar), NavigationPane, Toast
@@ -159,7 +159,7 @@ In-flight items (`uploading` / `scanning`) are saved as `failed` with `interrupt
 
 - Frameless window; `WindowChrome` draws the WinUI title bar and caption buttons, `NavigationPane` renders the left navigation rail.
 - `WindowChrome` mirrors native states: restore glyph when maximized, dimmed title and controls when the window is inactive, tooltips, and a back button on reports.
-- `NavigationPane` follows WinUI NavigationView: **320 px expanded** at ≥ 1008 px, **48 px compact rail** at 641–1007 px, and an **overlay pane** (scrim + hamburger) at ≤ 640 px. Roving tabindex with Arrow/Home/End.
+- `NavigationPane` is a fixed **320 px** WinUI pane with no collapse or compact mode. Roving tabindex with Arrow/Home/End.
 - Close can hide to tray (`CLOSE_TO_TRAY`).
 - No native menu bar; `useAppShortcuts` provides Ctrl+O, Ctrl+Shift+O, Ctrl+1–4, Ctrl+M, and Ctrl+W. The tray menu emits `native:menu`; `menuBridge.ts` maps ids to views and pickers.
 - `tauri-plugin-single-instance` focuses the existing window.

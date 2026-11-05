@@ -70,7 +70,6 @@ const de = {
     settingsSubtitle: 'Wie Sentinel aussieht, sich verbindet und Aufzeichnungen führt.',
     appearance: 'Erscheinungsbild',
     appearanceHint: 'Windows steuert Design und Akzentfarbe. Wählen Sie hier die Sprache der Oberfläche.',
-    toggleNavigation: 'Navigation',
     windowRestore: 'Wiederherstellen',
     language: 'Sprache',
     languageHint: 'Oberflächensprache von Sentinel.',

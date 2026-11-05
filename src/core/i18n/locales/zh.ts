@@ -68,7 +68,6 @@ const zh = {
     settingsSubtitle: 'Sentinel 的外观、连接和记录方式。',
     appearance: '外观',
     appearanceHint: 'Windows 控制系统主题和强调色。在此选择界面语言。',
-    toggleNavigation: '导航',
     windowRestore: '还原',
     language: '语言',
     languageHint: 'Sentinel 的界面语言。',

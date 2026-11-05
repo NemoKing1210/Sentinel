@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent, type RefObject } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import logo from '@/assets/logo.png';
@@ -30,14 +30,11 @@ function CaptionGlyph({ name }: { name: keyof typeof CAPTION_GLYPHS }) {
 }
 
 interface WindowChromeProps {
-  paneExpanded: boolean;
-  onTogglePane: () => void;
   onBack?: () => void;
   backLabel?: string;
-  navToggleRef?: RefObject<HTMLButtonElement | null>;
 }
 
-export function WindowChrome({ paneExpanded, onTogglePane, onBack, backLabel, navToggleRef }: WindowChromeProps) {
+export function WindowChrome({ onBack, backLabel }: WindowChromeProps) {
   const { t } = useTranslation();
   const [maximized, setMaximized] = useState(false);
   const [focused, setFocused] = useState(true);
@@ -101,19 +98,6 @@ export function WindowChrome({ paneExpanded, onTogglePane, onBack, backLabel, na
       onMouseDown={startDragging}
       onDoubleClick={toggleMaximize}
     >
-      <Tooltip content={t('toggleNavigation')} placement="bottom">
-        <button
-          ref={navToggleRef}
-          type="button"
-          className="window-nav-toggle"
-          aria-label={t('toggleNavigation')}
-          aria-expanded={paneExpanded}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={onTogglePane}
-        >
-          <Icon name="menu" size={16} />
-        </button>
-      </Tooltip>
       {onBack ? (
         <Tooltip content={backText} placement="bottom">
           <button

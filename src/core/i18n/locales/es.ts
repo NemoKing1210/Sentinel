@@ -70,7 +70,6 @@ const es = {
     settingsSubtitle: 'Cómo se ve Sentinel, se conecta y guarda registros.',
     appearance: 'Apariencia',
     appearanceHint: 'Windows controla el tema y el color de énfasis. Elige aquí el idioma de la interfaz.',
-    toggleNavigation: 'Navegación',
     windowRestore: 'Restaurar',
     language: 'Idioma',
     languageHint: 'Idioma de la interfaz de Sentinel.',

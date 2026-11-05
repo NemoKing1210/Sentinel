@@ -74,7 +74,6 @@ const ru = {
     settingsSubtitle: 'Внешний вид, подключение и ведение записей Sentinel.',
     appearance: 'Внешний вид',
     appearanceHint: 'Тема и акцентный цвет берутся из Windows. Здесь можно выбрать язык интерфейса.',
-    toggleNavigation: 'Навигация',
     windowRestore: 'Восстановить',
     language: 'Язык',
     languageHint: 'Язык интерфейса Sentinel.',

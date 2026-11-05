@@ -30,12 +30,10 @@ import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
 import { useAppShortcuts } from '@/app/hooks/useAppShortcuts';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { useNativeTheme } from '@/app/hooks/useNativeTheme';
-import { useNavigationMode } from '@/app/hooks/useNavigationMode';
 import { useSystemAccent } from '@/app/hooks/useSystemAccent';
 import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
 import { resolveSystemAccentPalette } from '@/app/utils/accent';
 import { shouldRevealWindow, shouldStartHidden } from '@/app/utils/windowReveal';
-import type { NavigationMode } from '@/app/utils/navigation';
 import { useScanRunner } from '@/features/queue/useScanRunner';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { WindowChrome } from '@/components/layout/WindowChrome';
@@ -373,27 +371,6 @@ export default function App() {
   const colorScheme = useNativeTheme();
   const systemAccent = useSystemAccent();
   const backdrop = useWindowBackdrop(colorScheme);
-  const navMode = useNavigationMode();
-  const [paneOverride, setPaneOverride] = useState<{ mode: NavigationMode; open: boolean } | null>(null);
-  const navToggleRef = useRef<HTMLButtonElement>(null);
-  const paneOpen = paneOverride?.mode === navMode ? paneOverride.open : navMode === 'expanded';
-  const togglePane = () => setPaneOverride({ mode: navMode, open: !paneOpen });
-  const closePane = useCallback(() => {
-    setPaneOverride({ mode: navMode, open: false });
-    navToggleRef.current?.focus();
-  }, [navMode]);
-
-  useEffect(() => {
-    if (navMode === 'expanded' || !paneOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      closePane();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [navMode, paneOpen, closePane]);
 
   useEffect(() => {
     void isWindowsPlatform()
@@ -542,25 +519,9 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
-        <WindowChrome
-          paneExpanded={paneOpen}
-          navToggleRef={navToggleRef}
-          onTogglePane={togglePane}
-          onBack={reportOpen ? () => setReport(null) : undefined}
-          backLabel={t('historyBack')}
-        />
+        <WindowChrome onBack={reportOpen ? () => setReport(null) : undefined} backLabel={t('historyBack')} />
         <div className="app-body">
-          {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={closePane} /> : null}
-          <NavigationPane
-            nav={nav}
-            view={view}
-            setView={goToView}
-            mode={navMode}
-            open={paneOpen}
-            onNavigate={() => {
-              if (navMode !== 'expanded') closePane();
-            }}
-          />
+          <NavigationPane nav={nav} view={view} setView={goToView} />
           <main ref={mainRef} className="manual-main">
             <div className="page-transition" key={view}>
               {view === 'dashboard' && (

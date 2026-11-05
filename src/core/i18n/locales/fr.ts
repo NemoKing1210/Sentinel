@@ -70,7 +70,6 @@ const fr = {
     settingsSubtitle: 'Apparence, connexion et conservation des enregistrements de Sentinel.',
     appearance: 'Apparence',
     appearanceHint: 'Windows gère le thème et la couleur d’accentuation. Choisissez ici la langue de l’interface.',
-    toggleNavigation: 'Navigation',
     windowRestore: 'Restaurer',
     language: 'Langue',
     languageHint: 'Langue de l’interface de Sentinel.',
