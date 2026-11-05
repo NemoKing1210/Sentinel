@@ -5,6 +5,68 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-05
+
+### Added
+
+- Real Windows 11 Mica backdrop with an opaque fallback for Windows 10
+- Windows system accent color, used by default, with a System swatch in Settings
+- Native title bar states: restore icon when maximized, inactive-window dimming, tooltips, and a back button on reports
+- NavigationView layout modes: 320 px expanded, 48 px compact rail, and an overlay pane on narrow windows
+- Keyboard navigation in the navigation pane (arrows, Home, End)
+
+### Changed
+
+- Scan and history lists now render as one surface with divider-separated rows
+- Settings uses section headers above cards, 64 px rows, and no language flags
+- Statuses are plain colored text instead of filled pills
+- Reports lead with the verdict and detection count
+- Fluent System Icons use their 16/20/24 px variants
+- Two-tone focus visuals, quieter row motion, selectable hashes, and a forced-colors theme
+
+### Fixed
+
+- The dashboard used a missing `clock` icon and silently fell back to the home icon
+
+## [0.4.0] - 2026-11-05
+
+### Changed
+
+- Rebuilt the interface on WinUI / Fluent Design: Segoe UI Variable, 4 px controls, 8 px surfaces, Windows 11 type scale and density
+- New window shell: a WinUI title bar with native-style caption buttons and a left NavigationView pane, with Settings pinned to the bottom and a compact icon-only mode on narrow windows
+- Reworked every control to Fluent: accent/standard/subtle buttons, text fields with an accent focus underline, toggle switches, ComboBox, SelectorBar filters, ProgressBar and InfoBar
+- Replaced Heroicons with the official Fluent System Icons set
+- API-key banners now use WinUI InfoBar styling; toasts use a Fluent flyout with an Acrylic-style backdrop
+- Added Fluent hover/pressed/focus states, rounded flyouts and neutral light/dark window backdrops; the Mica look is emulated so Windows 10 stays supported
+- Restyled the overview, queue, history report and settings screens around WinUI cards and list rows
+- The Tauri window API is now skipped outside the desktop shell, so `npm run dev` renders again in a browser
+
+### Added
+
+- `@fluentui/react-icons` dependency for native Windows 11 icons
+
+## [0.3.10] - 2026-11-05
+
+### Changed
+
+- Unified the design system around semantic accent tokens, so navigation, controls, focus rings, scrollbars, selections, and surfaces follow the selected accent color
+- Selected filters and window controls now use the accent color; semantic verdict colors remain unchanged
+- File-type icon colors are now theme-aware and readable in both light and dark themes
+- VirusTotal accent gets a proper accessible light-theme variant
+- The native window background is tinted with the accent, matching the app background
+
+### Fixed
+
+- Window control labels are localized instead of hard-coded English
+- Unknown verdicts no longer show a success checkmark
+- Removed dead styles and duplicated overrides left over from earlier design passes
+
+## [0.3.9] - 2026-11-05
+
+### Changed
+
+- Removed the dotted background pattern and accent glow gradient for a flat background
+
 ## [0.3.8] - 2026-08-19
 
 ### Added

@@ -6,7 +6,7 @@ Instructions for [Claude Code](https://code.claude.com/docs/en/claude-md) workin
 
 Sentinel is a **Tauri 2** desktop client for **VirusTotal API v3**. It uploads files/folders, polls analysis, and stores local history. It is not a local antivirus. Verdicts come from VirusTotal.
 
-Stack: React 19 + TypeScript + Vite 6 + Zustand + i18next (`en`/`ru`) + custom CSS + Heroicons. Native: Rust, `reqwest`, OS keychain (`sentinel-virustotal` / `api-key`). Identifier: `dev.sentinel.scanner`. Alias `@/*` → `src/*`. Vite port **1421**.
+Stack: React 19 + TypeScript + Vite 6 + Zustand + i18next (7 locales) + custom CSS (WinUI / Fluent) + Fluent System Icons. Native: Rust, `reqwest`, OS keychain (`sentinel-virustotal` / `api-key`). Identifier: `dev.sentinel.scanner`. Alias `@/*` → `src/*`. Vite port **1421**.
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repo: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -34,12 +34,15 @@ Before finishing a change: `npm run build` and `cargo check --manifest-path src-
 ```
 src/App.tsx                composition root (hydrate, DnD, menu, toasts, views)
 src/app/                   constants, hooks, pure utils
+src/app/utils/navigation.ts      NavigationView modes + keyboard index math
+src/app/hooks/             useWindowBackdrop (Mica), useSystemAccent, useNavigationMode
 src/components/ui/         presentational widgets — not MUI
-src/components/layout/     WindowChrome, Toast
+src/components/ui/Tooltip.tsx    Fluent delayed tooltip (portal)
+src/components/layout/     WindowChrome, NavigationPane, Toast
 src/core/domain/types.ts   ScanItem, FileReport, AppSettings
 src/core/native/api.ts     only frontend ↔ Tauri boundary
 src/core/state/store.ts    Zustand
-src/core/i18n/index.ts     en + ru catalogs
+src/core/i18n/index.ts     i18next init; locales in src/core/i18n/locales/
 src/core/persistence/      state.json hydrate/save
 src/features/<name>/       one screen; kebab-case dirs
 src-tauri/src/lib.rs       command registration
@@ -63,6 +66,8 @@ Features must not import other features.
 ## Architecture (short)
 
 - Pages render Zustand state. I/O lives in `core/native`, `core/persistence`, and feature hooks (`useScanRunner`).
+- Window: `useWindowBackdrop` applies real Mica on Windows 11 (`get_window_backdrop`, build ≥ 22000) and falls back to a solid Fluent backdrop. `settings.accent` defaults to `'system'`; `useSystemAccent` + `resolveAccentPalette` derive contrast-safe `--accent` / `--on-accent`.
+- `NavigationPane` has three WinUI modes: 320 px expanded (≥ 1008 px), 48 px compact rail (641–1007 px), overlay pane (≤ 640 px). Breakpoints and keyboard math live in `app/utils/navigation.ts`.
 - New Tauri commands: implement in the matching Rust module → register in `lib.rs` → wrap in `api.ts` → call from a hook/`App.tsx`. Visual components never `invoke`.
 - Scan: absolute paths → `pathToItem` → `submit_file` or `submit_archive` (folder → ZIP) → poll `get_analysis_status`. File cap 650 MB; ≤32 MB uses `/files`, larger uses `/files/upload_url`.
 - `settings.pollInterval` is persisted in Settings; `scanPath` currently polls every **5s**. Wire it through if you change polling.
@@ -85,10 +90,11 @@ Default to patch when unsure. Keep `package.json`, `package-lock.json`, `src-tau
 3. Native commands return `Result<T, String>` (or a typed error at the boundary). Do not panic on user input.
 4. Use absolute filesystem paths. Do not replace dropped paths with display names.
 5. Scan state is serializable and UI-independent.
-6. Every user-facing string: both `en` and `ru` in `src/core/i18n/index.ts`.
+6. Every user-facing string: the same key in every locale under `src/core/i18n/locales/` (`en`, `ru`, `es`, `de`, `fr`, `pt`, `zh`).
 7. No `any` in new TypeScript. Small functions, explicit types.
 8. Do not commit secrets, `dist/`, `src-tauri/target/`, `.env`, or OS temp files.
 9. Log every change in `CHANGELOG.md` and bump SemVer (patch for small changes).
+10. Never hardcode an accent hex. Derive it with `resolveAccentPalette` from `settings.accent` (default `'system'`) and use the `--accent*` / `--on-accent` tokens.
 
 ## Naming
 
@@ -98,8 +104,8 @@ React components PascalCase. TS functions camelCase. Rust fns and Tauri commands
 
 - **Screen:** `src/features/<name>/`, register in `VIEWS` + `App.tsx`.
 - **Native API:** Rust module → `lib.rs` → `api.ts` → hook/`App.tsx`.
-- **String:** same key in `en` and `ru`.
-- **Icon:** map Heroicons 24/outline in `Icon.tsx`; do not import Heroicons from features.
+- **String:** same key in all 7 locale files.
+- **Icon:** map Fluent System Icons in `Icon.tsx`; do not import icons from features.
 - **Setting:** `AppSettings` + `DEFAULT_SETTINGS` + `sanitizeSettings`; keep the key off disk.
 
 ## Do not
