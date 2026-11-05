@@ -1,13 +1,6 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import CNFlag from 'country-flag-icons/react/3x2/CN';
-import DEFlag from 'country-flag-icons/react/3x2/DE';
-import ESFlag from 'country-flag-icons/react/3x2/ES';
-import FRFlag from 'country-flag-icons/react/3x2/FR';
-import PTFlag from 'country-flag-icons/react/3x2/PT';
-import RUFlag from 'country-flag-icons/react/3x2/RU';
-import USFlag from 'country-flag-icons/react/3x2/US';
-import type { AppSettings, ColorScheme, Language, LanguageFlag, LogLevel } from '@/core/domain/types';
+import type { AppSettings, ColorScheme, Language, LogLevel } from '@/core/domain/types';
 import {
   ACCENT_COLORS,
   getAccentPalette,
@@ -28,16 +21,6 @@ import { StepperInput } from '@/components/ui/StepperInput';
 import { Switch } from '@/components/ui/Switch';
 import { PROJECT_META } from '@/app/utils/packageMeta';
 import { resolveAccentPalette } from '@/app/utils/accent';
-
-const LANGUAGE_FLAG_ICONS: Record<LanguageFlag, ReactElement> = {
-  us: <USFlag className="flag-icon" aria-hidden="true" />,
-  ru: <RUFlag className="flag-icon" aria-hidden="true" />,
-  es: <ESFlag className="flag-icon" aria-hidden="true" />,
-  de: <DEFlag className="flag-icon" aria-hidden="true" />,
-  fr: <FRFlag className="flag-icon" aria-hidden="true" />,
-  pt: <PTFlag className="flag-icon" aria-hidden="true" />,
-  cn: <CNFlag className="flag-icon" aria-hidden="true" />,
-};
 
 interface SettingsPageProps {
   settings: AppSettings;
@@ -64,6 +47,16 @@ const REPOSITORY_DISPLAY = PROJECT_META.repositoryUrl
 
 const VT_API_KEY_URL = 'https://www.virustotal.com/gui/my-apikey';
 
+function SettingsSection({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+  return (
+    <section className="settings-section">
+      <h2>{title}</h2>
+      <p>{hint}</p>
+      <Card className="settings-card">{children}</Card>
+    </section>
+  );
+}
+
 export function SettingsPage({
   settings,
   colorScheme,
@@ -88,16 +81,7 @@ export function SettingsPage({
   return (
     <div className="screen settings-screen">
       <PageTitle title={t('settingsTitle')} subtitle={t('settingsSubtitle')} />
-      <Card className="settings-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="brush" />
-          </span>
-          <div>
-            <h3>{t('appearance')}</h3>
-            <p>{t('appearanceHint')}</p>
-          </div>
-        </div>
+      <SettingsSection title={t('appearance')} hint={t('appearanceHint')}>
         <div className="settings-list">
           <div className="settings-row">
             <div className="settings-row-copy">
@@ -192,7 +176,6 @@ export function SettingsPage({
                   options={LANGUAGES.map((language) => ({
                     value: language.value,
                     label: language.label,
-                    prefix: LANGUAGE_FLAG_ICONS[language.flag],
                   }))}
                   ariaLabel={t('language')}
                   onChange={(language) => {
@@ -204,17 +187,8 @@ export function SettingsPage({
             </div>
           </div>
         </div>
-      </Card>
-      <Card className="settings-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="key" />
-          </span>
-          <div>
-            <h3>{t('apiAccess')}</h3>
-            <p>{t('apiKeyHint')}</p>
-          </div>
-        </div>
+      </SettingsSection>
+      <SettingsSection title={t('apiAccess')} hint={t('apiKeyHint')}>
         <div className="settings-list">
           <div className="settings-row">
             <div className="settings-row-copy">
@@ -266,17 +240,8 @@ export function SettingsPage({
             {t('save')}
           </Button>
         </div>
-      </Card>
-      <Card className="settings-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="bolt" />
-          </span>
-          <div>
-            <h3>{t('scanSection')}</h3>
-            <p>{t('scanningHint')}</p>
-          </div>
-        </div>
+      </SettingsSection>
+      <SettingsSection title={t('scanSection')} hint={t('scanningHint')}>
         <div className="settings-list">
           <div className="settings-row">
             <div className="settings-row-copy">
@@ -312,17 +277,8 @@ export function SettingsPage({
             </div>
           </div>
         </div>
-      </Card>
-      <Card className="settings-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="bell" />
-          </span>
-          <div>
-            <h3>{t('notificationsSection')}</h3>
-            <p>{t('notificationsSectionHint')}</p>
-          </div>
-        </div>
+      </SettingsSection>
+      <SettingsSection title={t('notificationsSection')} hint={t('notificationsSectionHint')}>
         <div className="settings-list">
           <Switch
             className="settings-row"
@@ -348,18 +304,9 @@ export function SettingsPage({
             description={t('notifyOnFailedHint')}
           />
         </div>
-      </Card>
+      </SettingsSection>
       {supportsContextMenu && (
-        <Card className="settings-card">
-          <div className="settings-card-head">
-            <span className="settings-card-icon">
-              <Icon name="external" />
-            </span>
-            <div>
-              <h3>{t('integrationSection')}</h3>
-              <p>{t('integrationSectionHint')}</p>
-            </div>
-          </div>
+        <SettingsSection title={t('integrationSection')} hint={t('integrationSectionHint')}>
           <div className="settings-list">
             <Switch
               className="settings-row"
@@ -369,18 +316,9 @@ export function SettingsPage({
               description={t('contextMenuHint')}
             />
           </div>
-        </Card>
+        </SettingsSection>
       )}
-      <Card className="settings-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="monitor" />
-          </span>
-          <div>
-            <h3>{t('systemSection')}</h3>
-            <p>{t('systemSectionHint')}</p>
-          </div>
-        </div>
+      <SettingsSection title={t('systemSection')} hint={t('systemSectionHint')}>
         <div className="settings-list">
           <Switch
             className="settings-row"
@@ -397,17 +335,8 @@ export function SettingsPage({
             description={t('startMinimizedHint')}
           />
         </div>
-      </Card>
-      <Card className="settings-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="doc" />
-          </span>
-          <div>
-            <h3>{t('logging')}</h3>
-            <p>{t('loggingHint')}</p>
-          </div>
-        </div>
+      </SettingsSection>
+      <SettingsSection title={t('logging')} hint={t('loggingHint')}>
         <div className="settings-list">
           <div className="settings-row">
             <div className="settings-row-copy">
@@ -434,17 +363,8 @@ export function SettingsPage({
             {t('openLogs')}
           </Button>
         </div>
-      </Card>
-      <Card className="settings-card about-card">
-        <div className="settings-card-head">
-          <span className="settings-card-icon">
-            <Icon name="info" />
-          </span>
-          <div>
-            <h3>{t('about')}</h3>
-            <p>{t('aboutHint')}</p>
-          </div>
-        </div>
+      </SettingsSection>
+      <SettingsSection title={t('about')} hint={t('aboutHint')}>
         <div className="about-identity">
           <span className="about-mark">
             <Icon name="shield" size={24} />
@@ -480,7 +400,7 @@ export function SettingsPage({
             onClick={() => void openExternalUrl(PROJECT_META.issuesUrl)}
           />
         </div>
-      </Card>
+      </SettingsSection>
     </div>
   );
 }

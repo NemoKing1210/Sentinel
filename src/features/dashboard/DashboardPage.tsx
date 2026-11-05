@@ -112,7 +112,7 @@ export function DashboardPage({
               {t('seeAll')}
             </Button>
           </div>
-          <div className="list">
+          <div className="list list-surface surface">
             <AnimatePresence mode="popLayout" initial={false}>
               {recent.map((report) => (
                 <FileReportRow
