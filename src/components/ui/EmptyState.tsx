@@ -5,7 +5,7 @@ export function EmptyState({ title, copy }: { title: string; copy: string }) {
   return (
     <Card className="empty">
       <span className="empty-mark">
-        <Icon name="shield" />
+        <Icon name="shield" size={32} />
       </span>
       <h3>{title}</h3>
       <p>{copy}</p>

@@ -447,7 +447,7 @@ export function SettingsPage({
         </div>
         <div className="about-identity">
           <span className="about-mark">
-            <Icon name="shield" />
+            <Icon name="shield" size={24} />
           </span>
           <div className="about-identity-copy">
             <strong>{t('appName')}</strong>

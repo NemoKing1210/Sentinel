@@ -14,7 +14,6 @@ import { StatusIcon } from '@/components/ui/StatusIcon';
 import { openExternalUrl, openFolderContaining } from '@/core/native/api';
 import { logError } from '@/core/logging';
 import {
-  engineCategoryIcon,
   engineCategoryLabelKey,
   enginePillTone,
   presentHashes,
@@ -122,7 +121,7 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
             {nativeIcon ? (
               <img className="history-report-native-icon" src={nativeIcon} alt="" />
             ) : (
-              <Icon name={fileIconName(kind)} />
+              <Icon name={fileIconName(kind)} size={24} />
             )}
           </span>
           <div className="history-report-title">
@@ -256,8 +255,7 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
                   transition={engineCardTransition}
                 >
                   <span>{engine.name}</span>
-                  <small className={`pill ${enginePillTone(engine.category)}`}>
-                    <Icon name={engineCategoryIcon(engine.category)} />
+                  <small className={`engine-status ${enginePillTone(engine.category)}`}>
                     {engine.result || t(engineCategoryLabelKey(engine.category))}
                   </small>
                 </motion.div>

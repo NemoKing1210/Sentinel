@@ -76,9 +76,9 @@ export function QueueRow({ item, onRunScan, onOpenDetails, onRemove }: QueueRowP
       actions={
         <>
           {item.status === 'completed' && item.verdict ? (
-            <span className={`pill ${tone}`}>{t(item.verdict)}</span>
+            <span className={`status-text ${tone}`}>{t(item.verdict)}</span>
           ) : (
-            <span className={`pill ${isActive ? 'teal' : item.status}`}>{t(item.status)}</span>
+            <span className={`status-text ${isActive ? 'teal' : item.status}`}>{t(item.status)}</span>
           )}
           <OpenFolderButton path={item.path} />
           {item.status === 'failed' ? (
