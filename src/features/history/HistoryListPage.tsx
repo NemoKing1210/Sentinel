@@ -7,9 +7,16 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FileReportRow } from '@/components/ui/FileReportRow';
 import { Icon } from '@/components/ui/Icon';
 import { PageTitle } from '@/components/ui/PageTitle';
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { countReportsByVerdict, groupReportsByDay, queryHistory, type HistoryFilter } from './historyQuery';
 
-const FILTERS: { value: HistoryFilter; labelKey: string; tone: string }[] = [
+interface FilterDescriptor {
+  value: HistoryFilter;
+  labelKey: string;
+  tone: string;
+}
+
+const FILTERS: FilterDescriptor[] = [
   { value: 'all', labelKey: 'all', tone: 'muted' },
   { value: 'malicious', labelKey: 'historyFilterMalicious', tone: 'danger' },
   { value: 'suspicious', labelKey: 'historyFilterSuspicious', tone: 'warning' },
@@ -57,24 +64,18 @@ export function HistoryListPage({
       />
 
       <div className="history-toolbar">
-        <div className="segment-group queue-filter" role="tablist" aria-label={t('history')}>
-          {FILTERS.map((option) => {
-            const isSelected = filter === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                className={`segment tone-${option.tone}${isSelected ? ' selected' : ''}`}
-                onClick={() => setFilter(option.value)}
-              >
-                <span>{t(option.labelKey)}</span>
-                <b>{counts[option.value]}</b>
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabs
+          options={FILTERS.map((option) => ({
+            ...option,
+            label: t(option.labelKey),
+            count: counts[option.value],
+          }))}
+          value={filter}
+          onChange={setFilter}
+          layoutId="history-filter-indicator"
+          ariaLabel={t('history')}
+          className="queue-filter"
+        />
         <label className="search history-search">
           <Icon name="search" />
           <input

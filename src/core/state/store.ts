@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AppSettings, FileReport, ScanItem } from '../domain/types';
-import { DEFAULT_SETTINGS, type View } from '../../app/constants';
+import { DEFAULT_SETTINGS } from '../../app/constants';
 
 export interface WindowState {
   width: number;
@@ -11,11 +11,8 @@ export interface WindowState {
 }
 
 interface AppState {
-  view: View;
-  setView: (view: AppState['view']) => void;
   items: ScanItem[];
   history: FileReport[];
-  selectedReportId: string | null;
   settings: AppSettings;
   windowState: WindowState | null;
   hydrated: boolean;
@@ -24,7 +21,6 @@ interface AppState {
   removeItem: (id: string) => void;
   clearItems: () => void;
   clearCompletedItems: () => void;
-  setReport: (report: FileReport | null) => void;
   addReport: (report: FileReport) => void;
   removeReport: (id: string) => void;
   clearHistory: () => void;
@@ -34,11 +30,8 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  view: 'dashboard',
-  setView: (view) => set({ view }),
   items: [],
   history: [],
-  selectedReportId: null,
   settings: DEFAULT_SETTINGS,
   windowState: null,
   hydrated: false,
@@ -51,15 +44,10 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       items: state.items.filter((item) => item.status !== 'completed' && item.status !== 'failed'),
     })),
-  setReport: (report) => set({ selectedReportId: report?.itemId ?? null }),
   addReport: (report) =>
     set((state) => ({ history: [report, ...state.history.filter((item) => item.itemId !== report.itemId)] })),
-  removeReport: (id) =>
-    set((state) => ({
-      history: state.history.filter((item) => item.itemId !== id),
-      selectedReportId: state.selectedReportId === id ? null : state.selectedReportId,
-    })),
-  clearHistory: () => set({ history: [], selectedReportId: null }),
+  removeReport: (id) => set((state) => ({ history: state.history.filter((item) => item.itemId !== id) })),
+  clearHistory: () => set({ history: [] }),
   setSettings: (settings) => set((state) => ({ settings: { ...state.settings, ...settings } })),
   setWindowState: (windowState) => set({ windowState }),
   setHydrated: (hydrated) => set({ hydrated }),

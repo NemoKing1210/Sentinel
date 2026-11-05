@@ -2,6 +2,10 @@ import type { EngineResult, FileKind, FileReport } from '@/core/domain/types';
 import { detectFileKind } from '@/app/utils/fileKind';
 
 export type HistoryFilter = 'all' | 'malicious' | 'suspicious' | 'clean';
+
+export function parseHistoryFilter(value: string | null): HistoryFilter {
+  return value === 'malicious' || value === 'suspicious' || value === 'clean' ? value : 'all';
+}
 export type EngineFilter = 'all' | 'flagged' | 'clean' | 'unsupported';
 export type HashKey = 'sha256' | 'sha1' | 'md5';
 export type StatsKey = keyof FileReport['stats'];

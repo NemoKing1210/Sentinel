@@ -5,6 +5,37 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2026-11-05
+
+### Changed
+
+- The navigation pane's accent indicator now slides between items with the Fluent 167 ms motion, and the icon color eases into its selected state
+- Queue, History, and engine tabs share a single sliding underline instead of each redrawing its own marker
+- Tabs are rendered by a reusable `SegmentedTabs` component, so selection motion and markup stay consistent across screens
+
+### Fixed
+
+- The tab underline had zero width because the text-layer rule overrode its absolute positioning, so the selection looked like it jumped instead of sliding
+
+## [0.6.6] - 2026-11-05
+
+### Changed
+
+- Opening a scan report is now a real subpage transition: the History list fades out and the report enters with the Fluent 167 ms / 8 px motion instead of switching instantly
+- Navigation is URL-based (`#/dashboard`, `#/queue`, `#/history/:reportId`, `#/settings`), so reports can be opened from notifications and tray actions without hidden state
+- History search and verdict filters live in the URL and are restored when you return from a report, including the list scroll position
+- Removing the report you are viewing returns to the History list without a spurious “report missing” toast
+
+### Removed
+
+- `view` and `selectedReportId` navigation state from Zustand; route paths are the single source of truth
+
+## [0.6.5] - 2026-11-05
+
+### Changed
+
+- The report back action moved from the title bar into the report's page header; the title bar now shows only the app identity and the window controls
+
 ## [0.6.4] - 2026-11-05
 
 ### Removed

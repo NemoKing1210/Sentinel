@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { FileReport, ScanItem } from '@/core/domain/types';
 import { isWindowFocused, scanPath, showNativeScanNotification } from '@/core/native/api';
 import { useAppStore } from '@/core/state/store';
+import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { detectionCount, engineTotal } from '@/app/utils/format';
 import { logError, logInfo, logWarn } from '@/core/logging';
@@ -11,16 +12,14 @@ export function useScanRunner() {
   const { t } = useTranslation();
   const updateItem = useAppStore((state) => state.updateItem);
   const addReport = useAppStore((state) => state.addReport);
-  const setReport = useAppStore((state) => state.setReport);
-  const setView = useAppStore((state) => state.setView);
+  const { goToView, openReport: navigateToReport } = useAppNavigate();
   const { showToast } = useToast();
 
   const openReport = useCallback(
     (report: FileReport) => {
-      setReport(report);
-      setView('history');
+      navigateToReport(report.itemId);
     },
-    [setReport, setView],
+    [navigateToReport],
   );
 
   const notifyCompleted = useCallback(
@@ -90,7 +89,7 @@ export function useScanRunner() {
       const path = item.path || item.name;
       if (!useAppStore.getState().settings.hasApiKey) {
         logWarn('scan.skipped_no_api_key', { item: item.name });
-        setView('settings');
+        goToView('settings');
         showToast(describePreset('scanNoKey', t));
         return;
       }
@@ -120,7 +119,6 @@ export function useScanRunner() {
           sha256: report.sha256,
         });
         addReport(report);
-        setReport(report);
         void notifyCompleted(item, report);
         logInfo('scan.completed', {
           item: item.name,
@@ -137,7 +135,7 @@ export function useScanRunner() {
         void notifyFailed(item);
       }
     },
-    [addReport, notifyCompleted, notifyFailed, setReport, setView, showToast, t, updateItem],
+    [addReport, goToView, notifyCompleted, notifyFailed, showToast, t, updateItem],
   );
 
   const startAll = useCallback(

@@ -10,6 +10,7 @@ import { verdictTone } from '@/app/utils/verdict';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { fileIconName, Icon } from '@/components/ui/Icon';
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { StatusIcon } from '@/components/ui/StatusIcon';
 import { openExternalUrl, openFolderContaining } from '@/core/native/api';
 import { logError } from '@/core/logging';
@@ -24,7 +25,13 @@ import {
   type StatsKey,
 } from './historyQuery';
 
-const ENGINE_FILTERS: { value: EngineFilter; labelKey: string; tone: string }[] = [
+interface EngineFilterDescriptor {
+  value: EngineFilter;
+  labelKey: string;
+  tone: string;
+}
+
+const ENGINE_FILTERS: EngineFilterDescriptor[] = [
   { value: 'all', labelKey: 'all', tone: 'muted' },
   { value: 'flagged', labelKey: 'engineFilterFlagged', tone: 'danger' },
   { value: 'clean', labelKey: 'engineFilterClean', tone: 'success' },
@@ -97,6 +104,9 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
   return (
     <div className="screen history-screen history-report-screen">
       <div className="history-report-nav">
+        <Button variant="quiet" icon="back" onClick={onBack}>
+          {t('historyBack')}
+        </Button>
         <div className="button-row">
           {fileStillExists && report.path ? (
             <Button variant="quiet" icon="folder" onClick={() => void openFolderContaining(report.path!)}>
@@ -200,27 +210,14 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
       <Card className="history-report-section">
         <span className="eyebrow section-label">{t('engineResults')}</span>
         <div className="history-engine-toolbar">
-          <div
-            className="segment-group queue-filter history-engine-filter"
-            role="tablist"
-            aria-label={t('engineResults')}
-          >
-            {ENGINE_FILTERS.map((option) => {
-              const isSelected = engineFilter === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  className={`segment tone-${option.tone}${isSelected ? ' selected' : ''}`}
-                  onClick={() => setEngineFilter(option.value)}
-                >
-                  {t(option.labelKey)}
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedTabs
+            options={ENGINE_FILTERS.map((option) => ({ ...option, label: t(option.labelKey) }))}
+            value={engineFilter}
+            onChange={setEngineFilter}
+            layoutId="engine-filter-indicator"
+            ariaLabel={t('engineResults')}
+            className="queue-filter history-engine-filter"
+          />
           <label className="search history-search">
             <Icon name="search" />
             <input

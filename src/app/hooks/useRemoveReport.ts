@@ -12,7 +12,7 @@ export function useRemoveReport() {
   const removeReport = useAppStore((state) => state.removeReport);
 
   return useCallback(
-    async (report: FileReport) => {
+    async (report: FileReport): Promise<boolean> => {
       const confirmed = await confirmAction({
         title: t('removeReportConfirmTitle'),
         message: t('removeReportConfirm', { name: report.name }),
@@ -20,10 +20,11 @@ export function useRemoveReport() {
         okLabel: t('removeReport'),
         cancelLabel: t('cancel'),
       });
-      if (!confirmed) return;
+      if (!confirmed) return false;
       removeReport(report.itemId);
       logInfo('history.report_removed', { itemId: report.itemId, name: report.name });
       showToast(describePreset('reportRemoved', t, { name: report.name }));
+      return true;
     },
     [removeReport, showToast, t],
   );

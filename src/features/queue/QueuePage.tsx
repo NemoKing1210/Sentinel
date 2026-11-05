@@ -8,9 +8,16 @@ import { DropSymbol, DropZone } from '@/components/ui/DropZone';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Icon } from '@/components/ui/Icon';
 import { PageTitle } from '@/components/ui/PageTitle';
+import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { QueueRow } from './QueueRow';
 
 type FilterMode = 'all' | 'active' | 'queued' | 'completed' | 'failed';
+
+interface FilterDescriptor {
+  value: FilterMode;
+  labelKey: string;
+  tone: string;
+}
 
 interface QueuePageProps {
   items: ScanItem[];
@@ -24,7 +31,7 @@ interface QueuePageProps {
   setDragging: (dragging: boolean) => void;
 }
 
-const FILTERS: { value: FilterMode; labelKey: string; tone: string }[] = [
+const FILTERS: FilterDescriptor[] = [
   { value: 'all', labelKey: 'queueFilterAll', tone: 'muted' },
   { value: 'active', labelKey: 'queueFilterActive', tone: 'teal' },
   { value: 'queued', labelKey: 'queued', tone: 'muted' },
@@ -112,25 +119,18 @@ export function QueuePage({
       />
 
       <div className="queue-toolbar">
-        <div className="segment-group queue-filter" role="tablist" aria-label={t('queue')}>
-          {FILTERS.map((option) => {
-            const count = counts[option.value];
-            const isSelected = filter === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                className={`segment tone-${option.tone}${isSelected ? ' selected' : ''}`}
-                onClick={() => setFilter(option.value)}
-              >
-                <span>{t(option.labelKey)}</span>
-                <b>{count}</b>
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabs
+          options={FILTERS.map((option) => ({
+            ...option,
+            label: t(option.labelKey),
+            count: counts[option.value],
+          }))}
+          value={filter}
+          onChange={setFilter}
+          layoutId="queue-filter-indicator"
+          ariaLabel={t('queue')}
+          className="queue-filter"
+        />
         <div className="button-row">
           <Button variant="outline" icon="upload" onClick={() => void pickPath()}>
             {t('chooseFile')}

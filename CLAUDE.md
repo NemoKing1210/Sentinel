@@ -34,6 +34,7 @@ Before finishing a change: `npm run build` and `cargo check --manifest-path src-
 ```
 src/App.tsx                composition root (hydrate, DnD, menu, toasts, views)
 src/app/                   constants, hooks, pure utils
+src/app/navigation/        route paths, useAppNavigate, PageTransition
 src/app/utils/navigation.ts      Keyboard index math for the navigation pane
 src/app/hooks/             useWindowBackdrop (Mica), useSystemAccent
 src/components/ui/         presentational widgets — not MUI
@@ -65,6 +66,9 @@ Features must not import other features.
 
 ## Architecture (short)
 
+- `react-router-dom` (`HashRouter`) owns navigation: `/dashboard`, `/queue`, `/history`, `/history/:reportId`, `/settings`. There is no `view` flag in Zustand. Features navigate via `useAppNavigate()`; path builders live in `app/navigation/routes.ts`.
+- History filters/search live in the query string, so opening a report preserves the list state and Back restores it.
+- `PageTransition` animates every pathname change (including list → report) with `AnimatePresence`; no CSS keyframe animation on the page wrapper.
 - Pages render Zustand state. I/O lives in `core/native`, `core/persistence`, and feature hooks (`useScanRunner`).
 - Window: `useWindowBackdrop` applies real Mica on Windows 11 (`get_window_backdrop`, build ≥ 22000) and falls back to a solid Fluent backdrop. Theme and accent always follow Windows; `useNativeTheme` + `useSystemAccent` + `resolveSystemAccentPalette` derive the color scheme and contrast-safe `--accent` / `--on-accent`.
 - `NavigationPane` is a fixed 320 px WinUI pane; it cannot be collapsed. Keyboard index math lives in `app/utils/navigation.ts`.
@@ -102,7 +106,7 @@ React components PascalCase. TS functions camelCase. Rust fns and Tauri commands
 
 ## How to add
 
-- **Screen:** `src/features/<name>/`, register in `VIEWS` + `App.tsx`.
+- **Screen:** `src/features/<name>/`, add the path in `app/navigation/routes.ts`, register the route in `App.tsx`, and add it to `VIEWS` if it appears in the pane.
 - **Native API:** Rust module → `lib.rs` → `api.ts` → hook/`App.tsx`.
 - **String:** same key in all 7 locale files.
 - **Icon:** map Fluent System Icons in `Icon.tsx`; do not import icons from features.

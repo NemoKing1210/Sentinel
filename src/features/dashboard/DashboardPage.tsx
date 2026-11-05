@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'motion/react';
 import type { FileReport, ScanItem } from '@/core/domain/types';
-import type { View } from '@/app/constants';
+import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import { useRemoveReport } from '@/app/hooks/useRemoveReport';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -19,27 +19,14 @@ interface DashboardPageProps {
   hasApiKey: boolean;
   setDragging: (v: boolean) => void;
   pickPath: () => Promise<void>;
-  setView: (view: View) => void;
-  setReport: (report: FileReport | null) => void;
 }
 
-export function DashboardPage({
-  items,
-  history,
-  dragging,
-  hasApiKey,
-  setDragging,
-  pickPath,
-  setView,
-  setReport,
-}: DashboardPageProps) {
+export function DashboardPage({ items, history, dragging, hasApiKey, setDragging, pickPath }: DashboardPageProps) {
   const { t } = useTranslation();
+  const { goToView, openReport: navigateToReport } = useAppNavigate();
   const removeReport = useRemoveReport();
   const recent = history.slice(0, 5);
-  const openReport = (report: FileReport) => {
-    setReport(report);
-    setView('history');
-  };
+  const openReport = (report: FileReport) => navigateToReport(report.itemId);
   return (
     <div className="screen dashboard-screen">
       <PageTitle title={t('overview')} subtitle={t('overviewCopy')} />
@@ -52,7 +39,7 @@ export function DashboardPage({
             <strong>{t('keyRequired')}</strong>
             <p>{t('statusNeedsKey')}</p>
           </div>
-          <Button variant="quiet" icon="tune" onClick={() => setView('settings')}>
+          <Button variant="quiet" icon="tune" onClick={() => goToView('settings')}>
             {t('settings')}
           </Button>
         </Card>
@@ -83,8 +70,8 @@ export function DashboardPage({
       <WatchBoard
         items={items}
         history={history}
-        onOpenQueue={() => setView('queue')}
-        onOpenHistory={() => setView('history')}
+        onOpenQueue={() => goToView('queue')}
+        onOpenHistory={() => goToView('history')}
         onOpenReport={openReport}
       />
       {recent.length > 0 ? (
@@ -94,7 +81,7 @@ export function DashboardPage({
               <span className="eyebrow">{t('history')}</span>
               <h2>{t('recentScans')}</h2>
             </div>
-            <Button variant="quiet" icon="arrow" onClick={() => setView('history')}>
+            <Button variant="quiet" icon="arrow" onClick={() => goToView('history')}>
               {t('seeAll')}
             </Button>
           </div>

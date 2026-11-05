@@ -1,5 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'motion/react';
 import type { View } from '@/app/constants';
 import { nextNavIndex, type NavigationKey } from '@/app/utils/navigation';
 import { Icon } from '../ui/Icon';
@@ -18,6 +19,9 @@ export interface NavigationPaneProps {
 }
 
 const NAV_KEYS: NavigationKey[] = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+
+/** Fluent 167 ms slide for the WinUI selection indicator. */
+const INDICATOR_TRANSITION = { duration: 0.167, ease: [0.1, 0.9, 0.2, 1] } as const;
 
 function isNavigationKey(key: string): key is NavigationKey {
   return (NAV_KEYS as string[]).includes(key);
@@ -63,6 +67,14 @@ export function NavigationPane({ nav, view, setView }: NavigationPaneProps) {
           aria-current={active ? 'page' : undefined}
           aria-label={item.label}
         >
+          {active ? (
+            <motion.span
+              layoutId="nav-selection-indicator"
+              className="nav-selection-indicator"
+              transition={INDICATOR_TRANSITION}
+              aria-hidden="true"
+            />
+          ) : null}
           <span className="nav-icon">
             <Icon name={item.icon} size={16} />
           </span>

@@ -292,25 +292,8 @@
   user-select: none;
 }
 
-.window-back {
-  width: 40px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  margin-right: 4px;
-  border: 0;
-  border-radius: var(--radius-control);
-  color: var(--text-secondary);
-  background: transparent;
-}
-
-.window-back:hover {
-  background: var(--subtle-hover);
-}
-
 .window-chrome.inactive .window-title,
-.window-chrome.inactive .window-control,
-.window-chrome.inactive .window-back {
+.window-chrome.inactive .window-control {
   color: var(--text-disabled);
 }
 
@@ -462,6 +445,7 @@
 .nav-link .glyph {
   width: 16px;
   height: 16px;
+  transition: color 0.12s ease;
 }
 
 .nav-icon {
@@ -487,16 +471,16 @@
   color: var(--accent);
 }
 
-.nav-link.active::before {
-  content: '';
+/* Shared-layout element: slides between items when the active view changes. */
+.nav-selection-indicator {
   position: absolute;
   left: 0;
   top: 50%;
   width: 3px;
   height: 16px;
+  margin-top: -8px;
   border-radius: 2px;
   background: var(--accent);
-  transform: translateY(-50%);
 }
 
 .nav-label {
@@ -531,22 +515,11 @@
   overflow-y: auto;
 }
 
+/* Motion drives the route transition; CSS only owns the content column width. */
 .page-transition {
   width: 100%;
   max-width: 1000px;
   margin: 0 auto;
-  animation: page-enter 167ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
-}
-
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .screen {
@@ -1580,8 +1553,8 @@ h2 {
   font-weight: 600;
 }
 
-.segment.selected::after {
-  content: '';
+/* Shared-layout underline: slides between tabs sharing the same layoutId. */
+.segment-indicator {
   position: absolute;
   left: 12px;
   right: 12px;
@@ -1589,6 +1562,13 @@ h2 {
   height: 3px;
   border-radius: 2px 2px 0 0;
   background: var(--accent);
+  z-index: 0;
+}
+
+.segment > span:not(.segment-indicator),
+.segment > b {
+  position: relative;
+  z-index: 1;
 }
 
 .segment b {
@@ -1622,11 +1602,15 @@ h2 {
 }
 
 .segment-group:not(.queue-filter) .segment.selected {
-  background: var(--control-bg-hover);
+  background: transparent;
 }
 
-.segment-group:not(.queue-filter) .segment.selected::after {
-  display: none;
+/* Inside cards the same shared element becomes a sliding selection pill. */
+.segment-group:not(.queue-filter) .segment-indicator {
+  inset: 0;
+  height: auto;
+  border-radius: 3px;
+  background: var(--control-bg-hover);
 }
 
 .queue-clear-row {
@@ -1669,7 +1653,7 @@ h2 {
 .history-report-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }

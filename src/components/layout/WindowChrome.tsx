@@ -2,7 +2,6 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import logo from '@/assets/logo.png';
-import { Icon } from '../ui/Icon';
 import { Tooltip } from '../ui/Tooltip';
 
 function currentWindow() {
@@ -29,12 +28,7 @@ function CaptionGlyph({ name }: { name: keyof typeof CAPTION_GLYPHS }) {
   );
 }
 
-interface WindowChromeProps {
-  onBack?: () => void;
-  backLabel?: string;
-}
-
-export function WindowChrome({ onBack, backLabel }: WindowChromeProps) {
+export function WindowChrome() {
   const { t } = useTranslation();
   const [maximized, setMaximized] = useState(false);
   const [focused, setFocused] = useState(true);
@@ -90,7 +84,6 @@ export function WindowChrome({ onBack, backLabel }: WindowChromeProps) {
   };
 
   const maximizeLabel = maximized ? t('windowRestore') : t('windowMaximize');
-  const backText = backLabel ?? t('historyBack');
 
   return (
     <header
@@ -98,19 +91,6 @@ export function WindowChrome({ onBack, backLabel }: WindowChromeProps) {
       onMouseDown={startDragging}
       onDoubleClick={toggleMaximize}
     >
-      {onBack ? (
-        <Tooltip content={backText} placement="bottom">
-          <button
-            type="button"
-            className="window-back"
-            aria-label={backText}
-            onMouseDown={(event) => event.stopPropagation()}
-            onClick={onBack}
-          >
-            <Icon name="back" size={16} />
-          </button>
-        </Tooltip>
-      ) : null}
       <span className="window-title">
         <img src={logo} alt="" className="window-logo" width={16} height={16} draggable={false} />
         <span>Sentinel</span>

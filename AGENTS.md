@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.6.4`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.6.7`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -43,6 +43,7 @@ src/
   app/
     constants/             Views, defaults, poll presets
     hooks/                 useToast, useNativeTheme, useWindowBackdrop, useSystemAccent, useAppShortcuts
+    navigation/            Route paths, semantic navigation hooks, PageTransition
     utils/                 format, verdict tones, fileKind / MIME, navigation (keyboard index math)
   components/
     ui/                    Button, Card, Field, Icon, ScanRow, FileReportRow, StatusIcon, Switch, Select, Tooltip, …
@@ -103,11 +104,11 @@ Feature modules must not import other features. When a screen outgrows one file,
 - Window bounds restore/subscribe
 - Tray menu binding and in-app keyboard shortcuts
 - Drag-and-drop via `subscribeToFileDrops`
-- Screen switching (`view`: `dashboard` | `queue` | `history` | `settings`)
+- Route table (`react-router-dom` HashRouter): `/dashboard`, `/queue`, `/history`, `/history/:reportId`, `/settings`
 - Toast host
 - Scan runner (`useScanRunner`)
 
-Pages are presentational: they receive props and render store state. I/O stays in `core/native`, `core/persistence`, and feature hooks/services.
+Pages receive props, render store state, and navigate through `useAppNavigate()`. I/O stays in `core/native`, `core/persistence`, and feature hooks/services.
 
 ### Native command table
 
@@ -144,7 +145,13 @@ Native commands return `Result<T, String>` (or a typed error converted at the bo
 6. Result becomes `FileReport` (verdict from `stats.malicious` / `stats.suspicious`) and is stored in `history`.
 7. Completion notifies: toast with a "View report" action when the window is focused, otherwise a native notification (`notify_scan_result`). Clicking the native notification emits `native:notification`, which `notificationBridge.ts` routes to the report page. Gate on `settings.notificationsEnabled` / `notifyOnCompleted` / `notifyOnFailed`.
 
-History is a list plus a report sub-page. `view` stays `history`; `selectedReportId` chooses the sub-page. Nav and the tray History item open the list. Dashboard, Queue, and completed scans open a report by id. Missing ids fall back to the list.
+### Navigation
+
+`react-router-dom` (`HashRouter`) owns navigation; there is no `view` or `selectedReportId` in Zustand. Paths live in `src/app/navigation/routes.ts`, and features call `useAppNavigate()` (`goToView`, `openReport`, `backToHistory`) instead of mutating navigation state.
+
+History is a list plus a report sub-page: `/history` and `/history/:reportId`. Filters and search live in the query string (`?filter=`, `?q=`), so the report route preserves them and Back restores the list exactly as it was left. Nav and the tray History item open the list. Dashboard, Queue, completed scans, and notifications open a report by id. Missing ids show `reportMissing` and fall back to the list once persistence has hydrated.
+
+`PageTransition` (motion) keys route animation by `pathname`, so every route change — including list → report — enters with the Fluent 167 ms / 8 px motion and exits with a short fade. Route params are passed to `HistoryPage` as props: during an exit animation the old page is re-rendered after the location changed, and reading router context there would render the next page inside the outgoing one.
 
 In-flight items (`uploading` / `scanning`) are saved as `failed` with `interrupted_by_restart` on persist so a crash does not revive a fake running state.
 
@@ -158,7 +165,7 @@ In-flight items (`uploading` / `scanning`) are saved as `failed` with `interrupt
 ### Desktop chrome
 
 - Frameless window; `WindowChrome` draws the WinUI title bar and caption buttons, `NavigationPane` renders the left navigation rail.
-- `WindowChrome` mirrors native states: restore glyph when maximized, dimmed title and controls when the window is inactive, tooltips, and a back button on reports.
+- `WindowChrome` mirrors native states: restore glyph when maximized, dimmed title and controls when the window is inactive, and tooltips. Subpage navigation lives in the page header, not the title bar.
 - `NavigationPane` is a fixed **320 px** WinUI pane with no collapse or compact mode. Roving tabindex with Arrow/Home/End.
 - Close can hide to tray (`CLOSE_TO_TRAY`).
 - No native menu bar; `useAppShortcuts` provides Ctrl+O, Ctrl+Shift+O, Ctrl+1–4, Ctrl+M, and Ctrl+W. The tray menu emits `native:menu`; `menuBridge.ts` maps ids to views and pickers.
@@ -217,7 +224,7 @@ Keep scan state serializable and UI-independent. Components render; services per
 
 ## How to add work safely
 
-**New screen / feature:** `src/features/<name>/`, register the view in `app/constants` (`VIEWS`) and `App.tsx`. Import only `core/`, `app/`, `components/`.
+**New screen / feature:** `src/features/<name>/`, add the path to `src/app/navigation/routes.ts`, add a `<Route>` in `App.tsx`, and add the view to `app/constants` (`VIEWS`) when it belongs in the navigation pane. Import only `core/`, `app/`, `components/`.
 
 **New native capability:** implement in the right Rust module (`commands.rs` vs `persistence.rs` vs `logging.rs` vs `chrome.rs`), register in `lib.rs`, wrap in `api.ts`, then call from a hook or `App.tsx`.
 

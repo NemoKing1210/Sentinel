@@ -2,9 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MotionConfig } from 'motion/react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppStore } from '@/core/state/store';
 import { LANGUAGES, type View } from '@/app/constants';
+import { PageTransition } from '@/app/navigation/PageTransition';
+import { ROUTES, reportIdFromPath, resolveView } from '@/app/navigation/routes';
+import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import {
   detectPaths,
   getApiKey,
@@ -62,15 +66,15 @@ function keepListener(cancelled: { current: boolean }, assign: (unlisten: () => 
 export default function App() {
   const { t, i18n } = useTranslation();
   const settings = useAppStore((state) => state.settings);
-  const view = useAppStore((state) => state.view);
-  const setView = useAppStore((state) => state.setView);
+  const location = useLocation();
+  const { goToView, openReport: navigateToReport } = useAppNavigate();
+  const activeView = resolveView(location.pathname) ?? 'dashboard';
+  const historyReportId = reportIdFromPath(location.pathname);
   const items = useAppStore((state) => state.items);
   const addItems = useAppStore((state) => state.addItems);
   const clearItems = useAppStore((state) => state.clearItems);
   const clearCompletedItems = useAppStore((state) => state.clearCompletedItems);
   const history = useAppStore((state) => state.history);
-  const selectedReportId = useAppStore((state) => state.selectedReportId);
-  const setReport = useAppStore((state) => state.setReport);
   const setSettings = useAppStore((state) => state.setSettings);
   const { toasts, showToast, dismiss } = useToast();
   const { runScan, startAll } = useScanRunner();
@@ -79,14 +83,7 @@ export default function App() {
   const [dragging, setDragging] = useState(false);
   const [supportsContextMenu, setSupportsContextMenu] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
-
-  const goToView = useCallback(
-    (next: View) => {
-      if (next === 'history') setReport(null);
-      setView(next);
-    },
-    [setReport, setView],
-  );
+  const scrollPositions = useRef(new Map<string, number>());
 
   const revealWindow = useCallback((hasPendingPaths = false) => {
     if (!shouldRevealWindow(useAppStore.getState().settings.startMinimized, hasPendingPaths)) return;
@@ -106,11 +103,10 @@ export default function App() {
   const openNotificationReport = useCallback(
     (itemId: string) => {
       const report = useAppStore.getState().history.find((entry) => entry.itemId === itemId);
-      setReport(report ?? null);
-      setView('history');
+      navigateToReport(itemId);
       logInfo('notifications.report_opened', { itemId, found: Boolean(report) });
     },
-    [setReport, setView],
+    [navigateToReport],
   );
 
   const addPaths = useCallback(
@@ -119,14 +115,14 @@ export default function App() {
       if (!valid.length) return;
       const newItems = await Promise.all(valid.map((path) => pathToItem(path, folder)));
       addItems(newItems);
-      setView('queue');
+      goToView('queue');
       const preset = folder ? 'folderAdded' : 'filesAdded';
       showToast(describePreset(preset, t, { count: valid.length }));
       if (useAppStore.getState().settings.scanImmediately) {
         newItems.forEach((item) => void runScan(item));
       }
     },
-    [addItems, runScan, setView, showToast, t],
+    [addItems, goToView, runScan, showToast, t],
   );
 
   const addDetectedPaths = useCallback(
@@ -152,12 +148,12 @@ export default function App() {
       if (folders.length) newItems.push(...(await Promise.all(folders.map((path) => pathToItem(path, true)))));
       if (!newItems.length) return;
       addItems(newItems);
-      setView('queue');
+      goToView('queue');
       showToast(describePreset('contextScanStarted', t, { count: newItems.length }));
       logInfo('shell.context_scan_started', { items: newItems.map((item) => item.name) });
       newItems.forEach((item) => void runScan(item));
     },
-    [addItems, runScan, setView, showToast, t],
+    [addItems, goToView, runScan, showToast, t],
   );
 
   const pickFilesAndAdd = useCallback(async () => {
@@ -310,8 +306,18 @@ export default function App() {
   }, [revealWindow]);
 
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-  }, [view]);
+    const main = mainRef.current;
+    if (!main) return;
+    const routeKey = location.pathname;
+    const saveScroll = () => scrollPositions.current.set(routeKey, main.scrollTop);
+    main.addEventListener('scroll', saveScroll, { passive: true });
+    return () => main.removeEventListener('scroll', saveScroll);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const top = scrollPositions.current.get(location.pathname) ?? 0;
+    mainRef.current?.scrollTo({ top, behavior: 'auto' });
+  }, [location.pathname]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -502,14 +508,13 @@ export default function App() {
   const openItemDetails = useCallback(
     (item: ScanItem) => {
       const report = history.find((entry) => entry.itemId === item.id);
-      setReport(report ?? null);
-      setView('history');
+      if (report) navigateToReport(report.itemId);
+      else goToView('history');
     },
-    [history, setReport, setView],
+    [goToView, history, navigateToReport],
   );
 
   const accent = resolveSystemAccentPalette(systemAccent, colorScheme);
-  const reportOpen = view === 'history' && Boolean(selectedReportId);
   const accentVars = {
     '--accent': accent.teal,
     '--accent-strong': accent.tealDeep,
@@ -519,65 +524,80 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
-        <WindowChrome onBack={reportOpen ? () => setReport(null) : undefined} backLabel={t('historyBack')} />
+        <WindowChrome />
         <div className="app-body">
-          <NavigationPane nav={nav} view={view} setView={goToView} />
+          <NavigationPane nav={nav} view={activeView} setView={goToView} />
           <main ref={mainRef} className="manual-main">
-            <div className="page-transition" key={view}>
-              {view === 'dashboard' && (
-                <DashboardPage
-                  items={items}
-                  history={history}
-                  dragging={dragging}
-                  hasApiKey={settings.hasApiKey}
-                  setDragging={setDragging}
-                  pickPath={pickPathAndAdd}
-                  setView={setView}
-                  setReport={setReport}
+            <PageTransition routeKey={location.pathname}>
+              <Routes location={location}>
+                <Route path="/" element={<Navigate to={ROUTES.dashboard} replace />} />
+                <Route
+                  path={ROUTES.dashboard}
+                  element={
+                    <DashboardPage
+                      items={items}
+                      history={history}
+                      dragging={dragging}
+                      hasApiKey={settings.hasApiKey}
+                      setDragging={setDragging}
+                      pickPath={pickPathAndAdd}
+                    />
+                  }
                 />
-              )}
-              {view === 'queue' && (
-                <QueuePage
-                  items={items}
-                  dragging={dragging}
-                  runScan={runScan}
-                  startAll={() => startAll(items)}
-                  clearCompleted={clearCompleted}
-                  clearQueue={clearQueue}
-                  onOpenDetails={openItemDetails}
-                  pickPath={pickPathAndAdd}
-                  setDragging={setDragging}
+                <Route
+                  path={ROUTES.queue}
+                  element={
+                    <QueuePage
+                      items={items}
+                      dragging={dragging}
+                      runScan={runScan}
+                      startAll={() => startAll(items)}
+                      clearCompleted={clearCompleted}
+                      clearQueue={clearQueue}
+                      onOpenDetails={openItemDetails}
+                      pickPath={pickPathAndAdd}
+                      setDragging={setDragging}
+                    />
+                  }
                 />
-              )}
-              {view === 'history' && <HistoryPage />}
-              {view === 'settings' && (
-                <SettingsPage
-                  settings={settings}
-                  apiKey={apiKey}
-                  showApiKey={showApiKey}
-                  toggleApiKey={toggleApiKey}
-                  setApiKey={setApiKey}
-                  save={save}
-                  validate={validate}
-                  setSettings={updateSettings}
-                  supportsContextMenu={supportsContextMenu}
-                  setContextMenuEnabled={changeContextMenuEnabled}
-                  changeLanguage={(language) => void i18n.changeLanguage(language)}
-                  setLogLevel={changeLogLevel}
-                  openLogDirectory={async () => {
-                    try {
-                      await openLogDirectory();
-                      showToast(describePreset('logFolderOpened', t));
-                      logInfo('logging.directory_opened_ui');
-                    } catch (error) {
-                      logError('logging.directory_open_failed_ui', { error: String(error) });
-                      showToast(describePreset('logFolderFailed', t));
-                    }
-                  }}
-                  openExternalUrl={(url) => openExternalUrl(url)}
+                <Route path={ROUTES.history} element={<HistoryPage reportId={null} search={location.search} />} />
+                <Route
+                  path={`${ROUTES.history}/:reportId`}
+                  element={<HistoryPage reportId={historyReportId} search={location.search} />}
                 />
-              )}
-            </div>
+                <Route
+                  path={ROUTES.settings}
+                  element={
+                    <SettingsPage
+                      settings={settings}
+                      apiKey={apiKey}
+                      showApiKey={showApiKey}
+                      toggleApiKey={toggleApiKey}
+                      setApiKey={setApiKey}
+                      save={save}
+                      validate={validate}
+                      setSettings={updateSettings}
+                      supportsContextMenu={supportsContextMenu}
+                      setContextMenuEnabled={changeContextMenuEnabled}
+                      changeLanguage={(language) => void i18n.changeLanguage(language)}
+                      setLogLevel={changeLogLevel}
+                      openLogDirectory={async () => {
+                        try {
+                          await openLogDirectory();
+                          showToast(describePreset('logFolderOpened', t));
+                          logInfo('logging.directory_opened_ui');
+                        } catch (error) {
+                          logError('logging.directory_open_failed_ui', { error: String(error) });
+                          showToast(describePreset('logFolderFailed', t));
+                        }
+                      }}
+                      openExternalUrl={(url) => openExternalUrl(url)}
+                    />
+                  }
+                />
+                <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
+              </Routes>
+            </PageTransition>
           </main>
         </div>
         <ToastContainer toasts={toasts} onDismiss={dismiss} />
