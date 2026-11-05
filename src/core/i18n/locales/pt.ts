@@ -81,6 +81,7 @@ const pt = {
     accentRose: 'Rosa',
     accentAmber: 'Âmbar',
     accentSystem: 'Cor de destaque do Windows',
+    toggleNavigation: 'Navegação',
     system: 'Sistema',
     light: 'Claro',
     dark: 'Escuro',

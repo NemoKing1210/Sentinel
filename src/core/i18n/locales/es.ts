@@ -81,6 +81,7 @@ const es = {
     accentRose: 'Rosa',
     accentAmber: 'Ámbar',
     accentSystem: 'Color de énfasis de Windows',
+    toggleNavigation: 'Navegación',
     system: 'Sistema',
     light: 'Claro',
     dark: 'Oscuro',

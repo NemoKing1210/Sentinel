@@ -81,6 +81,7 @@ const de = {
     accentRose: 'Rosa',
     accentAmber: 'Bernstein',
     accentSystem: 'Windows-Akzentfarbe',
+    toggleNavigation: 'Navigation',
     system: 'System',
     light: 'Hell',
     dark: 'Dunkel',

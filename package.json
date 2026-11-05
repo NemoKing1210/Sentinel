@@ -1,7 +1,7 @@
 {
   "name": "sentinel",
   "private": true,
-  "version": "0.3.8",
+  "version": "0.4.0",
   "license": "MIT",
   "author": "NemoKing (https://github.com/NemoKing1210)",
   "homepage": "https://github.com/NemoKing1210/Sentinel",
@@ -27,14 +27,14 @@
     "version:minor": "node scripts/bump-version.mjs minor",
     "version:major": "node scripts/bump-version.mjs major",
     "release": "node scripts/release.mjs",
-    "test": "node --experimental-strip-types --test scripts/lib/versions.test.mjs src/core/i18n/resolveLanguage.test.ts src/app/utils/theme.test.ts",
+    "test": "node --experimental-strip-types --test scripts/lib/versions.test.mjs src/core/i18n/resolveLanguage.test.ts src/app/utils/theme.test.ts src/app/utils/navigation.test.ts",
     "ci": "npm run lint && npm run format:check && npm run build && npm run check:versions && npm test"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
+    "@fluentui/react-icons": "^2.0.345",
     "@tauri-apps/api": "^2.4.1",
     "@tauri-apps/plugin-dialog": "^2.0.0",
     "country-flag-icons": "^1.6.20",

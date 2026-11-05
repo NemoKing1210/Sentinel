@@ -85,6 +85,7 @@ const ru = {
     accentRose: 'Розовый',
     accentAmber: 'Янтарный',
     accentSystem: 'Акцент Windows',
+    toggleNavigation: 'Навигация',
     system: 'Системная',
     light: 'Светлая',
     dark: 'Тёмная',

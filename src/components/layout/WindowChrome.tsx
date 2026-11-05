@@ -3,13 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import logo from '@/assets/logo.png';
 import { Icon } from '../ui/Icon';
+import { Tooltip } from '../ui/Tooltip';
 
 function currentWindow() {
   if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return null;
   return getCurrentWindow();
 }
 
-export function WindowChrome() {
+interface WindowChromeProps {
+  paneExpanded: boolean;
+  onTogglePane: () => void;
+}
+
+export function WindowChrome({ paneExpanded, onTogglePane }: WindowChromeProps) {
   const { t } = useTranslation();
   const isInteractiveTarget = (target: EventTarget | null) =>
     target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [role="button"]'));
@@ -21,6 +27,18 @@ export function WindowChrome() {
   };
   return (
     <header className="window-chrome" onMouseDown={startDragging} onDoubleClick={toggleMaximize}>
+      <Tooltip content={t('toggleNavigation')} placement="bottom">
+        <button
+          type="button"
+          className="window-nav-toggle"
+          aria-label={t('toggleNavigation')}
+          aria-expanded={paneExpanded}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={onTogglePane}
+        >
+          <Icon name="menu" size={16} />
+        </button>
+      </Tooltip>
       <span className="window-title">
         <img src={logo} alt="" className="window-logo" width={16} height={16} draggable={false} />
         <span>Sentinel</span>
