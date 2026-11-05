@@ -33,6 +33,7 @@ import { useNavigationMode } from '@/app/hooks/useNavigationMode';
 import { useSystemAccent } from '@/app/hooks/useSystemAccent';
 import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
 import { resolveAccentPalette } from '@/app/utils/accent';
+import { shouldRevealWindow, shouldStartHidden } from '@/app/utils/windowReveal';
 import type { NavigationMode } from '@/app/utils/navigation';
 import { useScanRunner } from '@/features/queue/useScanRunner';
 import { logError, logInfo, logWarn } from '@/core/logging';
@@ -88,8 +89,8 @@ export default function App() {
     [setReport, setView],
   );
 
-  const revealWindow = useCallback(() => {
-    if (useAppStore.getState().settings.startMinimized) return;
+  const revealWindow = useCallback((hasPendingPaths = false) => {
+    if (!shouldRevealWindow(useAppStore.getState().settings.startMinimized, hasPendingPaths)) return;
     if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return;
     void getCurrentWindow().show();
   }, []);
@@ -235,8 +236,9 @@ export default function App() {
       if (pendingContextPaths.length) {
         await scanContextPathsRef.current(pendingContextPaths);
       }
-      const shouldStartHidden = useAppStore.getState().settings.startMinimized && !pendingContextPaths.length;
-      if (shouldStartHidden) {
+      const hasPendingPaths = pendingContextPaths.length > 0;
+      const startsHidden = shouldStartHidden(useAppStore.getState().settings.startMinimized, hasPendingPaths);
+      if (startsHidden) {
         await getCurrentWindow().hide();
       } else {
         await applyPersistedWindowState();
@@ -244,9 +246,13 @@ export default function App() {
       if (cancelled.current) return;
       disposePersistence = subscribePersistence();
       disposeWindow = subscribeWindowState();
+      return hasPendingPaths;
     })()
-      .catch((error) => logWarn('bootstrap.hydration_failed', { error: String(error) }))
-      .finally(() => {
+      .then((hasPendingPaths) => {
+        if (!cancelled.current) revealWindow(Boolean(hasPendingPaths));
+      })
+      .catch((error) => {
+        logWarn('bootstrap.hydration_failed', { error: String(error) });
         if (!cancelled.current) revealWindow();
       });
     void subscribeToFileDrops(async (paths) => {
@@ -366,9 +372,25 @@ export default function App() {
   const backdrop = useWindowBackdrop(settings.theme, colorScheme);
   const navMode = useNavigationMode();
   const [paneOverride, setPaneOverride] = useState<{ mode: NavigationMode; open: boolean } | null>(null);
+  const navToggleRef = useRef<HTMLButtonElement>(null);
   const paneOpen = paneOverride?.mode === navMode ? paneOverride.open : navMode === 'expanded';
-  const setPaneOpen = (open: boolean) => setPaneOverride({ mode: navMode, open });
   const togglePane = () => setPaneOverride({ mode: navMode, open: !paneOpen });
+  const closePane = useCallback(() => {
+    setPaneOverride({ mode: navMode, open: false });
+    navToggleRef.current?.focus();
+  }, [navMode]);
+
+  useEffect(() => {
+    if (navMode === 'expanded' || !paneOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closePane();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [navMode, paneOpen, closePane]);
 
   useEffect(() => {
     void isWindowsPlatform()
@@ -529,12 +551,13 @@ export default function App() {
       <div className={`manual-app ${colorScheme}${backdrop === 'mica' ? ' mica' : ''}`} style={accentVars}>
         <WindowChrome
           paneExpanded={paneOpen}
+          navToggleRef={navToggleRef}
           onTogglePane={togglePane}
           onBack={reportOpen ? () => setReport(null) : undefined}
           backLabel={t('historyBack')}
         />
         <div className="app-body">
-          {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={() => setPaneOpen(false)} /> : null}
+          {navMode !== 'expanded' && paneOpen ? <div className="nav-scrim" onClick={closePane} /> : null}
           <NavigationPane
             nav={nav}
             view={view}
@@ -542,7 +565,7 @@ export default function App() {
             mode={navMode}
             open={paneOpen}
             onNavigate={() => {
-              if (navMode !== 'expanded') setPaneOpen(false);
+              if (navMode !== 'expanded') closePane();
             }}
           />
           <main ref={mainRef} className="manual-main">

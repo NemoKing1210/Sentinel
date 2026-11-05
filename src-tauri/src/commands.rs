@@ -762,7 +762,7 @@ fn hicon_to_png(icon: windows::Win32::UI::WindowsAndMessaging::HICON) -> Result<
             biHeight: -height,
             biPlanes: 1,
             biBitCount: 32,
-            biCompression: BI_RGB.0 as u32,
+            biCompression: BI_RGB.0,
             biSizeImage: 0,
             biXPelsPerMeter: 0,
             biYPelsPerMeter: 0,
@@ -827,6 +827,21 @@ fn backdrop_for_build(build: u32) -> bool {
     build >= 22000
 }
 
+fn backdrop_for(build: u32, remote_session: bool) -> bool {
+    !remote_session && backdrop_for_build(build)
+}
+
+#[cfg(target_os = "windows")]
+fn is_remote_session() -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_REMOTESESSION};
+    unsafe { GetSystemMetrics(SM_REMOTESESSION) != 0 }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_remote_session() -> bool {
+    false
+}
+
 #[cfg(target_os = "windows")]
 fn windows_build_number() -> u32 {
     use winreg::enums::HKEY_LOCAL_MACHINE;
@@ -849,7 +864,7 @@ fn windows_build_number() -> u32 {
 pub fn get_window_backdrop() -> WindowBackdrop {
     let build = windows_build_number();
     WindowBackdrop {
-        mica: cfg!(target_os = "windows") && backdrop_for_build(build),
+        mica: cfg!(target_os = "windows") && backdrop_for(build, is_remote_session()),
         build,
     }
 }
@@ -865,6 +880,13 @@ mod window_backdrop_tests {
         assert!(backdrop_for_build(22000));
         assert!(backdrop_for_build(22621));
     }
+
+    #[test]
+    fn remote_sessions_do_not_use_mica() {
+        assert!(!backdrop_for(22621, true));
+        assert!(backdrop_for(22621, false));
+        assert!(!backdrop_for(19045, false));
+    }
 }
 
 #[tauri::command]
@@ -877,7 +899,11 @@ fn hex_from_rgb(r: u8, g: u8, b: u8) -> String {
 }
 
 fn accent_from_registry_value(value: u32) -> String {
-    hex_from_rgb(((value >> 16) & 0xff) as u8, ((value >> 8) & 0xff) as u8, (value & 0xff) as u8)
+    hex_from_rgb(
+        ((value >> 16) & 0xff) as u8,
+        ((value >> 8) & 0xff) as u8,
+        (value & 0xff) as u8,
+    )
 }
 
 #[cfg(target_os = "windows")]

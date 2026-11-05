@@ -42,8 +42,33 @@ export function onAccentFor(color: string): '#000000' | '#ffffff' {
   return contrastWithBlack >= contrastWithWhite ? '#000000' : '#ffffff';
 }
 
+const THEME_BACKGROUND: Record<ColorScheme, string> = {
+  light: '#f3f3f3',
+  dark: '#202020',
+};
+
+const MIN_TEXT_CONTRAST = 4.5;
+
+function contrastRatio(a: string, b: string): number {
+  const luminanceA = relativeLuminance(a);
+  const luminanceB = relativeLuminance(b);
+  return (Math.max(luminanceA, luminanceB) + 0.05) / (Math.min(luminanceA, luminanceB) + 0.05);
+}
+
+/** The accent is also used as text, so keep it readable against the theme background. */
+function ensureAccentContrast(hex: string, scheme: ColorScheme): string {
+  const background = THEME_BACKGROUND[scheme];
+  const target = scheme === 'light' ? '#000000' : '#ffffff';
+  let color = hex;
+  for (let step = 0; step < 20 && contrastRatio(color, background) < MIN_TEXT_CONTRAST; step += 1) {
+    color = mixHex(color, target, 0.08);
+  }
+  return color;
+}
+
 export function accentPaletteFromHex(hex: string, scheme: ColorScheme): AccentPalette {
-  const teal = mixHex(hex, scheme === 'light' ? '#000000' : '#ffffff', scheme === 'light' ? 0.1 : 0.4);
+  const mixed = mixHex(hex, scheme === 'light' ? '#000000' : '#ffffff', scheme === 'light' ? 0.1 : 0.4);
+  const teal = ensureAccentContrast(mixed, scheme);
   return {
     teal,
     tealDeep: mixHex(teal, '#000000', 0.12),

@@ -27,6 +27,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Fixed
 
 - The dashboard used a missing `clock` icon and silently fell back to the home icon
+- Unknown file verdicts use the info icon instead of the success check
 
 ## [0.4.0] - 2026-11-05
 

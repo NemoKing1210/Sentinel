@@ -87,11 +87,6 @@
   color-scheme: dark;
 }
 
-.manual-app.mica {
-  background-color: transparent;
-  background-image: none;
-}
-
 .manual-app.light {
   --focus-inner: #000000;
   --focus-outer: #ffffff;
@@ -143,6 +138,12 @@
   background-color: var(--bg);
   background-image: linear-gradient(180deg, #fbfbfb 0%, #f3f3f3 58%, #eeeeee 100%);
   color-scheme: light;
+}
+
+/* Must follow the theme blocks so both light and dark Mica stay transparent. */
+.manual-app.mica {
+  background-color: transparent;
+  background-image: none;
 }
 
 /* Tone helpers: rows, stats and verdicts read --tone / --tone-soft. */
@@ -930,20 +931,23 @@ h2 {
 .status-text.completed,
 .status-text.harmless,
 .status-text.success,
-.engine-status.success {
+.engine-status.success,
+.engine-status.harmless {
   color: var(--success);
 }
 
 .status-text.failed,
 .status-text.malicious,
 .status-text.danger,
-.engine-status.danger {
+.engine-status.danger,
+.engine-status.malicious {
   color: var(--danger);
 }
 
 .status-text.suspicious,
 .status-text.warning,
-.engine-status.warning {
+.engine-status.warning,
+.engine-status.suspicious {
   color: var(--warning);
 }
 
@@ -3130,11 +3134,11 @@ h2 {
     --card-bg: Canvas;
     --card-stroke: ButtonBorder;
     --control-bg: Canvas;
-    --control-bg-hover: Highlight;
-    --control-bg-pressed: Highlight;
+    --control-bg-hover: Canvas;
+    --control-bg-pressed: Canvas;
     --control-stroke: ButtonBorder;
-    --subtle-hover: Highlight;
-    --subtle-pressed: Highlight;
+    --subtle-hover: Canvas;
+    --subtle-pressed: Canvas;
     --divider: ButtonBorder;
     --text: CanvasText;
     --text-secondary: CanvasText;
