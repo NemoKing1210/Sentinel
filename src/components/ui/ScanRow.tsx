@@ -19,7 +19,7 @@ interface ScanRowProps {
 }
 
 export function ScanRow({ name, kind, tone, meta, summary, extra, actions, status, nativeIcon, onOpen }: ScanRowProps) {
-  const className = ['surface scan-row', `tone-${tone}`, `kind-${kind}`, status ? `status-${status}` : '']
+  const className = ['scan-row', `tone-${tone}`, `kind-${kind}`, status ? `status-${status}` : '']
     .filter(Boolean)
     .join(' ');
 

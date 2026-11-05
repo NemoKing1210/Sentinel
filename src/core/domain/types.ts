@@ -1,5 +1,4 @@
 export type Language = 'en' | 'ru' | 'es' | 'de' | 'fr' | 'pt' | 'zh';
-export type LanguageFlag = 'us' | 'ru' | 'es' | 'de' | 'fr' | 'pt' | 'cn';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type ColorScheme = 'light' | 'dark';
 export type AccentColor = 'system' | 'vt' | 'teal' | 'blue' | 'violet' | 'rose' | 'amber';

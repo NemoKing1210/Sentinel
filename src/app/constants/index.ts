@@ -1,12 +1,4 @@
-import type {
-  AccentColor,
-  AppSettings,
-  ColorScheme,
-  Language,
-  LanguageFlag,
-  LogLevel,
-  ThemeMode,
-} from '@/core/domain/types';
+import type { AccentColor, AppSettings, ColorScheme, Language, LogLevel, ThemeMode } from '@/core/domain/types';
 import { detectPreferredLanguage } from '@/core/i18n/resolveLanguage';
 
 export const VIEWS = ['dashboard', 'queue', 'history', 'settings'] as const;
@@ -14,20 +6,15 @@ export type View = (typeof VIEWS)[number];
 
 export const THEME_MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
-export const LANGUAGES: ReadonlyArray<{ value: Language; label: string; flag: LanguageFlag }> = [
-  { value: 'en', label: 'English', flag: 'us' },
-  { value: 'ru', label: 'Русский', flag: 'ru' },
-  { value: 'es', label: 'Español', flag: 'es' },
-  { value: 'de', label: 'Deutsch', flag: 'de' },
-  { value: 'fr', label: 'Français', flag: 'fr' },
-  { value: 'pt', label: 'Português', flag: 'pt' },
-  { value: 'zh', label: '中文', flag: 'cn' },
+export const LANGUAGES: ReadonlyArray<{ value: Language; label: string }> = [
+  { value: 'en', label: 'English' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'es', label: 'Español' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'fr', label: 'Français' },
+  { value: 'pt', label: 'Português' },
+  { value: 'zh', label: '中文' },
 ];
-
-export const LANGUAGE_FLAG: Record<Language, LanguageFlag> = LANGUAGES.reduce(
-  (acc, language) => ({ ...acc, [language.value]: language.flag }),
-  {} as Record<Language, LanguageFlag>,
-);
 
 export const LOG_LEVELS: LogLevel[] = ['off', 'error', 'warn', 'info', 'debug', 'trace'];
 

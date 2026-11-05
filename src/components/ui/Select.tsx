@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Icon } from './Icon';
 
 export interface SelectOption<T extends string> {
   value: T;
   label: string;
-  prefix?: ReactNode;
 }
 
 interface SelectProps<T extends string> {
@@ -190,10 +189,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel }
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => select(option)}
               >
-                <span className="select-option-label">
-                  {option.prefix ? <span className="select-prefix">{option.prefix}</span> : null}
-                  {option.label}
-                </span>
+                <span className="select-option-label">{option.label}</span>
                 {option.value === value ? <Icon name="check" /> : null}
               </button>
             ))}
@@ -214,10 +210,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel }
         onClick={toggleMenu}
         onKeyDown={onTriggerKeyDown}
       >
-        <span className="select-trigger-label">
-          {selected?.prefix ? <span className="select-prefix">{selected.prefix}</span> : null}
-          {selected?.label ?? ''}
-        </span>
+        <span className="select-trigger-label">{selected?.label ?? ''}</span>
         <Icon name="chevron" />
       </button>
       {menu}

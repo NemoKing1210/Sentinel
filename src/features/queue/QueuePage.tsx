@@ -162,7 +162,7 @@ export function QueuePage({
       ) : filtered.length === 0 ? (
         <EmptyState title={t('queueFilterEmptyTitle')} copy={t('queueFilterEmptyCopy')} />
       ) : (
-        <div className="queue-list">
+        <div className="list-surface surface">
           <AnimatePresence mode="popLayout" initial={false}>
             {filtered.map((item) => (
               <QueueRow

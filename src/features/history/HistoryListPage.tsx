@@ -101,7 +101,7 @@ export function HistoryListPage({
                     ? t('historyYesterday')
                     : dateFormat.format(group.date)}
               </h2>
-              <div className="history-group-rows">
+              <div className="history-group-rows list-surface surface">
                 <AnimatePresence mode="popLayout" initial={false}>
                   {group.reports.map((report) => (
                     <FileReportRow key={report.itemId} report={report} onOpen={onOpen} onRemove={onRemove} />

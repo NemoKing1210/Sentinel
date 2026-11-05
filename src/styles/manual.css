@@ -630,7 +630,7 @@
 }
 
 .settings-screen {
-  gap: 16px;
+  gap: 24px;
 }
 
 /* ---------------------------------------------------------------- *
@@ -836,7 +836,7 @@ h2 {
 .surface {
   background: var(--card-bg);
   border: 1px solid var(--card-stroke);
-  border-radius: var(--radius-surface);
+  border-radius: var(--radius-control);
 }
 
 .empty {
@@ -1379,11 +1379,13 @@ h2 {
 }
 
 .list,
-.queue-list,
-.history-group-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.list-surface {
+  overflow: hidden;
+  padding: 4px 0;
+}
+
+.list-surface > * + * {
+  border-top: 1px solid var(--divider);
 }
 
 /* ---------------------------------------------------------------- *
@@ -1393,14 +1395,14 @@ h2 {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 60px;
-  padding: 8px 8px 8px 12px;
-  border-radius: var(--radius-control);
+  min-height: 64px;
+  padding: 8px 12px;
+  border-radius: 0;
   transition: background-color 0.12s ease;
 }
 
 .scan-row:hover {
-  background: var(--control-bg-hover);
+  background: var(--subtle-hover);
 }
 
 .scan-row-open {
@@ -2104,35 +2106,22 @@ h2 {
   overflow: hidden;
 }
 
-.settings-card-head {
+.settings-section {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px 12px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.settings-card-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: var(--text-secondary);
-}
-
-.settings-card-icon .glyph {
-  width: 20px;
-  height: 20px;
-}
-
-.settings-card-head h3 {
+.settings-section > h2 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
 }
 
-.settings-card-head p {
-  margin: 2px 0 0;
+.settings-section > p {
+  margin: 0;
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 16px;
@@ -2148,8 +2137,8 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 56px;
-  padding: 10px 20px;
+  min-height: 64px;
+  padding: 12px 20px;
   border-top: 1px solid var(--divider);
 }
 
@@ -2601,19 +2590,6 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.select-prefix {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-.flag-icon {
-  width: 20px;
-  height: 14px;
-  flex: 0 0 auto;
-  border-radius: 2px;
 }
 
 .select-menu {
@@ -3128,7 +3104,6 @@ h2 {
     padding: 28px 16px;
   }
 
-  .settings-card-head,
   .settings-row,
   .about-identity,
   .about-copy,
