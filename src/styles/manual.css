@@ -1318,8 +1318,9 @@ h2 {
   align-items: center;
   gap: 6px;
   color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
 .watch-live {
@@ -1795,7 +1796,7 @@ h2 {
   gap: 2px;
 }
 
-.history-report-title h1 {
+.history-report-title h2 {
   margin: 0;
   overflow: hidden;
   font-family: var(--font-display);
@@ -1804,6 +1805,33 @@ h2 {
   line-height: 28px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.report-verdict {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.report-verdict h1 {
+  margin: 0;
+  color: var(--tone, var(--text));
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+}
+
+.report-verdict p {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.report-verdict + .history-report-heading {
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
 }
 
 .history-report-title-link {
@@ -1847,54 +1875,21 @@ h2 {
   height: 20px;
 }
 
-.verdict-icon.danger,
-.history-verdict.danger {
+.verdict-icon.danger {
   --tone: var(--danger);
   --tone-soft: var(--danger-soft);
 }
-.verdict-icon.warning,
-.history-verdict.warning {
+.verdict-icon.warning {
   --tone: var(--warning);
   --tone-soft: var(--warning-soft);
 }
-.verdict-icon.success,
-.history-verdict.success {
+.verdict-icon.success {
   --tone: var(--success);
   --tone-soft: var(--success-soft);
 }
-.verdict-icon.muted,
-.history-verdict.muted {
+.verdict-icon.muted {
   --tone: var(--text-secondary);
   --tone-soft: var(--control-bg);
-}
-
-.history-verdict {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid var(--divider);
-}
-
-.history-verdict > div:first-child {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.history-verdict strong {
-  color: var(--tone, var(--text));
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 28px;
-}
-
-.history-verdict > div:first-child span {
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 16px;
 }
 
 .history-stats-bar {

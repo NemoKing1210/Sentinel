@@ -113,6 +113,16 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
       </div>
 
       <Card className={`history-report-hero kind-${kind} tone-${tone}`}>
+        <div className="report-verdict">
+          <StatusIcon verdict={report.verdict} />
+          <div>
+            <h1>{t(report.verdict)}</h1>
+            <p>
+              {detections} / {total} {t('detections')}
+            </p>
+          </div>
+        </div>
+
         <div className="history-report-heading">
           <span className="history-report-file-icon">
             {nativeIcon ? (
@@ -123,7 +133,7 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
           </span>
           <div className="history-report-title">
             <span className="eyebrow">{t('report')}</span>
-            <h1 title={report.name}>
+            <h2 title={report.name}>
               <a
                 className="history-report-title-link"
                 href={report.vtUrl}
@@ -135,47 +145,34 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
                 {report.name}
                 <Icon name="external" />
               </a>
-            </h1>
+            </h2>
             <small>
               {[report.type, report.size > 0 ? formatSize(report.size) : null, formatDateTime(report.scannedAt)]
                 .filter(Boolean)
                 .join(' · ')}
             </small>
           </div>
-          <StatusIcon verdict={report.verdict} />
         </div>
 
-        <div className={`history-verdict ${tone}`}>
-          <div>
-            <strong>{t(report.verdict)}</strong>
-            <span>
-              {detections} / {total} {t('detections')}
-            </span>
-          </div>
-          <div className="history-stats-bar" aria-hidden={segments.length === 0}>
-            {segments.length === 0 ? (
-              <i className="history-stats-seg empty" />
-            ) : (
-              segments.map((segment) => (
-                <i
-                  key={segment.key}
-                  className={`history-stats-seg ${segment.key}`}
-                  style={{ flexGrow: segment.value }}
-                />
-              ))
-            )}
-          </div>
-          <ul className="history-stats-legend">
-            {segments.map((segment) => (
-              <li key={segment.key}>
-                <i className={`history-stats-dot ${segment.key}`} />
-                <span>
-                  {t(STAT_LABEL[segment.key])} · {segment.value}
-                </span>
-              </li>
-            ))}
-          </ul>
+        <div className="history-stats-bar" aria-hidden={segments.length === 0}>
+          {segments.length === 0 ? (
+            <i className="history-stats-seg empty" />
+          ) : (
+            segments.map((segment) => (
+              <i key={segment.key} className={`history-stats-seg ${segment.key}`} style={{ flexGrow: segment.value }} />
+            ))
+          )}
         </div>
+        <ul className="history-stats-legend">
+          {segments.map((segment) => (
+            <li key={segment.key}>
+              <i className={`history-stats-dot ${segment.key}`} />
+              <span>
+                {t(STAT_LABEL[segment.key])} · {segment.value}
+              </span>
+            </li>
+          ))}
+        </ul>
       </Card>
 
       {hashes.length > 0 ? (
