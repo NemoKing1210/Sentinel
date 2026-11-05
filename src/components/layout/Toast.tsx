@@ -49,7 +49,7 @@ function Toast({ toast, onDismiss }: ToastProps) {
       onBlur={() => setPaused(false)}
     >
       <span className={`toast-icon toast-icon-${tone}`}>
-        <Icon name={toast.icon ?? fallbackIcon} />
+        <Icon name={toast.icon ?? fallbackIcon} size={20} />
       </span>
       <div className="toast-body">
         <strong className="toast-title">{toast.title}</strong>

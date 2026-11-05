@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type DragEvent, type ReactNode } from 'react';
+import { useRef, type DragEvent, type ReactNode } from 'react';
 import { Icon } from './Icon';
 
 interface DropZoneProps {
@@ -11,77 +11,37 @@ interface DropZoneProps {
 export function DropSymbol({ locked }: { locked: boolean }) {
   return (
     <div className="drop-symbol">
-      <span className="drop-lock" aria-hidden="true" />
-      <Icon name={locked ? 'shield' : 'upload'} />
+      <Icon name={locked ? 'shield' : 'upload'} size={24} />
     </div>
   );
 }
 
 export function DropZone({ dragging, setDragging, className = '', children }: DropZoneProps) {
-  const rootRef = useRef<HTMLElement>(null);
   const dragDepthRef = useRef(0);
-  const [dropPosition, setDropPosition] = useState<{ x: number; y: number } | null>(null);
-
-  const trackDropPosition = (event: DragEvent<HTMLElement>) => {
-    const rect = rootRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const next = {
-      x: Math.round(event.clientX - rect.left),
-      y: Math.round(event.clientY - rect.top),
-    };
-    setDropPosition((prev) => (prev && prev.x === next.x && prev.y === next.y ? prev : next));
-  };
-
-  const clearDrag = () => {
-    dragDepthRef.current = 0;
-    setDragging(false);
-    setDropPosition(null);
-  };
 
   return (
     <section
-      ref={rootRef}
-      className={`drop-zone ${className} ${dragging ? 'dragging' : ''} ${dropPosition ? 'targeted' : ''}`}
-      style={
-        {
-          '--drop-x': dropPosition ? `${dropPosition.x}px` : '50%',
-          '--drop-y': dropPosition ? `${dropPosition.y}px` : '42%',
-        } as CSSProperties
-      }
-      onDragEnter={(event) => {
+      className={`drop-zone ${className} ${dragging ? 'dragging' : ''}`}
+      onDragEnter={(event: DragEvent<HTMLElement>) => {
         event.preventDefault();
         dragDepthRef.current += 1;
         setDragging(true);
-        trackDropPosition(event);
       }}
-      onDragOver={(event) => {
+      onDragOver={(event: DragEvent<HTMLElement>) => {
         event.preventDefault();
         setDragging(true);
-        trackDropPosition(event);
       }}
       onDragLeave={() => {
         dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
-        if (dragDepthRef.current === 0) {
-          setDragging(false);
-          setDropPosition(null);
-        }
+        if (dragDepthRef.current === 0) setDragging(false);
       }}
-      onDrop={(event) => {
+      onDrop={(event: DragEvent<HTMLElement>) => {
         // Visual only: file ingest is subscribeToFileDrops so HTML5 + native drop do not double-add.
         event.preventDefault();
-        clearDrag();
+        dragDepthRef.current = 0;
+        setDragging(false);
       }}
     >
-      <div className="drop-field" aria-hidden="true">
-        <span className="drop-well" />
-        <span className="drop-rings" />
-        <span className="drop-shutter" />
-      </div>
-      {dropPosition ? (
-        <span className="drop-cursor-file" style={{ left: dropPosition.x, top: dropPosition.y }}>
-          <Icon name="file" />
-        </span>
-      ) : null}
       {children}
     </section>
   );

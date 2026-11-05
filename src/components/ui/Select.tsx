@@ -28,7 +28,7 @@ interface MenuLayout {
 }
 
 const MENU_GAP = 6;
-const MENU_OPTION_HEIGHT = 42;
+const MENU_OPTION_HEIGHT = 34;
 const MENU_PADDING = 12;
 const MENU_MAX_HEIGHT = 264;
 const MENU_MIN_HEIGHT = 120;

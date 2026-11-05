@@ -29,7 +29,7 @@ export function ScanRow({ name, kind, tone, meta, summary, extra, actions, statu
         {nativeIcon ? (
           <img className="scan-row-native-icon" src={nativeIcon} alt="" />
         ) : (
-          <Icon name={fileIconName(kind)} />
+          <Icon name={fileIconName(kind)} size={20} />
         )}
       </div>
       <div className="scan-row-main">

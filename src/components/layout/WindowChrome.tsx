@@ -1,70 +1,59 @@
 import type { MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import type { View } from '@/app/constants';
 import logo from '@/assets/logo.png';
 import { Icon } from '../ui/Icon';
 
-export interface NavItem {
-  id: View;
-  label: string;
-  icon: string;
-  count?: number;
+function currentWindow() {
+  if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return null;
+  return getCurrentWindow();
 }
 
-export function WindowChrome({ nav, view, setView }: { nav: NavItem[]; view: View; setView: (view: View) => void }) {
-  const nativeWindow = getCurrentWindow();
+export function WindowChrome() {
+  const { t } = useTranslation();
   const isInteractiveTarget = (target: EventTarget | null) =>
     target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [role="button"]'));
-  const startDragging = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.button === 0 && !isInteractiveTarget(event.target)) void nativeWindow.startDragging();
+  const startDragging = (event: MouseEvent<HTMLElement>) => {
+    if (event.button === 0 && !isInteractiveTarget(event.target)) void currentWindow()?.startDragging();
   };
-  const toggleMaximize = (event: MouseEvent<HTMLDivElement>) => {
-    if (!isInteractiveTarget(event.target)) void nativeWindow.toggleMaximize();
+  const toggleMaximize = (event: MouseEvent<HTMLElement>) => {
+    if (!isInteractiveTarget(event.target)) void currentWindow()?.toggleMaximize();
   };
   return (
-    <div className="window-chrome" onMouseDown={startDragging} onDoubleClick={toggleMaximize}>
+    <header className="window-chrome" onMouseDown={startDragging} onDoubleClick={toggleMaximize}>
       <span className="window-title">
-        <img src={logo} alt="" className="window-logo" width={22} height={22} draggable={false} />
-        Sentinel
+        <img src={logo} alt="" className="window-logo" width={16} height={16} draggable={false} />
+        <span>Sentinel</span>
       </span>
-      <nav className="window-nav">
-        {nav.map((item) => (
-          <button
-            type="button"
-            className={view === item.id ? 'nav-link active' : 'nav-link'}
-            key={item.id}
-            onClick={() => setView(item.id)}
-          >
-            <Icon name={item.icon} />
-            <span>{item.label}</span>
-            {item.count ? <b>{item.count}</b> : null}
-          </button>
-        ))}
-      </nav>
       <div className="window-controls">
         <button
+          type="button"
+          className="window-control"
           onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => void nativeWindow.minimize()}
-          aria-label="Minimize"
+          onClick={() => void currentWindow()?.minimize()}
+          aria-label={t('windowMinimize')}
         >
           <Icon name="minimize" />
         </button>
         <button
+          type="button"
+          className="window-control"
           onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => void nativeWindow.toggleMaximize()}
-          aria-label="Maximize"
+          onClick={() => void currentWindow()?.toggleMaximize()}
+          aria-label={t('windowMaximize')}
         >
           <Icon name="maximize" />
         </button>
         <button
+          type="button"
+          className="window-control close"
           onMouseDown={(event) => event.stopPropagation()}
-          className="close"
-          onClick={() => void nativeWindow.close()}
-          aria-label="Close"
+          onClick={() => void currentWindow()?.close()}
+          aria-label={t('windowClose')}
         >
           <Icon name="close" />
         </button>
       </div>
-    </div>
+    </header>
   );
 }

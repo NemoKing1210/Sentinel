@@ -17,6 +17,10 @@
   --radius-control: 4px;
   --radius-surface: 8px;
 
+  /* Two-tone focus visual: black outer ring, white inner ring. */
+  --focus-inner: #ffffff;
+  --focus-outer: #000000;
+
   /* Accent is overridden inline from settings. */
   --accent: #60cdff;
   --accent-strong: #60cdff;
@@ -89,6 +93,8 @@
 }
 
 .manual-app.light {
+  --focus-inner: #000000;
+  --focus-outer: #ffffff;
   --accent: #005fb8;
   --accent-strong: #005fb8;
   --on-accent: #ffffff;
@@ -194,15 +200,47 @@
 .manual-app button:focus-visible,
 .manual-app a:focus-visible,
 .manual-app [role='radio']:focus-visible,
-.manual-app [role='tab']:focus-visible {
-  outline: 2px solid var(--text);
-  outline-offset: 1px;
+.manual-app [role='tab']:focus-visible,
+.manual-app [role='option']:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--focus-outer),
+    0 0 0 3px var(--focus-inner);
 }
 
 .manual-app input:focus,
 .manual-app select:focus,
 .manual-app textarea:focus {
   outline: none;
+}
+
+.tooltip-anchor {
+  display: inline-flex;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 80;
+  padding: 6px 10px;
+  border: 1px solid var(--card-stroke);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  background: var(--flyout-bg);
+  box-shadow: var(--shadow-flyout);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltip-in 100ms cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .manual-app ::-webkit-scrollbar {
@@ -744,59 +782,46 @@ h2 {
   }
 }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 20px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
+.status-text,
+.engine-status {
+  flex: 0 0 auto;
   color: var(--text-secondary);
-  background: var(--control-bg);
   font-size: 12px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 16px;
   white-space: nowrap;
 }
 
-.pill .glyph {
-  width: 12px;
-  height: 12px;
-}
-
-.pill.teal,
-.pill.uploading,
-.pill.scanning {
+.status-text.teal,
+.status-text.uploading,
+.status-text.scanning {
   color: var(--accent);
-  background: var(--accent-soft);
 }
 
-.pill.completed,
-.pill.harmless,
-.pill.success {
+.status-text.completed,
+.status-text.harmless,
+.status-text.success,
+.engine-status.success {
   color: var(--success);
-  background: var(--success-soft);
 }
 
-.pill.failed,
-.pill.malicious,
-.pill.danger {
+.status-text.failed,
+.status-text.malicious,
+.status-text.danger,
+.engine-status.danger {
   color: var(--danger);
-  background: var(--danger-soft);
 }
 
-.pill.suspicious,
-.pill.warning {
+.status-text.suspicious,
+.status-text.warning,
+.engine-status.warning {
   color: var(--warning);
-  background: var(--warning-soft);
 }
 
-.pill.queued,
-.pill.muted,
-.pill.undetected {
+.status-text.queued,
+.status-text.muted,
+.status-text.undetected {
   color: var(--text-secondary);
-  background: var(--control-bg);
 }
 
 /* ---------------------------------------------------------------- *
@@ -1189,6 +1214,7 @@ h2 {
 
 .watch-stat-value {
   font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
   font-size: 28px;
   font-weight: 600;
   line-height: 36px;
@@ -1783,6 +1809,7 @@ h2 {
   padding: 0;
   list-style: none;
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   line-height: 16px;
 }
@@ -2368,8 +2395,10 @@ h2 {
 }
 
 .switch-input:focus-visible + .switch {
-  outline: 2px solid var(--text);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--focus-outer),
+    0 0 0 3px var(--focus-inner);
 }
 
 .switch-field.disabled {
@@ -2420,6 +2449,13 @@ h2 {
 .select-trigger.open {
   border-bottom-color: var(--accent);
   box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.select-trigger.open:focus-visible {
+  box-shadow:
+    inset 0 -1px 0 var(--accent),
+    0 0 0 1px var(--focus-outer),
+    0 0 0 3px var(--focus-inner);
 }
 
 .select-trigger > .glyph {
@@ -2503,7 +2539,7 @@ h2 {
   gap: 8px;
   width: 100%;
   min-height: 32px;
-  padding: 0 8px 0 12px;
+  padding: 0 12px;
   border: 0;
   border-radius: var(--radius-control);
   color: var(--text);
@@ -2994,7 +3030,7 @@ h2 {
     padding-left: 16px;
   }
 
-  .scan-row-actions .pill {
+  .scan-row-actions .status-text {
     display: none;
   }
 }

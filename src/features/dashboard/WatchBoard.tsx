@@ -41,7 +41,7 @@ function WatchScope({ live }: { live: boolean }) {
   return (
     <span className={`watch-scope${live ? ' is-live' : ''}`} aria-hidden="true">
       <span className="watch-scope-sweep" />
-      <Icon name="shield" />
+      <Icon name="shield" size={20} />
     </span>
   );
 }
@@ -113,7 +113,7 @@ function WatchStat({
           {label}
         </span>
         <span className="watch-stat-icon">
-          <Icon name={icon} />
+          <Icon name={icon} size={16} />
         </span>
       </span>
       <strong className="watch-stat-value">{value}</strong>

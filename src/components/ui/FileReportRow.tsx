@@ -33,7 +33,7 @@ export function FileReportRow({ report, onOpen, onRemove }: FileReportRowProps) 
       onOpen={() => onOpen(report)}
       actions={
         <>
-          <span className={`pill ${tone}`}>{t(report.verdict)}</span>
+          <span className={`status-text ${tone}`}>{t(report.verdict)}</span>
           <OpenFolderButton path={report.path} />
           {onRemove ? (
             <button

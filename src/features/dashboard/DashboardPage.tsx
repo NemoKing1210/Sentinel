@@ -51,7 +51,7 @@ export function DashboardPage({
       {!hasApiKey ? (
         <Card className="key-banner">
           <span className="key-banner-icon">
-            <Icon name="key" />
+            <Icon name="key" size={20} />
           </span>
           <div className="key-banner-copy">
             <strong>{t('keyRequired')}</strong>
