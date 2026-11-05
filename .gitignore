@@ -5,3 +5,5 @@ src-tauri/target/
 src-tauri/gen/
 .env
 .DS_Store
+.cursor/
+.superpowers/
