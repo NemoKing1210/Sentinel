@@ -82,11 +82,20 @@ pub fn run() {
             shell::platform_name,
             autostart::get_autostart,
             autostart::set_autostart,
+            watcher::runtime::sync_watch_rules,
+            watcher::runtime::get_watch_statuses,
+            watcher::runtime::drain_watch_spool,
+            watcher::runtime::ack_watch_spool,
             set_close_to_tray,
             chrome::update_tray_state
         ])
         .setup(|app| {
             logging::init(app.handle()).map_err(std::io::Error::other)?;
+            let watch_dir = app
+                .path()
+                .app_data_dir()
+                .unwrap_or_else(|_| std::env::temp_dir());
+            app.manage(watcher::runtime::WatcherState::new(watch_dir));
             if let Err(error) = chrome::install_tray(app.handle()) {
                 logging::write(
                     logging::LogLevel::Warn,
