@@ -166,7 +166,12 @@ export function HistoryReportPage({ report, onBack, onRemove }: HistoryReportPag
               </a>
             </h2>
             <small>
-              {[report.type, report.size > 0 ? formatSize(report.size) : null, formatDateTime(report.scannedAt)]
+              {[
+                report.type,
+                report.watchName ? t('watchSource', { name: report.watchName }) : null,
+                report.size > 0 ? formatSize(report.size) : null,
+                formatDateTime(report.scannedAt),
+              ]
                 .filter(Boolean)
                 .join(' · ')}
             </small>

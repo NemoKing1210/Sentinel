@@ -43,7 +43,8 @@ export function QueueRow({ item, onRunScan, onOpenDetails, onRemove }: QueueRowP
   const sizeLabel = item.size > 0 ? formatSize(item.size) : null;
   const countLabel =
     item.isFolder && item.fileCount !== undefined ? t('queueFileCount', { count: item.fileCount }) : null;
-  const meta = [item.type, sizeLabel, countLabel, relativeTime].filter(Boolean).join(' · ');
+  const sourceLabel = item.watchName ? t('watchSource', { name: item.watchName }) : null;
+  const meta = [item.type, sourceLabel, sizeLabel, countLabel, relativeTime].filter(Boolean).join(' · ');
   const nativeIcon = useFileIcon(item.path);
 
   const extra = isActive ? (
@@ -75,7 +76,11 @@ export function QueueRow({ item, onRunScan, onOpenDetails, onRemove }: QueueRowP
       onOpen={item.status === 'completed' ? () => onOpenDetails(item) : undefined}
       actions={
         <>
-          {item.status === 'completed' && item.verdict ? (
+          {item.status === 'waiting' ? (
+            <span className="status-text waiting" title={t('waitingForLimit')}>
+              {t('waiting')}
+            </span>
+          ) : item.status === 'completed' && item.verdict ? (
             <span className={`status-text ${tone}`}>{t(item.verdict)}</span>
           ) : (
             <span className={`status-text ${isActive ? 'teal' : item.status}`}>{t(item.status)}</span>

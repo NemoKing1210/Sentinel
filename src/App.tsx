@@ -463,7 +463,13 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       const activeItems = items
-        .filter((item) => item.status === 'queued' || item.status === 'uploading' || item.status === 'scanning')
+        .filter(
+          (item) =>
+            item.status === 'queued' ||
+            item.status === 'waiting' ||
+            item.status === 'uploading' ||
+            item.status === 'scanning',
+        )
         .slice(0, 5)
         .map((item) => ({
           id: item.id,
@@ -495,6 +501,7 @@ export default function App() {
         no_recent: t('tray.noRecent'),
         quit: t('tray.quit'),
         status_queued: t('tray.statusQueued'),
+        status_waiting: t('tray.statusWaiting'),
         status_uploading: t('tray.statusUploading'),
         status_scanning: t('tray.statusScanning'),
         verdict_clean: t('tray.verdictClean'),

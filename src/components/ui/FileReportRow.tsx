@@ -19,7 +19,8 @@ export function FileReportRow({ report, onOpen, onRemove }: FileReportRowProps) 
   const kind = report.fileKind ?? detectFileKind(report.name);
   const tone = verdictTone(report.verdict);
   const sizeLabel = report.size > 0 ? formatSize(report.size) : null;
-  const meta = [report.type, sizeLabel, formatDateTime(report.scannedAt)].filter(Boolean).join(' · ');
+  const sourceLabel = report.watchName ? t('watchSource', { name: report.watchName }) : null;
+  const meta = [report.type, sourceLabel, sizeLabel, formatDateTime(report.scannedAt)].filter(Boolean).join(' · ');
   const nativeIcon = useFileIcon(report.path);
 
   return (

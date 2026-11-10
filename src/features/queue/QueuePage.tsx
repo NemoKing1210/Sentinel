@@ -43,6 +43,10 @@ function isRunningItem(item: ScanItem): boolean {
   return item.status === 'uploading' || item.status === 'scanning';
 }
 
+function isActiveItem(item: ScanItem): boolean {
+  return isRunningItem(item) || item.status === 'waiting';
+}
+
 function compareQueueItems(a: ScanItem, b: ScanItem): number {
   const runningDelta = Number(isRunningItem(b)) - Number(isRunningItem(a));
   if (runningDelta !== 0) return runningDelta;
@@ -54,7 +58,7 @@ function compareQueueItems(a: ScanItem, b: ScanItem): number {
 function filterItems(items: ScanItem[], mode: FilterMode): ScanItem[] {
   switch (mode) {
     case 'active':
-      return items.filter(isRunningItem);
+      return items.filter(isActiveItem);
     case 'queued':
       return items.filter((item) => item.status === 'queued');
     case 'completed':
@@ -88,7 +92,7 @@ export function QueuePage({
   const counts = useMemo(
     () => ({
       all: items.length,
-      active: items.filter(isRunningItem).length,
+      active: items.filter(isActiveItem).length,
       queued: items.filter((item) => item.status === 'queued').length,
       completed: items.filter((item) => item.status === 'completed').length,
       failed: items.filter((item) => item.status === 'failed').length,

@@ -255,6 +255,7 @@ export interface TrayMenuLabels {
   no_recent: string;
   quit: string;
   status_queued: string;
+  status_waiting: string;
   status_uploading: string;
   status_scanning: string;
   verdict_clean: string;

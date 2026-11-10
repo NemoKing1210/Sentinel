@@ -47,6 +47,7 @@ pub struct TrayLabels {
     pub no_recent: String,
     pub quit: String,
     pub status_queued: String,
+    pub status_waiting: String,
     pub status_uploading: String,
     pub status_scanning: String,
     pub verdict_clean: String,
@@ -203,6 +204,7 @@ fn truncate_name(name: &str) -> String {
 
 fn status_text(status: &str, progress: u8, labels: &TrayLabels) -> String {
     let base = match status {
+        "waiting" => &labels.status_waiting,
         "uploading" => &labels.status_uploading,
         "scanning" => &labels.status_scanning,
         _ => &labels.status_queued,
@@ -522,5 +524,42 @@ pub fn rebuild_tray_menu<R: Runtime>(app: &AppHandle<R>) {
                 serde_json::json!({ "error": error.to_string() }),
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn labels() -> TrayLabels {
+        TrayLabels {
+            show: "show".into(),
+            dashboard: "dashboard".into(),
+            queue: "queue".into(),
+            queue_count: "queue_count".into(),
+            history: "history".into(),
+            settings: "settings".into(),
+            scan_file: "scan_file".into(),
+            scan_folder: "scan_folder".into(),
+            active_count: "active_count".into(),
+            recent_count: "recent_count".into(),
+            no_active: "no_active".into(),
+            no_recent: "no_recent".into(),
+            quit: "quit".into(),
+            status_queued: "queued".into(),
+            status_waiting: "waiting".into(),
+            status_uploading: "uploading".into(),
+            status_scanning: "scanning".into(),
+            verdict_clean: "clean".into(),
+            verdict_suspicious: "suspicious".into(),
+            verdict_malicious: "malicious".into(),
+            verdict_unknown: "unknown".into(),
+        }
+    }
+
+    #[test]
+    fn waiting_status_uses_its_label() {
+        let labels = labels();
+        assert_eq!(status_text("waiting", 0, &labels), "waiting");
     }
 }
