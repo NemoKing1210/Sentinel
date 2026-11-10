@@ -245,6 +245,10 @@ const zh = {
         title: '需要 API 密钥',
         desc: '请在设置中添加您的 VirusTotal API 密钥以开始扫描。',
       },
+      watchSyncFailed: {
+        title: '无法应用文件夹规则',
+        desc: 'Sentinel 无法更新监视文件夹。请检查路径并重试。',
+      },
       apiKeySaved: {
         title: 'API 密钥已保存',
         desc: '安全存储在您操作系统的钥匙串中。',

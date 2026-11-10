@@ -253,6 +253,10 @@ const es = {
         title: 'Se requiere la clave de API',
         desc: 'Añade tu clave de API de VirusTotal en Ajustes para empezar a analizar.',
       },
+      watchSyncFailed: {
+        title: 'No se pudieron aplicar las reglas de carpetas',
+        desc: 'Sentinel no pudo actualizar las carpetas vigiladas. Comprueba las rutas e inténtalo de nuevo.',
+      },
       apiKeySaved: {
         title: 'Clave de API guardada',
         desc: 'Se guarda de forma segura en el llavero de tu sistema operativo.',

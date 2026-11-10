@@ -39,6 +39,7 @@ export type ToastPreset =
   | 'scanCompleted'
   | 'scanFailed'
   | 'scanNoKey'
+  | 'watchSyncFailed'
   | 'apiKeySaved'
   | 'apiKeySaveFailed'
   | 'apiKeyReadFailed'
@@ -125,6 +126,12 @@ const PRESETS: Record<ToastPreset, PresetDescriptor> = {
     level: 'warn',
     titleKey: 'toast.scanNoKey.title',
     descKey: 'toast.scanNoKey.desc',
+  },
+  watchSyncFailed: {
+    icon: 'alert',
+    level: 'error',
+    titleKey: 'toast.watchSyncFailed.title',
+    descKey: 'toast.watchSyncFailed.desc',
   },
   apiKeySaved: {
     icon: 'key',

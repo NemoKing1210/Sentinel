@@ -251,6 +251,10 @@ const en = {
         title: 'API key required',
         desc: 'Add your VirusTotal API key in Settings to start scanning.',
       },
+      watchSyncFailed: {
+        title: 'Could not apply folder rules',
+        desc: 'Sentinel could not update the watched folders. Check the paths and try again.',
+      },
       apiKeySaved: {
         title: 'API key saved',
         desc: 'Stored securely in your operating system keychain.',

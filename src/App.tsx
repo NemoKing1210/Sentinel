@@ -10,13 +10,17 @@ import { PageTransition } from '@/app/navigation/PageTransition';
 import { ROUTES, isBrowserPath, reportIdFromPath, resolveView } from '@/app/navigation/routes';
 import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import {
+  ackWatchSpool,
   detectPaths,
+  drainWatchSpool,
   getApiKey,
   getAutostart,
   getLogLevel,
   getPendingScanPaths,
   hasSavedApiKey,
   isWindowsPlatform,
+  listenWatchDetected,
+  listenWatchStatus,
   openLogDirectory,
   openExternalUrl,
   pathToItem,
@@ -28,11 +32,12 @@ import {
   setAutostart,
   setLogLevel,
   subscribeToFileDrops,
+  syncWatchRules,
   unregisterContextMenu,
   updateTrayState,
   validateApiKey,
 } from '@/core/native/api';
-import type { AppSettings, LogLevel, ScanItem } from '@/core/domain/types';
+import type { AppSettings, LogLevel, ScanItem, WatchPendingFile, WatchStatus } from '@/core/domain/types';
 import { useAppShortcuts } from '@/app/hooks/useAppShortcuts';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { useNativeTheme } from '@/app/hooks/useNativeTheme';
@@ -51,7 +56,8 @@ import { QueuePage } from '@/features/queue/QueuePage';
 import { HistoryPage } from '@/features/history/HistoryPage';
 import { InternalBrowserPage } from '@/features/history/InternalBrowserPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
-import { hydratePersistedState, subscribePersistence } from '@/core/persistence/store';
+import { hydratePersistedState, flushPersistedState, subscribePersistence } from '@/core/persistence/store';
+import { planWatchIngest } from '@/features/watch/ingestWatch';
 import { applyPersistedWindowState, subscribeWindowState } from '@/core/persistence/windowState';
 import { bindNativeMenu } from '@/core/native/menuBridge';
 import { bindNativeNotifications } from '@/core/native/notificationBridge';
@@ -65,6 +71,10 @@ function keepListener(cancelled: { current: boolean }, assign: (unlisten: () => 
     }
     assign(unlisten);
   };
+}
+
+function statusesById(statuses: WatchStatus[]): Record<string, WatchStatus> {
+  return Object.fromEntries(statuses.map((status) => [status.watchId, status]));
 }
 
 export default function App() {
@@ -84,6 +94,7 @@ export default function App() {
   const clearCompletedItems = useAppStore((state) => state.clearCompletedItems);
   const history = useAppStore((state) => state.history);
   const setSettings = useAppStore((state) => state.setSettings);
+  const hydrated = useAppStore((state) => state.hydrated);
   const { toasts, showToast, dismiss } = useToast();
   const { executeScan, notifyFailed } = useScanRunner();
   const { requestScan, requestAll } = useScanScheduler({ executeScan, notifyFailed });
@@ -109,6 +120,9 @@ export default function App() {
   );
   const scanContextPathsRef = useRef<(paths: string[]) => Promise<void>>(async () => undefined);
   const openNotificationReportRef = useRef<(itemId: string) => void>(() => undefined);
+  const pendingWatchEventsRef = useRef<WatchPendingFile[]>([]);
+  const watchFlushTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const ingestChainRef = useRef<Promise<void>>(Promise.resolve());
 
   const openNotificationReport = useCallback(
     (itemId: string) => {
@@ -119,11 +133,45 @@ export default function App() {
     [navigateToReport],
   );
 
+  const ingestWatchFiles = useCallback(async (files: WatchPendingFile[]) => {
+    if (!files.length) return;
+    const state = useAppStore.getState();
+    const plan = planWatchIngest(files, state.watchedFolders, state.items);
+    if (plan.items.length) state.addItems(plan.items);
+    const saved = await flushPersistedState();
+    if (saved && plan.ackIds.length) {
+      try {
+        await ackWatchSpool(plan.ackIds);
+        logInfo('watch.spool_acked', { ids: plan.ackIds.length });
+      } catch (error) {
+        logError('watch.ack_failed', { error: String(error) });
+      }
+    } else if (!saved) {
+      logWarn('watch.ack_skipped_unsaved', { ids: plan.ackIds.length });
+    }
+    logInfo('watch.ingested', { detected: files.length, created: plan.items.length });
+  }, []);
+
+  const enqueueWatchIngest = useCallback(
+    (files: WatchPendingFile[]) => {
+      ingestChainRef.current = ingestChainRef.current
+        .then(() => ingestWatchFiles(files))
+        .catch((error) => {
+          logError('watch.ingest_failed', { error: String(error) });
+        });
+    },
+    [ingestWatchFiles],
+  );
+
   const addPaths = useCallback(
     async (paths: string[], folder = false) => {
       const valid = paths.filter(Boolean);
       if (!valid.length) return;
-      const newItems = await Promise.all(valid.map((path) => pathToItem(path, folder)));
+      const newItems = (await Promise.all(valid.map((path) => pathToItem(path, folder)))).map((item) => ({
+        ...item,
+        origin: 'manual' as const,
+        autoStart: useAppStore.getState().settings.scanImmediately,
+      }));
       addItems(newItems);
       goToView('queue');
       const preset = folder ? 'folderAdded' : 'filesAdded';
@@ -153,9 +201,11 @@ export default function App() {
       const detected = await detectPaths(valid);
       const files = detected.filter((item) => !item.isFolder).map((item) => item.path);
       const folders = detected.filter((item) => item.isFolder).map((item) => item.path);
+      const toItem = (path: string, isFolder: boolean) =>
+        pathToItem(path, isFolder).then((item) => ({ ...item, origin: 'manual' as const, autoStart: true }));
       const newItems: ScanItem[] = [];
-      if (files.length) newItems.push(...(await Promise.all(files.map((path) => pathToItem(path, false)))));
-      if (folders.length) newItems.push(...(await Promise.all(folders.map((path) => pathToItem(path, true)))));
+      if (files.length) newItems.push(...(await Promise.all(files.map((path) => toItem(path, false)))));
+      if (folders.length) newItems.push(...(await Promise.all(folders.map((path) => toItem(path, true)))));
       if (!newItems.length) return;
       addItems(newItems);
       goToView('queue');
@@ -215,6 +265,8 @@ export default function App() {
     let disposeContextMenu: (() => void) | undefined;
     let disposeWindow: (() => void) | undefined;
     let disposePersistence: (() => void) | undefined;
+    let disposeWatchDetected: (() => void) | undefined;
+    let disposeWatchStatus: (() => void) | undefined;
     void (async () => {
       const persistOk = await hydratePersistedState();
       if (cancelled.current) return;
@@ -239,6 +291,43 @@ export default function App() {
         return;
       }
       useAppStore.getState().setHydrated(true);
+      // Subscribe before syncing/draining: a detection during the drain is a wake-up
+      // signal on top of the durable spool, so nothing is lost across webview reloads.
+      disposeWatchDetected = await listenWatchDetected((file) => {
+        pendingWatchEventsRef.current.push(file);
+        if (watchFlushTimerRef.current) clearTimeout(watchFlushTimerRef.current);
+        watchFlushTimerRef.current = setTimeout(() => {
+          const batch = pendingWatchEventsRef.current.splice(0);
+          if (batch.length) enqueueWatchIngest(batch);
+        }, 200);
+      }).catch((error) => {
+        logWarn('bootstrap.watch_detected_listener_failed', { error: String(error) });
+        return undefined;
+      });
+      disposeWatchStatus = await listenWatchStatus((statuses) => {
+        useAppStore.getState().setWatchStatuses(statusesById(statuses));
+      }).catch((error) => {
+        logWarn('bootstrap.watch_status_listener_failed', { error: String(error) });
+        return undefined;
+      });
+      if (cancelled.current) {
+        disposeWatchDetected?.();
+        disposeWatchStatus?.();
+        return;
+      }
+      try {
+        const statuses = await syncWatchRules(useAppStore.getState().watchedFolders);
+        useAppStore.getState().setWatchStatuses(statusesById(statuses));
+      } catch (error) {
+        logError('watch.sync_failed', { error: String(error) });
+      }
+      if (cancelled.current) return;
+      const spooled = await drainWatchSpool().catch((error) => {
+        logWarn('watch.drain_failed', { error: String(error) });
+        return [] as WatchPendingFile[];
+      });
+      if (cancelled.current) return;
+      if (spooled.length) enqueueWatchIngest(spooled);
       // Bind before draining: a scan requested while the webview was loading must
       // find hydrated state, and an event arriving during the drain must not be lost.
       const contextMenuUnlisten = await bindContextMenuScans({
@@ -314,6 +403,12 @@ export default function App() {
     logInfo('app.started_ui');
     return () => {
       cancelled.current = true;
+      if (watchFlushTimerRef.current) {
+        clearTimeout(watchFlushTimerRef.current);
+        watchFlushTimerRef.current = undefined;
+      }
+      disposeWatchDetected?.();
+      disposeWatchStatus?.();
       disposeDrop?.();
       disposeMenu?.();
       disposeNotifications?.();
@@ -321,7 +416,33 @@ export default function App() {
       disposeWindow?.();
       disposePersistence?.();
     };
-  }, [revealWindow]);
+  }, [enqueueWatchIngest, revealWindow]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    // Bootstrap already synced the hydrated rules; only later edits need a push.
+    let previous = useAppStore.getState().watchedFolders;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = useAppStore.subscribe((state) => {
+      if (state.watchedFolders === previous) return;
+      previous = state.watchedFolders;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void syncWatchRules(state.watchedFolders)
+          .then((statuses) => {
+            useAppStore.getState().setWatchStatuses(statusesById(statuses));
+          })
+          .catch((error) => {
+            logError('watch.sync_failed', { error: String(error) });
+            showToast(describePreset('watchSyncFailed', t));
+          });
+      }, 300);
+    });
+    return () => {
+      unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, [hydrated, showToast, t]);
 
   useEffect(() => {
     const main = mainRef.current;

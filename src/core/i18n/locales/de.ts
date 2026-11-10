@@ -254,6 +254,10 @@ const de = {
         title: 'API-Schlüssel erforderlich',
         desc: 'Fügen Sie in den Einstellungen Ihren VirusTotal-API-Schlüssel hinzu.',
       },
+      watchSyncFailed: {
+        title: 'Ordnerregeln konnten nicht angewendet werden',
+        desc: 'Sentinel konnte die überwachten Ordner nicht aktualisieren. Prüfe die Pfade und versuche es erneut.',
+      },
       apiKeySaved: {
         title: 'API-Schlüssel gespeichert',
         desc: 'Wird sicher im Schlüsselbund Ihres Betriebssystems gespeichert.',

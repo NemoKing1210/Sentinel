@@ -253,6 +253,10 @@ const pt = {
         title: 'Chave de API necessária',
         desc: 'Adicione sua chave de API do VirusTotal nas Configurações para analisar.',
       },
+      watchSyncFailed: {
+        title: 'Não foi possível aplicar as regras das pastas',
+        desc: 'O Sentinel não conseguiu atualizar as pastas monitorizadas. Verifique os caminhos e tente novamente.',
+      },
       apiKeySaved: {
         title: 'Chave de API salva',
         desc: 'Armazenada com segurança no chaveiro do seu sistema operacional.',

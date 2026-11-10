@@ -254,6 +254,10 @@ const fr = {
         title: 'Clé API requise',
         desc: 'Ajoutez votre clé API VirusTotal dans les Paramètres pour analyser.',
       },
+      watchSyncFailed: {
+        title: 'Impossible d’appliquer les règles des dossiers',
+        desc: 'Sentinel n’a pas pu mettre à jour les dossiers surveillés. Vérifiez les chemins et réessayez.',
+      },
       apiKeySaved: {
         title: 'Clé API enregistrée',
         desc: 'Stockée en toute sécurité dans le trousseau de votre système.',
