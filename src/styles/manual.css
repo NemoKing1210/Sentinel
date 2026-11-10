@@ -3382,3 +3382,121 @@ h2 {
   color: var(--danger);
   font-size: 13px;
 }
+
+.watch-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--card-stroke);
+  border-radius: var(--radius-surface);
+  background: var(--card-bg);
+}
+
+.watch-editor h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.watch-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.watch-field-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.watch-editor-path {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.watch-extensions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ext-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-control);
+  background: var(--control-bg);
+  cursor: text;
+}
+
+.ext-chip-list:focus-within {
+  border-color: var(--accent);
+}
+
+.ext-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.ext-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ext-chip-remove:hover {
+  background: var(--subtle-hover);
+}
+
+.ext-chip-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 2px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.ext-chip-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.watch-advanced summary {
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.watch-advanced[open] summary {
+  margin-bottom: 10px;
+}
+
+.watch-editor-actions {
+  display: flex;
+  gap: 8px;
+}

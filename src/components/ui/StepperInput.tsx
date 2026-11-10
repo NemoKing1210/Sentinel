@@ -61,7 +61,7 @@ export function StepperInput({
           aria-label={ariaLabel}
           onChange={(event) => {
             const raw = event.target.value;
-            if (raw !== '' && !/^\d{1,2}$/.test(raw)) return;
+            if (raw !== '' && !/^\d{1,5}$/.test(raw)) return;
             setText(raw);
           }}
           onBlur={() => commit(text)}

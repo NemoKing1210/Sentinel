@@ -33,6 +33,17 @@ export function parseExtensionInput(raw: string): string[] {
   return normalizeExtensionList(raw.split(/[,\s]+/));
 }
 
+const BYTES_PER_MEGABYTE = 1024 * 1024;
+
+export function sizeMegabytesToBytes(megabytes: number): number {
+  return megabytes * BYTES_PER_MEGABYTE;
+}
+
+/** Converts a byte limit to the whole megabytes shown in the editor, never below 1. */
+export function bytesToSizeMegabytes(bytes: number): number {
+  return Math.max(1, Math.round(bytes / BYTES_PER_MEGABYTE));
+}
+
 export function isOverlappingPath(a: string, b: string): boolean {
   return watchPathsOverlap(a, b);
 }

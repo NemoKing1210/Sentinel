@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { TFunction } from 'i18next';
 import {
+  bytesToSizeMegabytes,
   createWatchRule,
   isOverlappingPath,
   normalizeExtensionList,
   parseExtensionInput,
   shouldNotifyWatch,
+  sizeMegabytesToBytes,
   validateWatchDraft,
   watchRuleSummary,
 } from './watchRules.ts';
@@ -41,6 +43,13 @@ test('parses and normalizes extension input', () => {
   assert.deepEqual(normalizeExtensionList(['.TXT', 'txt', 'mp4']), ['txt', 'mp4']);
   assert.equal(isOverlappingPath('C:\\Root', 'c:/root/sub'), true);
   assert.equal(isOverlappingPath('C:\\Root', 'C:\\Root2'), false);
+});
+
+test('converts the size limit between megabytes and bytes', () => {
+  assert.equal(sizeMegabytesToBytes(650), 681574400);
+  assert.equal(sizeMegabytesToBytes(1), 1048576);
+  assert.equal(bytesToSizeMegabytes(681574400), 650);
+  assert.equal(bytesToSizeMegabytes(1), 1);
 });
 
 test('summarizes a rule', () => {

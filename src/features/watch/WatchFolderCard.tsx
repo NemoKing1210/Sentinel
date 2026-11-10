@@ -22,6 +22,7 @@ interface WatchFolderCardProps {
   activeCount: number;
   lastScan?: string;
   onToggle: (enabled: boolean) => void;
+  onEdit: () => void;
   onOpenFolder: () => void;
   onRemove: () => void;
 }
@@ -32,6 +33,7 @@ export function WatchFolderCard({
   activeCount,
   lastScan,
   onToggle,
+  onEdit,
   onOpenFolder,
   onRemove,
 }: WatchFolderCardProps) {
@@ -68,6 +70,9 @@ export function WatchFolderCard({
         {lastScan ? <span>{t('watchLastScan', { time: formatRelativeTime(lastScan) })}</span> : null}
       </div>
       <div className="watch-actions">
+        <Button variant="quiet" icon="tune" onClick={onEdit}>
+          {t('watchEdit')}
+        </Button>
         <Button variant="outline" icon="folder" onClick={onOpenFolder}>
           {t('watchOpenFolder')}
         </Button>
