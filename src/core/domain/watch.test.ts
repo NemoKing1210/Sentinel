@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { normalizeExtension, sanitizeWatchedFolders, watchPathsOverlap } from './watch.ts';
+import { normalizeExtension, sanitizeWatchedFolders, watchFolderName, watchPathsOverlap } from './watch.ts';
 
 test('normalizes extensions to lowercase without a leading dot', () => {
   assert.equal(normalizeExtension('.TXT'), 'txt');
@@ -23,6 +23,12 @@ test('sanitizes rules and applies defaults', () => {
 test('detects nested and case-insensitive paths', () => {
   assert.equal(watchPathsOverlap('C:\\Root', 'c:/root/sub'), true);
   assert.equal(watchPathsOverlap('C:\\Root', 'C:\\Root2'), false);
+});
+
+test('extracts a folder display name', () => {
+  assert.equal(watchFolderName('C:\\Users\\me\\Downloads\\'), 'Downloads');
+  assert.equal(watchFolderName('C:\\'), 'C:\\');
+  assert.equal(watchFolderName('\\\\server\\share\\inbox'), 'inbox');
 });
 
 test('drops rules without id or path and duplicates ids', () => {

@@ -106,6 +106,16 @@ export function watchPathsOverlap(a: string, b: string): boolean {
   return true;
 }
 
+/** Display name for a watched folder: its last segment, keeping a drive root intact. */
+export function watchFolderName(path: string): string {
+  const trimmed = path.replace(/[\\/]+$/, '');
+  const parts = trimmed.split(/[\\/]/).filter(Boolean);
+  if (parts.length === 0) return path;
+  const [first] = parts;
+  if (parts.length === 1 && /^[A-Za-z]:$/.test(first)) return `${first}\\`;
+  return parts[parts.length - 1];
+}
+
 /** Restores persisted rules, dropping invalid, duplicate and overlapping records. */
 export function sanitizeWatchedFolders(value: unknown): WatchRule[] {
   if (!Array.isArray(value)) return [];
