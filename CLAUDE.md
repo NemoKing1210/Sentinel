@@ -46,8 +46,10 @@ src/core/state/store.ts    Zustand
 src/core/i18n/index.ts     i18next init; locales in src/core/i18n/locales/
 src/core/persistence/      state.json hydrate/save
 src/features/<name>/       one screen; kebab-case dirs
+src/features/watch/        watched folders screen, rule editor, ingest plan
 src-tauri/src/lib.rs       command registration
 src-tauri/src/commands.rs  keychain, VT, path metadata
+src-tauri/src/watcher/     notify watcher, per-folder rules, durable spool/index
 src-tauri/src/persistence.rs  logging.rs  chrome.rs
 ```
 
@@ -74,7 +76,9 @@ Features must not import other features.
 - `NavigationPane` is a fixed 320 px WinUI pane; it cannot be collapsed. Keyboard index math lives in `app/utils/navigation.ts`.
 - New Tauri commands: implement in the matching Rust module → register in `lib.rs` → wrap in `api.ts` → call from a hook/`App.tsx`. Visual components never `invoke`.
 - Scan: absolute paths → `pathToItem` → `submit_file` or `submit_archive` (folder → ZIP) → poll `get_analysis_status`. File cap 650 MB; ≤32 MB uses `/files`, larger uses `/files/upload_url`.
-- `settings.pollInterval` is persisted in Settings; `scanPath` currently polls every **5s**. Wire it through if you change polling.
+- `settings.pollInterval` is persisted in Settings and used by `pollScanPath`.
+- Watched folders: the Rust `notify` watcher writes detections to a durable spool (`watch-pending.json`); the webview drains it, adds queue items, persists, and only then acks the ids. Rules are per folder (extensions, depth, size, hidden/temp, settle, missed-while-closed, notifications). Existing files are indexed, not scanned.
+- `useScanScheduler` is the only path that starts scans: manual before watched, `scanConcurrency` 1–4 and `scanDelaySeconds` 0–120 from Settings, 429 → `waiting` with `retryAt` and up to 3 retries that resume the stored analysis instead of re-uploading.
 - `settings.reportOpenTarget` (`internal` | `external`) controls "Open VirusTotal report". Internal opens `/history/:reportId/browser`, where React draws the toolbar and `src-tauri/src/browser.rs` positions a native child webview over the placeholder.
 - API key: OS keychain only. `sanitizeSettings` writes `hasApiKey: false` to `state.json`. Never log the key.
 

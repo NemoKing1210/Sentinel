@@ -13,7 +13,7 @@ Typical user loop:
 3. `useScanRunner` uploads, polls, and writes a `FileReport`.
 4. Queue shows live status; History keeps completed reports.
 
-UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.8.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
+UI languages: English and Russian. Identifier: `dev.sentinel.scanner`. Version: `0.9.0`. Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing1210/Sentinel](https://github.com/NemoKing1210/Sentinel).
 
@@ -29,6 +29,7 @@ Maintainer: [NemoKing](https://github.com/NemoKing1210). Repository: [NemoKing12
 | Native   | Rust 2021, Tauri 2, plugins: dialog, opener, single-instance, tray                                       |
 | Browser  | Native child webview (`tauri` `unstable` feature) positioned over the app shell for VirusTotal reports   |
 | HTTP     | `reqwest` (rustls) to `https://www.virustotal.com/api/v3`                                                |
+| Watcher  | `notify` 8 (recursive OS filesystem events), `walkdir` for baseline scans                                |
 | Secrets  | `keyring` service `sentinel-virustotal`, account `api-key`                                               |
 
 Path alias `@/*` → `src/*` (`tsconfig.json`, `vite.config.ts`). Vite dev server is port **1421** (`strictPort: true`).
@@ -60,8 +61,9 @@ src/
     logging/               Frontend log helpers → native log_event
   features/
     dashboard/             DashboardPage
-    queue/                 QueuePage, QueueRow, useScanRunner
+    queue/                 QueuePage, QueueRow, useScanRunner, useScanScheduler, scanScheduler
     history/               HistoryPage, HistoryListPage, HistoryReportPage, InternalBrowserPage, historyQuery
+    watch/                 WatchPage, WatchFolderCard, WatchRuleEditor, ingestWatch
     settings/              SettingsPage
   styles/
     global.css             Visual primitives
@@ -69,7 +71,8 @@ src/
 src-tauri/src/
   main.rs                  Thin entry: sentinel_lib::run()
   lib.rs                   Plugins, command table, tray close, setup
-  commands.rs              Keychain, VT upload/poll, path metadata, URLs
+  commands.rs              Keychain, VT upload/poll (typed ScanCommandError), path metadata, URLs
+  watcher/                 notify watcher: rules + validation, durable spool/index, runtime + commands
   browser.rs               Embedded report browser (child webview lifecycle, bounds, navigation)
   persistence.rs           state.json in app data dir (version 1)
   logging.rs               Daily JSON logs, rotation, level config
@@ -106,9 +109,10 @@ Feature modules must not import other features. When a screen outgrows one file,
 - Window bounds restore/subscribe
 - Tray menu binding and in-app keyboard shortcuts
 - Drag-and-drop via `subscribeToFileDrops`
-- Route table (`react-router-dom` HashRouter): `/dashboard`, `/queue`, `/history`, `/history/:reportId`, `/history/:reportId/browser`, `/settings`
+- Route table (`react-router-dom` HashRouter): `/dashboard`, `/queue`, `/watch`, `/history`, `/history/:reportId`, `/history/:reportId/browser`, `/settings`
 - Toast host
-- Scan runner (`useScanRunner`)
+- Scan runner (`useScanRunner`) and the global scheduler (`useScanScheduler`)
+- Watched-folder sync, spool drain, and event listeners
 
 Pages receive props, render store state, and navigate through `useAppNavigate()`. I/O stays in `core/native`, `core/persistence`, and feature hooks/services.
 
@@ -122,6 +126,8 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `submit_file`                                                                                | Hash SHA-256, upload (direct `/files` if ≤ 32 MB, else `/files/upload_url`), cap **650 MB** |
 | `submit_archive`                                                                             | Walk folder, ZIP to tempfile, then `submit_file`                                            |
 | `get_analysis_status`                                                                        | `GET /analyses/{id}`                                                                        |
+| `sync_watch_rules` / `get_watch_statuses`                                                    | Apply per-folder watcher rules; report `watching` / `indexing` / `missing` / `error`        |
+| `drain_watch_spool` / `ack_watch_spool`                                                      | Read durable detections; delete them only after the queue is persisted                      |
 | `get_path_metadata`                                                                          | Size, file count, mtime, `is_dir`                                                           |
 | `file_exists` / `open_folder_containing`                                                     | Check the original path and reveal it in Explorer / the file manager                        |
 | `get_file_icon`                                                                              | Windows shell icon for a path (PNG data URL); other platforms return `None`                 |
@@ -137,17 +143,26 @@ Registered in `src-tauri/src/lib.rs`. Add new commands there **and** expose them
 | `get_window_backdrop`                                                                        | Windows build number → whether Mica is available (Windows 11 build ≥ 22000)                 |
 | `get_system_accent`                                                                          | Windows system accent as `#rrggbb` (`UISettings`, DWM registry fallback)                    |
 
-Native commands return `Result<T, String>` (or a typed error converted at the boundary). They must not panic on user-controlled input.
+Native commands return `Result<T, String>` (or a typed error converted at the boundary). They must not panic on user-controlled input. Scan commands return `ScanCommandError` (`code`, `message`, optional `retryAfterSecs`) so the scheduler can distinguish `rate_limited`, `too_large`, `missing`, and `rejected`.
+
+Watcher events: `watch:file-detected` wakes the webview to drain the spool, and `watch:status` updates per-folder status. Events are hints; the spool is the source of truth.
 
 ### Scan pipeline
 
-1. UI collects **absolute paths** (`pickFiles`, `pickFolder`, `pickPath`, or drop).
-2. `pathToItem` builds a `ScanItem` (metadata from `get_path_metadata`).
-3. `useScanRunner.runScan` requires `settings.hasApiKey`; otherwise it switches to Settings.
-4. `scanPath` calls `submit_file` or `submit_archive`, then polls `get_analysis_status` until `completed` / `failed` or 60 attempts.
-5. Polling in `scanPath` currently uses a **5 second** delay. `settings.pollInterval` is persisted and edited in Settings; wire it through if you change polling.
-6. Result becomes `FileReport` (verdict from `stats.malicious` / `stats.suspicious`) and is stored in `history`.
-7. Completion notifies: toast with a "View report" action when the window is focused, otherwise a native notification (`notify_scan_result`). Clicking the native notification emits `native:notification`, which `notificationBridge.ts` routes to the report page. Gate on `settings.notificationsEnabled` / `notifyOnCompleted` / `notifyOnFailed`.
+1. UI collects **absolute paths** (`pickFiles`, `pickFolder`, `pickPath`, or drop) and `pathToItem` builds a `ScanItem` (metadata from `get_path_metadata`). Watched files enter through `ingestWatch.planWatchIngest` with `origin: 'watch'`, `autoStart: true`, and `watchId` / `watchName`.
+2. `useScanScheduler` is the only place a scan starts. It picks queued `autoStart` items (manual first, then oldest), enforces `settings.scanConcurrency` and `settings.scanDelaySeconds`, and calls `useScanRunner.executeScan`. Starting the whole queue sets `autoStart` and wakes the scheduler.
+3. `executeScan` requires `settings.hasApiKey`; otherwise it switches to Settings. It calls `submitScanPath` (`submit_file` or `submit_archive`), stores `analysisId` + `sha256`, then `pollScanPath` (`get_analysis_status`) with `settings.pollInterval`.
+4. On `rate_limited` with retries left, the item becomes `waiting` with an ISO `retryAt` (Retry-After or 30/60/120 s backoff) and the global scheduler pauses. The stored `analysisId` is kept, so the retry resumes polling instead of re-uploading.
+5. Result becomes `FileReport` (verdict from `stats.malicious` / `stats.suspicious`, plus `watchId` / `watchName`) and is stored in `history`.
+6. Completion notifies: toast with a "View report" action when the window is focused, otherwise a native notification (`notify_scan_result`). Clicking the native notification emits `native:notification`, which `notificationBridge.ts` routes to the report page. Gate on `settings.notificationsEnabled` / `notifyOnCompleted` / `notifyOnFailed`; watched-folder results additionally obey the folder's `notify` mode.
+
+### Watched folders
+
+- Rust (`src-tauri/src/watcher/`) owns detection. `notify` reports candidate paths; each waits `settleMs`, rechecks size/mtime, then writes to the durable `watch-pending.json` spool. Duplicate detections are filtered by normalized path + size + mtime.
+- `watch-index.json` stores a baseline tree per folder. Adding a folder records the baseline without scanning existing files; when the root path changes, the old index is discarded. `scanMissedWhileClosed` diffs the tree against the baseline at startup.
+- The webview drains the spool (`drain_watch_spool`), dedupes against active items, adds and persists queue items, then calls `ack_watch_spool` with the drained ids. Never ack before the queue is saved, or a killed webview loses detections.
+- Rules are validated and clamped natively (`watcher/rules.rs`): at most 32 folders, no overlapping roots, depth ≤ 64, max file 650 MB, settle 500–10 000 ms.
+- `App.tsx` debounces `sync_watch_rules` after Settings/watch-rule changes; a failed sync shows the `watchSyncFailed` toast.
 
 ### Navigation
 

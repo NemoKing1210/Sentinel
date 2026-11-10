@@ -5,6 +5,18 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-11-11
+
+### Added
+
+- Watched folders: add a folder and Sentinel checks every new file automatically; files already present are indexed, not scanned
+- Per-folder rules for included or excluded extensions, depth, maximum size, hidden and temporary files, settle delay, notifications, and whether files added while Sentinel was closed are checked
+- Durable detection spool that survives restarts and is acknowledged only after the queue is persisted
+- Global scan scheduler with 1–4 simultaneous scans and a 0–120 second delay between uploads, configurable in Settings
+- HTTP 429 handling that moves a scan to “Waiting” and retries with the server’s Retry-After, resuming polling instead of uploading again
+- Watched-folder source shown in the queue, in history, and in the tray status
+- Watched folders screen with folder status, queue counts, and a per-folder rule editor
+
 ## [0.8.0] - 2026-11-10
 
 ### Added

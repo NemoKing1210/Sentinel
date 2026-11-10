@@ -154,6 +154,7 @@ impl WatchIndex {
             .unwrap_or(false)
     }
 
+    #[cfg(test)]
     pub fn entry(&self, watch_id: &str, path: &str) -> Option<&IndexEntry> {
         self.folders.get(watch_id)?.files.get(&normalize_key(path))
     }
