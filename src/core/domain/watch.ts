@@ -1,4 +1,4 @@
-import type { WatchNotifyMode, WatchRule } from './types';
+import type { Verdict, WatchNotifyMode, WatchRule } from './types';
 
 export const WATCH_MAX_FOLDERS = 32;
 export const WATCH_MAX_SIZE_BYTES = 681_574_400;
@@ -104,6 +104,13 @@ export function watchPathsOverlap(a: string, b: string): boolean {
     if (left[index] !== right[index]) return false;
   }
   return true;
+}
+
+/** Whether a completed scan should raise a notification under the folder's rule. */
+export function shouldNotifyWatch(rule: WatchRule, verdict: Verdict): boolean {
+  if (rule.notify === 'none') return false;
+  if (rule.notify === 'all') return true;
+  return verdict === 'malicious' || verdict === 'suspicious';
 }
 
 /** Display name for a watched folder: its last segment, keeping a drive root intact. */

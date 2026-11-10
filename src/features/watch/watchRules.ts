@@ -1,12 +1,15 @@
 import type { TFunction } from 'i18next';
-import type { Verdict, WatchRule } from '../../core/domain/types';
+import type { WatchRule } from '../../core/domain/types';
 import {
   DEFAULT_WATCH_RULE,
   normalizeExtension,
+  shouldNotifyWatch,
   WATCH_MAX_SIZE_BYTES,
   watchPathsOverlap,
 } from '../../core/domain/watch.ts';
 import { formatSize } from '../../app/utils/format.ts';
+
+export { shouldNotifyWatch };
 
 export type WatchRuleErrorKey =
   'watchErrorPathMissing' | 'watchErrorDuplicate' | 'watchErrorOverlap' | 'watchErrorSize' | 'watchErrorDepth';
@@ -51,12 +54,6 @@ export function validateWatchDraft(rule: WatchRule, others: WatchRule[]): WatchR
     return 'watchErrorSize';
   }
   return null;
-}
-
-export function shouldNotifyWatch(rule: WatchRule, verdict: Verdict): boolean {
-  if (rule.notify === 'none') return false;
-  if (rule.notify === 'all') return true;
-  return verdict === 'malicious' || verdict === 'suspicious';
 }
 
 export function watchRuleSummary(rule: WatchRule, t: TFunction): string[] {

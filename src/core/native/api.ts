@@ -6,9 +6,11 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { ask, open } from '@tauri-apps/plugin-dialog';
 import type {
   EngineCategory,
+  EngineResult,
   FileReport,
   LogLevel,
   ScanItem,
+  Verdict,
   WatchPendingFile,
   WatchRule,
   WatchStatus,
@@ -23,10 +25,10 @@ import {
   pollAttempts,
   pollProgress,
 } from '@/app/utils/scanPolling';
-import { toScanError } from './scanError';
+import { ScanError, toScanError } from './scanError';
 
 const isTauri = Boolean((window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
-const bytes = (value: number) => value;
+const DEMO_SHA256 = 'a7f3c1d9e40b7d3f5c8a92f11b9a2e6c1d4f8a73c9e2b1d6f0a4c8e9b2d7f1a';
 
 function normalizeSelection(selection: string | string[] | null): string[] {
   if (!selection) return [];
@@ -391,90 +393,38 @@ function toEngineCategory(value: unknown): EngineCategory {
   return typeof value === 'string' && ENGINE_CATEGORIES.has(value) ? (value as EngineCategory) : 'failure';
 }
 
-export async function scanPath(
-  path: string,
-  isFolder = false,
-  options: ScanProgress = {},
-): Promise<{ analysisId: string; report: FileReport }> {
-  if (isTauri) {
-    let upload: { analysis_id: string; sha256: string };
-    try {
-      upload = await (isFolder
-        ? invoke<{ analysis_id: string; sha256: string }>('submit_archive', { paths: [path] })
-        : invoke<{ analysis_id: string; sha256: string }>('submit_file', { path }));
-    } catch (error) {
-      throw toScanError(error);
-    }
-    options.onProgress?.(35);
-    const intervalMs = Math.min(
-      MAX_POLL_INTERVAL_MS,
-      Math.max(MIN_POLL_INTERVAL_MS, options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS),
-    );
-    const attempts = pollAttempts(intervalMs, options.timeoutMs ?? DEFAULT_SCAN_TIMEOUT_MS);
-    let analysis: AnalysisResponse | null = null;
-    let phase: ReturnType<typeof analysisPhase> = 'pending';
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      try {
-        analysis = await invoke<AnalysisResponse>('get_analysis_status', { analysisId: upload.analysis_id });
-      } catch (error) {
-        throw toScanError(error);
-      }
-      phase = analysisPhase(analysis?.data?.attributes?.status);
-      if (phase === 'completed') break;
-      if (phase === 'failed') throw new Error('VirusTotal analysis failed');
-      options.onProgress?.(pollProgress(attempt, attempts));
-      if (attempt < attempts - 1) {
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      }
-    }
-    if (phase !== 'completed') {
-      throw new Error('VirusTotal analysis timed out');
-    }
-    const attrs = analysis?.data?.attributes ?? {};
-    const stats = attrs.stats ?? {};
-    const results = Object.values(attrs.results ?? {});
-    const report: FileReport = {
-      itemId: upload.analysis_id,
-      name: path.split(/[\\/]/).pop() || 'upload',
-      path,
-      size: 0,
-      type: isFolder ? 'application/zip' : 'application/octet-stream',
-      sha256: upload.sha256,
-      sha1: '',
-      md5: '',
-      verdict: (stats.malicious ?? 0) > 0 ? 'malicious' : (stats.suspicious ?? 0) > 0 ? 'suspicious' : 'clean',
-      stats: {
-        malicious: stats.malicious || 0,
-        suspicious: stats.suspicious || 0,
-        undetected: stats.undetected || 0,
-        harmless: stats.harmless || 0,
-      },
-      engines: results.map((result) => ({
-        name: result.engine_name || 'Unknown',
-        category: toEngineCategory(result.category),
-        result: result.result || null,
-        update: result.engine_update || '',
-      })),
-      vtUrl: `https://www.virustotal.com/gui/file/${upload.sha256}/detection`,
-      scannedAt: new Date().toISOString(),
-    };
-    return { analysisId: upload.analysis_id, report };
+export interface ScanSubmitResult {
+  analysisId: string;
+  sha256: string;
+}
+
+export interface ScanPollResult {
+  stats: FileReport['stats'];
+  engines: EngineResult[];
+  verdict: Verdict;
+}
+
+/** Uploads the file or folder archive to VirusTotal and returns the analysis id to poll. */
+export async function submitScanPath(path: string, isFolder = false): Promise<ScanSubmitResult> {
+  if (!isTauri) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return { analysisId: crypto.randomUUID(), sha256: DEMO_SHA256 };
   }
-  await new Promise((resolve) => setTimeout(resolve, 900));
-  const id = crypto.randomUUID();
-  const hash = 'a7f3c1d9e40b7d3f5c8a92f11b9a2e6c1d4f8a73c9e2b1d6f0a4c8e9b2d7f1a';
-  return {
-    analysisId: id,
-    report: {
-      itemId: id,
-      name: path.split(/[\\/]/).pop() || 'sample.bin',
-      path,
-      size: bytes(348160),
-      type: 'application/octet-stream',
-      sha256: hash,
-      sha1: hash.slice(0, 40),
-      md5: hash.slice(0, 32),
-      verdict: 'clean',
+  try {
+    const upload = await (isFolder
+      ? invoke<{ analysis_id: string; sha256: string }>('submit_archive', { paths: [path] })
+      : invoke<{ analysis_id: string; sha256: string }>('submit_file', { path }));
+    return { analysisId: upload.analysis_id, sha256: upload.sha256 };
+  } catch (error) {
+    throw toScanError(error);
+  }
+}
+
+/** Polls an analysis until VirusTotal finishes, resuming after a restart when only this phase is left. */
+export async function pollScanPath(analysisId: string, options: ScanProgress = {}): Promise<ScanPollResult> {
+  if (!isTauri) {
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    return {
       stats: { malicious: 0, suspicious: 0, undetected: 4, harmless: 67 },
       engines: ['Microsoft', 'Kaspersky', 'BitDefender', 'ESET', 'Avast'].map((name) => ({
         name,
@@ -482,9 +432,50 @@ export async function scanPath(
         result: null,
         update: '2026-08-16',
       })),
-      vtUrl: `https://www.virustotal.com/gui/file/${hash}/detection`,
-      scannedAt: new Date().toISOString(),
+      verdict: 'clean',
+    };
+  }
+  const intervalMs = Math.min(
+    MAX_POLL_INTERVAL_MS,
+    Math.max(MIN_POLL_INTERVAL_MS, options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS),
+  );
+  const attempts = pollAttempts(intervalMs, options.timeoutMs ?? DEFAULT_SCAN_TIMEOUT_MS);
+  let analysis: AnalysisResponse | null = null;
+  let phase: ReturnType<typeof analysisPhase> = 'pending';
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      analysis = await invoke<AnalysisResponse>('get_analysis_status', { analysisId });
+    } catch (error) {
+      throw toScanError(error);
+    }
+    phase = analysisPhase(analysis?.data?.attributes?.status);
+    if (phase === 'completed') break;
+    if (phase === 'failed') throw new ScanError('rejected', 'VirusTotal analysis failed');
+    options.onProgress?.(pollProgress(attempt, attempts));
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+  }
+  if (phase !== 'completed') {
+    throw new ScanError('other', 'VirusTotal analysis timed out');
+  }
+  const attrs = analysis?.data?.attributes ?? {};
+  const stats = attrs.stats ?? {};
+  const results = Object.values(attrs.results ?? {});
+  return {
+    stats: {
+      malicious: stats.malicious || 0,
+      suspicious: stats.suspicious || 0,
+      undetected: stats.undetected || 0,
+      harmless: stats.harmless || 0,
     },
+    engines: results.map((result) => ({
+      name: result.engine_name || 'Unknown',
+      category: toEngineCategory(result.category),
+      result: result.result || null,
+      update: result.engine_update || '',
+    })),
+    verdict: (stats.malicious ?? 0) > 0 ? 'malicious' : (stats.suspicious ?? 0) > 0 ? 'suspicious' : 'clean',
   };
 }
 

@@ -41,6 +41,7 @@ import { useWindowBackdrop } from '@/app/hooks/useWindowBackdrop';
 import { resolveSystemAccentPalette } from '@/app/utils/accent';
 import { shouldRevealWindow, shouldStartHidden } from '@/app/utils/windowReveal';
 import { useScanRunner } from '@/features/queue/useScanRunner';
+import { useScanScheduler } from '@/features/queue/useScanScheduler';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { WindowChrome } from '@/components/layout/WindowChrome';
 import { NavigationPane, type NavItem } from '@/components/layout/NavigationPane';
@@ -84,7 +85,8 @@ export default function App() {
   const history = useAppStore((state) => state.history);
   const setSettings = useAppStore((state) => state.setSettings);
   const { toasts, showToast, dismiss } = useToast();
-  const { runScan, startAll } = useScanRunner();
+  const { executeScan, notifyFailed } = useScanRunner();
+  const { requestScan, requestAll } = useScanScheduler({ executeScan, notifyFailed });
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -127,10 +129,10 @@ export default function App() {
       const preset = folder ? 'folderAdded' : 'filesAdded';
       showToast(describePreset(preset, t, { count: valid.length }));
       if (useAppStore.getState().settings.scanImmediately) {
-        newItems.forEach((item) => void runScan(item));
+        requestAll(newItems);
       }
     },
-    [addItems, goToView, runScan, showToast, t],
+    [addItems, goToView, requestAll, showToast, t],
   );
 
   const addDetectedPaths = useCallback(
@@ -159,9 +161,9 @@ export default function App() {
       goToView('queue');
       showToast(describePreset('contextScanStarted', t, { count: newItems.length }));
       logInfo('shell.context_scan_started', { items: newItems.map((item) => item.name) });
-      newItems.forEach((item) => void runScan(item));
+      requestAll(newItems);
     },
-    [addItems, goToView, runScan, showToast, t],
+    [addItems, goToView, requestAll, showToast, t],
   );
 
   const pickFilesAndAdd = useCallback(async () => {
@@ -582,8 +584,8 @@ export default function App() {
                     <QueuePage
                       items={items}
                       dragging={dragging}
-                      runScan={runScan}
-                      startAll={() => startAll(items)}
+                      runScan={requestScan}
+                      startAll={() => requestAll(items)}
                       clearCompleted={clearCompleted}
                       clearQueue={clearQueue}
                       onOpenDetails={openItemDetails}

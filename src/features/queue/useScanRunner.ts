@@ -1,22 +1,22 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FileReport, ScanItem } from '@/core/domain/types';
-import { isWindowFocused, scanPath, showNativeScanNotification } from '@/core/native/api';
+import { isWindowFocused, pollScanPath, showNativeScanNotification, submitScanPath } from '@/core/native/api';
+import type { ScanPollResult } from '@/core/native/api';
 import { useAppStore } from '@/core/state/store';
 import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { detectionCount, engineTotal } from '@/app/utils/format';
 import { normalizePollInterval } from '@/app/utils/scanPolling';
-import { runWithConcurrency } from '@/app/utils/concurrency';
-
-const MAX_CONCURRENT_SCANS = 2;
 import { logError, logInfo, logWarn } from '@/core/logging';
+import { shouldNotifyWatch } from '@/core/domain/watch';
+import { scanResumePhase } from './scanScheduler';
 
 export function useScanRunner() {
   const { t } = useTranslation();
   const updateItem = useAppStore((state) => state.updateItem);
   const addReport = useAppStore((state) => state.addReport);
-  const { goToView, openReport: navigateToReport } = useAppNavigate();
+  const { openReport: navigateToReport } = useAppNavigate();
   const { showToast } = useToast();
 
   const openReport = useCallback(
@@ -28,6 +28,12 @@ export function useScanRunner() {
 
   const notifyCompleted = useCallback(
     async (item: ScanItem, report: FileReport) => {
+      const settings = useAppStore.getState().settings;
+      if (item.origin === 'watch') {
+        const rule = useAppStore.getState().watchedFolders.find((entry) => entry.id === item.watchId);
+        if (!rule || !shouldNotifyWatch(rule, report.verdict)) return;
+        if (!settings.notificationsEnabled || !settings.notifyOnCompleted) return;
+      }
       const params = {
         verdict: t(report.verdict),
         detections: detectionCount(report),
@@ -35,7 +41,6 @@ export function useScanRunner() {
       };
       const toast = describePreset('scanCompleted', t, params);
       const action = { label: t('toast.openReport'), onClick: () => openReport(report) };
-      const settings = useAppStore.getState().settings;
       if (!settings.notificationsEnabled || !settings.notifyOnCompleted) {
         showToast({ ...toast, action });
         return;
@@ -68,6 +73,10 @@ export function useScanRunner() {
     async (item: ScanItem) => {
       const settings = useAppStore.getState().settings;
       if (!settings.notificationsEnabled || !settings.notifyOnFailed) return;
+      if (item.origin === 'watch') {
+        const rule = useAppStore.getState().watchedFolders.find((entry) => entry.id === item.watchId);
+        if (!rule || rule.notify === 'none') return;
+      }
       try {
         const focused = await isWindowFocused();
         if (focused) return;
@@ -88,68 +97,84 @@ export function useScanRunner() {
     [t],
   );
 
-  const runScan = useCallback(
+  const executeScan = useCallback(
     async (item: ScanItem) => {
-      const path = item.path || item.name;
-      if (!useAppStore.getState().settings.hasApiKey) {
-        logWarn('scan.skipped_no_api_key', { item: item.name });
-        goToView('settings');
-        showToast(describePreset('scanNoKey', t));
-        return;
-      }
-      updateItem(item.id, { status: 'uploading', progress: 15 });
-      showToast(describePreset('scanStarted', t));
-      logInfo('scan.started', { item: item.name, path, isFolder: item.isFolder ?? false });
+      const current = useAppStore.getState().items.find((entry) => entry.id === item.id);
+      if (!current) return;
+      const path = current.path || current.name;
+
+      let analysisId = current.analysisId ?? '';
+      let sha256 = current.sha256 ?? '';
+      let result: ScanPollResult;
       try {
-        const response = await scanPath(path, item.isFolder, {
-          onProgress: (progress) => updateItem(item.id, { status: 'scanning', progress }),
+        if (scanResumePhase(current) === 'submit') {
+          if (current.origin !== 'watch') showToast(describePreset('scanStarted', t));
+          logInfo('scan.started', { item: current.name, path, isFolder: current.isFolder ?? false });
+          const submitted = await submitScanPath(path, current.isFolder);
+          analysisId = submitted.analysisId;
+          sha256 = submitted.sha256;
+          updateItem(current.id, {
+            analysisId,
+            sha256,
+            status: 'scanning',
+            progress: 35,
+          });
+        } else {
+          logInfo('scan.resumed', { item: current.name, analysisId });
+        }
+
+        result = await pollScanPath(analysisId, {
+          onProgress: (progress) => updateItem(current.id, { status: 'scanning', progress }),
           pollIntervalMs: normalizePollInterval(useAppStore.getState().settings.pollInterval),
         });
-        const report: FileReport = {
-          ...response.report,
-          itemId: item.id,
-          name: item.name || response.report.name,
-          path: item.path || response.report.path,
-          size: item.size || response.report.size,
-          type: item.type || response.report.type,
-          fileKind: item.fileKind,
-        };
-        updateItem(item.id, {
-          status: 'completed',
-          progress: 100,
-          analysisId: response.analysisId,
-          verdict: report.verdict,
-          detections: detectionCount(report),
-          engines: engineTotal(report),
-          sha256: report.sha256,
-        });
-        addReport(report);
-        void notifyCompleted(item, report);
-        logInfo('scan.completed', {
-          item: item.name,
-          analysisId: response.analysisId,
-          verdict: report.verdict,
-          detections: detectionCount(report),
-          sha256: report.sha256,
-        });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        logError('scan.failed', { item: item.name, path, error: message });
-        updateItem(item.id, { status: 'failed', error: message });
-        showToast(describePreset('scanFailed', t));
-        void notifyFailed(item);
+        logError('scan.failed', {
+          item: current.name,
+          path,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
       }
+      const report: FileReport = {
+        itemId: current.id,
+        name: current.name,
+        path: current.path,
+        size: current.size,
+        type: current.type,
+        fileKind: current.fileKind,
+        sha256,
+        sha1: '',
+        md5: '',
+        verdict: result.verdict,
+        stats: result.stats,
+        engines: result.engines,
+        vtUrl: `https://www.virustotal.com/gui/file/${sha256}/detection`,
+        scannedAt: new Date().toISOString(),
+        watchId: current.watchId,
+        watchName: current.watchName,
+      };
+      updateItem(current.id, {
+        status: 'completed',
+        progress: 100,
+        analysisId,
+        verdict: report.verdict,
+        detections: detectionCount(report),
+        engines: engineTotal(report),
+        sha256,
+        error: undefined,
+      });
+      addReport(report);
+      void notifyCompleted(current, report);
+      logInfo('scan.completed', {
+        item: current.name,
+        analysisId,
+        verdict: report.verdict,
+        detections: detectionCount(report),
+        sha256,
+      });
     },
-    [addReport, goToView, notifyCompleted, notifyFailed, showToast, t, updateItem],
+    [addReport, notifyCompleted, showToast, t, updateItem],
   );
 
-  const startAll = useCallback(
-    (items: ScanItem[]) => {
-      const pending = items.filter((item) => item.status === 'queued' || item.status === 'failed');
-      void runWithConcurrency(pending, MAX_CONCURRENT_SCANS, (item) => runScan(item));
-    },
-    [runScan],
-  );
-
-  return { runScan, startAll };
+  return { executeScan, notifyFailed };
 }
