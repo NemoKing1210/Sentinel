@@ -109,9 +109,9 @@ impl WatcherState {
         }
         let keep: HashSet<String> = next.keys().cloned().collect();
         pruned += inner.spool.retain(&keep);
-        inner
-            .pending
-            .retain(|_, entry| keep.contains(&entry.watch_id) && !changed_roots.contains(&entry.watch_id));
+        inner.pending.retain(|_, entry| {
+            keep.contains(&entry.watch_id) && !changed_roots.contains(&entry.watch_id)
+        });
         if pruned > 0 {
             logging::write(
                 LogLevel::Info,
@@ -264,7 +264,10 @@ pub fn status_when_missing(current: &str, root_exists: bool) -> Option<&'static 
 }
 
 /// Status after a baseline walk: an index failure wins, disabled stays disabled.
-pub fn status_after_index(rule: &WatchRule, index_error: Option<&str>) -> (&'static str, Option<String>) {
+pub fn status_after_index(
+    rule: &WatchRule,
+    index_error: Option<&str>,
+) -> (&'static str, Option<String>) {
     if let Some(error) = index_error {
         return ("error", Some(error.to_string()));
     }
@@ -283,6 +286,34 @@ pub fn is_candidate_kind(kind: &EventKind) -> bool {
 
 pub fn is_settled(first: (u64, i64), second: (u64, i64)) -> bool {
     first == second
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum SettleDecision {
+    Wait,
+    Process,
+    Discard,
+}
+
+/// Quiet for `settle` → record; still changing → wait again; changing past the timeout → drop.
+pub fn settle_decision(
+    stored: (u64, i64),
+    current: (u64, i64),
+    since_seen: Duration,
+    settle: Duration,
+    since_first: Duration,
+) -> SettleDecision {
+    if is_settled(stored, current) {
+        if since_seen >= settle {
+            SettleDecision::Process
+        } else {
+            SettleDecision::Wait
+        }
+    } else if since_first > SETTLE_TIMEOUT {
+        SettleDecision::Discard
+    } else {
+        SettleDecision::Wait
+    }
 }
 
 fn normalize_root(path: &str) -> String {
@@ -493,23 +524,40 @@ fn record_settled(app: &AppHandle, entry: PendingSettle) {
         return;
     }
     let current = (meta.len(), modified_seconds(&meta));
-    if !is_settled((entry.size, entry.modified_at), current) {
-        // Still being written: re-arm with the new metadata instead of spawning another waiter.
-        let key = normalize_root(&entry.path.to_string_lossy());
-        let mut inner = state.lock();
-        if inner.generation != entry.generation {
+    match settle_decision(
+        (entry.size, entry.modified_at),
+        current,
+        entry.seen.elapsed(),
+        Duration::from_millis(rule.settle_ms),
+        entry.first_seen.elapsed(),
+    ) {
+        SettleDecision::Process => {}
+        SettleDecision::Wait => {
+            // Still being written: re-arm the same pending entry instead of another waiter.
+            let key = normalize_root(&entry.path.to_string_lossy());
+            let mut inner = state.lock();
+            if inner.generation != entry.generation {
+                return;
+            }
+            inner.pending.insert(
+                key,
+                PendingSettle {
+                    seen: Instant::now(),
+                    size: current.0,
+                    modified_at: current.1,
+                    ..entry
+                },
+            );
             return;
         }
-        inner.pending.insert(
-            key,
-            PendingSettle {
-                seen: Instant::now(),
-                size: current.0,
-                modified_at: current.1,
-                ..entry
-            },
-        );
-        return;
+        SettleDecision::Discard => {
+            logging::write(
+                LogLevel::Warn,
+                "watch.settle_discarded",
+                serde_json::json!({ "path": entry.path.to_string_lossy() }),
+            );
+            return;
+        }
     }
     if let Err(reason) = file_allowed(&rule, Path::new(&rule.path), &entry.path, &meta) {
         logging::write(
@@ -852,6 +900,51 @@ mod tests {
         assert!(is_settled((10, 100), (10, 100)));
         assert!(!is_settled((10, 100), (11, 100)));
         assert!(!is_settled((10, 100), (10, 101)));
+    }
+
+    #[test]
+    fn settle_decision_waits_for_quiet_metadata_and_discards_forever_changing_files() {
+        let settle = Duration::from_millis(1_500);
+        assert_eq!(
+            settle_decision(
+                (10, 100),
+                (10, 100),
+                Duration::from_millis(1_600),
+                settle,
+                Duration::from_secs(2)
+            ),
+            SettleDecision::Process
+        );
+        assert_eq!(
+            settle_decision(
+                (10, 100),
+                (12, 100),
+                Duration::from_millis(1_600),
+                settle,
+                Duration::from_secs(2)
+            ),
+            SettleDecision::Wait
+        );
+        assert_eq!(
+            settle_decision(
+                (10, 100),
+                (10, 100),
+                Duration::from_millis(100),
+                settle,
+                Duration::from_secs(2)
+            ),
+            SettleDecision::Wait
+        );
+        assert_eq!(
+            settle_decision(
+                (10, 100),
+                (12, 100),
+                Duration::from_millis(100),
+                settle,
+                Duration::from_secs(61)
+            ),
+            SettleDecision::Discard
+        );
     }
 
     #[test]
