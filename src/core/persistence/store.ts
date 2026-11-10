@@ -94,19 +94,13 @@ export async function hydratePersistedState(): Promise<boolean> {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
-let saveInFlight = false;
-let saveQueued = false;
+let flushChain: Promise<boolean> = Promise.resolve(true);
 
-async function flushPersistedState(): Promise<void> {
+async function writeState(): Promise<boolean> {
   if (!useAppStore.getState().hydrated) {
     logWarn('persistence.save_skipped_unhydrated');
-    return;
+    return false;
   }
-  if (saveInFlight) {
-    saveQueued = true;
-    return;
-  }
-  saveInFlight = true;
   try {
     const state = useAppStore.getState();
     const payload: PersistedState = {
@@ -118,15 +112,20 @@ async function flushPersistedState(): Promise<void> {
     };
     await invoke('save_persisted_state', { state: payload });
     logInfo('persistence.saved', { items: payload.items.length, history: payload.history.length });
+    return true;
   } catch (error) {
     logError('persistence.save_failed', { error: String(error) });
-  } finally {
-    saveInFlight = false;
-    if (saveQueued) {
-      saveQueued = false;
-      void flushPersistedState();
-    }
+    return false;
   }
+}
+
+/**
+ * Serializes writes and resolves true only when the state at call time (and later)
+ * reached disk, so a spool acknowledgement never precedes its durable items.
+ */
+export function flushPersistedState(): Promise<boolean> {
+  flushChain = flushChain.then(writeState, writeState);
+  return flushChain;
 }
 
 export function subscribePersistence(): () => void {
