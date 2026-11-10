@@ -6,6 +6,7 @@ mod logging;
 mod notifications;
 mod persistence;
 mod shell;
+mod watcher;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
