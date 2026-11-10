@@ -56,6 +56,7 @@ import { QueuePage } from '@/features/queue/QueuePage';
 import { HistoryPage } from '@/features/history/HistoryPage';
 import { InternalBrowserPage } from '@/features/history/InternalBrowserPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { WatchPage } from '@/features/watch/WatchPage';
 import { hydratePersistedState, flushPersistedState, subscribePersistence } from '@/core/persistence/store';
 import { planWatchIngest } from '@/features/watch/ingestWatch';
 import { applyPersistedWindowState, subscribeWindowState } from '@/core/persistence/windowState';
@@ -95,6 +96,7 @@ export default function App() {
   const history = useAppStore((state) => state.history);
   const setSettings = useAppStore((state) => state.setSettings);
   const hydrated = useAppStore((state) => state.hydrated);
+  const watchedFolders = useAppStore((state) => state.watchedFolders);
   const { toasts, showToast, dismiss } = useToast();
   const { executeScan, notifyFailed } = useScanRunner();
   const { requestScan, requestAll } = useScanScheduler({ executeScan, notifyFailed });
@@ -542,6 +544,12 @@ export default function App() {
       icon: 'queue',
       count: items.filter((item) => item.status !== 'completed').length,
     },
+    {
+      id: 'watch',
+      label: t('watch'),
+      icon: 'eye',
+      count: watchedFolders.filter((rule) => rule.enabled).length,
+    },
     { id: 'history', label: t('history'), icon: 'history', count: history.length },
     { id: 'settings', label: t('settings'), icon: 'tune' },
   ];
@@ -715,6 +723,7 @@ export default function App() {
                     />
                   }
                 />
+                <Route path={ROUTES.watch} element={<WatchPage />} />
                 <Route path={ROUTES.history} element={<HistoryPage reportId={null} search={location.search} />} />
                 <Route
                   path={`${ROUTES.history}/:reportId`}

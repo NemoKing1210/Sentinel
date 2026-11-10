@@ -59,13 +59,12 @@ export function validateWatchDraft(rule: WatchRule, others: WatchRule[]): WatchR
 export function watchRuleSummary(rule: WatchRule, t: TFunction): string[] {
   const extensions =
     rule.includeExtensions.length > 0
-      ? t('watchSummaryOnly', { extensions: rule.includeExtensions.join(', ') })
+      ? t('watchExtensionsOnly', { list: rule.includeExtensions.join(', ') })
       : rule.excludeExtensions.length > 0
-        ? t('watchSummaryExcept', { extensions: rule.excludeExtensions.join(', ') })
-        : t('watchSummaryAllExtensions');
-  const depth =
-    rule.maxDepth === null ? t('watchSummaryUnlimitedDepth') : t('watchSummaryDepth', { depth: rule.maxDepth });
-  const size = t('watchSummaryMaxSize', { size: formatSize(rule.maxSizeBytes) });
-  const missed = rule.scanMissedWhileClosed ? t('watchSummaryMissedOn') : t('watchSummaryMissedOff');
+        ? t('watchExtensionsExcept', { list: rule.excludeExtensions.join(', ') })
+        : t('watchExtensionsAll');
+  const depth = rule.maxDepth === null ? t('watchDepthAll') : t('watchDepthValue', { count: rule.maxDepth });
+  const size = t('watchMaxSize', { size: formatSize(rule.maxSizeBytes) });
+  const missed = rule.scanMissedWhileClosed ? t('watchMissedOn') : t('watchMissedOff');
   return [extensions, depth, size, missed];
 }

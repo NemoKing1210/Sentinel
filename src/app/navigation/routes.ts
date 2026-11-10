@@ -8,6 +8,7 @@ import type { View } from '@/app/constants';
 export const ROUTES = {
   dashboard: '/dashboard',
   queue: '/queue',
+  watch: '/watch',
   history: '/history',
   settings: '/settings',
 } as const satisfies Record<View, string>;

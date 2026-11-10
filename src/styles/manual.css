@@ -3233,3 +3233,152 @@ h2 {
     background: HighlightText;
   }
 }
+
+/* ---------------------------------------------------------------- *
+ * Watched folders
+ * ---------------------------------------------------------------- */
+.watch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.watch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: var(--radius-surface);
+}
+
+.watch-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.watch-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.watch-card-title strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.watch-path {
+  display: block;
+  max-width: 640px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watch-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.watch-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.watch-status.is-watching .watch-status-dot {
+  background: var(--success);
+}
+
+.watch-status.is-indexing .watch-status-dot {
+  background: var(--accent);
+}
+
+.watch-status.is-error .watch-status-dot,
+.watch-status.is-missing .watch-status-dot {
+  background: var(--danger);
+}
+
+.watch-status-error {
+  overflow: hidden;
+  color: var(--danger);
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.watch-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  list-style: none;
+}
+
+.watch-summary li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.watch-summary li::before {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  content: '';
+  opacity: 0.6;
+}
+
+.watch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.watch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.watch-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.watch-empty h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.watch-empty p {
+  max-width: 460px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.watch-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}

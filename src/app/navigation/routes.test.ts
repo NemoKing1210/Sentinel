@@ -5,6 +5,7 @@ import { browserPath, isBrowserPath, reportIdFromPath, reportPath, resolveView, 
 test('builds paths for primary views', () => {
   assert.equal(viewPath('dashboard'), '/dashboard');
   assert.equal(viewPath('queue'), '/queue');
+  assert.equal(viewPath('watch'), '/watch');
   assert.equal(viewPath('history'), '/history');
   assert.equal(viewPath('settings'), '/settings');
 });
@@ -34,6 +35,7 @@ test('builds and detects the embedded report browser path', () => {
 test('resolves the active view from a pathname', () => {
   assert.equal(resolveView('/dashboard'), 'dashboard');
   assert.equal(resolveView('/history'), 'history');
+  assert.equal(resolveView('/watch'), 'watch');
   assert.equal(resolveView('/history/abc-123'), 'history');
   assert.equal(resolveView('/history/abc-123/browser'), 'history');
   assert.equal(resolveView('/settings/'), 'settings');
