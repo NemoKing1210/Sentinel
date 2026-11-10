@@ -12,8 +12,20 @@ use super::rules::{file_allowed, file_depth, validate_rules, WatchRule};
 use super::store::{scan_tree, IndexEntry, PendingFile, Spool, WatchIndex};
 use crate::logging::{self, LogLevel};
 
-const SETTLE_RECHECK_MS: u64 = 250;
+const SETTLE_TICK_MS: u64 = 200;
 const SETTLE_TIMEOUT: Duration = Duration::from_secs(60);
+const MAX_PENDING_SETTLES: usize = 2_048;
+
+#[derive(Debug, Clone)]
+struct PendingSettle {
+    path: PathBuf,
+    watch_id: String,
+    generation: u64,
+    first_seen: Instant,
+    seen: Instant,
+    size: u64,
+    modified_at: i64,
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +44,8 @@ struct Inner {
     statuses: HashMap<String, WatchStatus>,
     watcher: Option<RecommendedWatcher>,
     watched: HashMap<String, PathBuf>,
+    pending: HashMap<String, PendingSettle>,
+    settling: bool,
     spool: Spool,
     index: WatchIndex,
     generation: u64,
@@ -47,6 +61,8 @@ impl WatcherState {
                 statuses: HashMap::new(),
                 watcher: None,
                 watched: HashMap::new(),
+                pending: HashMap::new(),
+                settling: false,
                 spool,
                 index,
                 generation: 0,
@@ -82,15 +98,20 @@ impl WatcherState {
                 inner.statuses.remove(id);
             }
         }
+        let mut changed_roots: HashSet<String> = HashSet::new();
         for (id, root) in next.iter() {
             let changed_root = previous.get(id).is_some_and(|old| old != root);
             if changed_root {
                 pruned += inner.spool.drop_rule(id);
                 inner.index.remove(id);
+                changed_roots.insert(id.clone());
             }
         }
         let keep: HashSet<String> = next.keys().cloned().collect();
         pruned += inner.spool.retain(&keep);
+        inner
+            .pending
+            .retain(|_, entry| keep.contains(&entry.watch_id) && !changed_roots.contains(&entry.watch_id));
         if pruned > 0 {
             logging::write(
                 LogLevel::Info,
@@ -107,10 +128,7 @@ impl WatcherState {
                     if !is_candidate_kind(&event.kind) {
                         return;
                     }
-                    for path in event.paths {
-                        let app = callback_app.clone();
-                        thread::spawn(move || settle_and_record(app, path));
-                    }
+                    queue_settles(&callback_app, event.paths);
                 },
                 Config::default(),
             )
@@ -213,8 +231,7 @@ impl WatcherState {
         let _ = app.emit("watch:status", &ordered);
 
         for rule in rules {
-            if rule.enabled
-                && Path::new(&rule.path).is_dir()
+            if Path::new(&rule.path).is_dir()
                 && !ordered
                     .iter()
                     .any(|status| status.watch_id == rule.id && status.state == "error")
@@ -236,6 +253,25 @@ pub fn initial_status(rule: &WatchRule, index_has_folder: bool) -> &'static str 
     } else {
         "indexing"
     }
+}
+
+/// Downgrades an active status when the watched root disappeared.
+pub fn status_when_missing(current: &str, root_exists: bool) -> Option<&'static str> {
+    if root_exists {
+        return None;
+    }
+    matches!(current, "watching" | "indexing").then_some("missing")
+}
+
+/// Status after a baseline walk: an index failure wins, disabled stays disabled.
+pub fn status_after_index(rule: &WatchRule, index_error: Option<&str>) -> (&'static str, Option<String>) {
+    if let Some(error) = index_error {
+        return ("error", Some(error.to_string()));
+    }
+    if !rule.enabled {
+        return ("disabled", None);
+    }
+    ("watching", None)
 }
 
 pub fn is_candidate_kind(kind: &EventKind) -> bool {
@@ -331,54 +367,156 @@ fn enqueue_locked(
     Some(pending)
 }
 
-fn settle_and_record(app: AppHandle, path: PathBuf) {
+/// Coalesces burst events into one settle entry per path and starts one worker if needed.
+fn queue_settles(app: &AppHandle, paths: Vec<PathBuf>) {
     let state = app.state::<WatcherState>();
-    let (rule, root, generation) = {
+    let mut start_worker = false;
+    {
+        let mut inner = state.lock();
+        let rules = inner.rules.clone();
+        let generation = inner.generation;
+        let now = Instant::now();
+        for path in paths {
+            let Some((rule, _root)) = match_rule(&rules, &path) else {
+                continue;
+            };
+            let Ok(meta) = std::fs::metadata(&path) else {
+                continue;
+            };
+            if !meta.is_file() {
+                continue;
+            }
+            let key = normalize_root(&path.to_string_lossy());
+            if !inner.pending.contains_key(&key) && inner.pending.len() >= MAX_PENDING_SETTLES {
+                logging::write(
+                    LogLevel::Warn,
+                    "watch.settle_spool_full",
+                    serde_json::json!({ "limit": MAX_PENDING_SETTLES, "path": path.to_string_lossy() }),
+                );
+                continue;
+            }
+            inner.pending.insert(
+                key,
+                PendingSettle {
+                    path,
+                    watch_id: rule.id.clone(),
+                    generation,
+                    first_seen: now,
+                    seen: now,
+                    size: meta.len(),
+                    modified_at: modified_seconds(&meta),
+                },
+            );
+        }
+        if !inner.pending.is_empty() && !inner.settling {
+            inner.settling = true;
+            start_worker = true;
+        }
+    }
+    if start_worker {
+        let app = app.clone();
+        thread::spawn(move || settle_worker(app));
+    }
+}
+
+/// Single background worker; each path is processed after its rule's settle delay with no event.
+fn settle_worker(app: AppHandle) {
+    loop {
+        thread::sleep(Duration::from_millis(SETTLE_TICK_MS));
+        let state = app.state::<WatcherState>();
+        let mut work: Vec<PendingSettle> = Vec::new();
+        {
+            let mut inner = state.lock();
+            if inner.pending.is_empty() {
+                inner.settling = false;
+                return;
+            }
+            let now = Instant::now();
+            let rules = inner.rules.clone();
+            let mut due: Vec<(String, PendingSettle)> = Vec::new();
+            let mut expired: Vec<String> = Vec::new();
+            for (key, entry) in inner.pending.iter() {
+                if now.duration_since(entry.first_seen) > SETTLE_TIMEOUT {
+                    expired.push(key.clone());
+                    continue;
+                }
+                let settle_ms = rules
+                    .iter()
+                    .find(|rule| rule.id == entry.watch_id && rule.enabled)
+                    .map(|rule| rule.settle_ms)
+                    .unwrap_or(0);
+                if now.duration_since(entry.seen) >= Duration::from_millis(settle_ms) {
+                    due.push((key.clone(), entry.clone()));
+                }
+            }
+            for key in &expired {
+                inner.pending.remove(key);
+            }
+            for (key, entry) in due {
+                inner.pending.remove(&key);
+                work.push(entry);
+            }
+            if !expired.is_empty() {
+                logging::write(
+                    LogLevel::Warn,
+                    "watch.settle_discarded",
+                    serde_json::json!({ "count": expired.len() }),
+                );
+            }
+        }
+        for entry in work {
+            record_settled(&app, entry);
+        }
+    }
+}
+
+fn record_settled(app: &AppHandle, entry: PendingSettle) {
+    let state = app.state::<WatcherState>();
+    let rule = {
         let inner = state.lock();
-        match match_rule(&inner.rules, &path) {
-            Some((rule, root)) => (rule.clone(), root, inner.generation),
+        if inner.generation != entry.generation {
+            return;
+        }
+        match inner
+            .rules
+            .iter()
+            .find(|rule| rule.id == entry.watch_id && rule.enabled)
+        {
+            Some(rule) => rule.clone(),
             None => return,
         }
     };
-
-    let Ok(meta) = std::fs::metadata(&path) else {
+    let Ok(meta) = std::fs::metadata(&entry.path) else {
         return;
     };
     if !meta.is_file() {
         return;
     }
-    let mut previous = (meta.len(), modified_seconds(&meta));
-    let started = Instant::now();
-    loop {
-        thread::sleep(Duration::from_millis(rule.settle_ms));
-        let Ok(next) = std::fs::metadata(&path) else {
-            return;
-        };
-        let current = (next.len(), modified_seconds(&next));
-        if is_settled(previous, current) {
-            break;
-        }
-        previous = current;
-        if started.elapsed() > SETTLE_TIMEOUT {
-            logging::write(
-                LogLevel::Warn,
-                "watch.settle_discarded",
-                serde_json::json!({ "path": path.to_string_lossy() }),
-            );
+    let current = (meta.len(), modified_seconds(&meta));
+    if !is_settled((entry.size, entry.modified_at), current) {
+        // Still being written: re-arm with the new metadata instead of spawning another waiter.
+        let key = normalize_root(&entry.path.to_string_lossy());
+        let mut inner = state.lock();
+        if inner.generation != entry.generation {
             return;
         }
-        thread::sleep(Duration::from_millis(SETTLE_RECHECK_MS));
-    }
-
-    let Ok(meta) = std::fs::metadata(&path) else {
+        inner.pending.insert(
+            key,
+            PendingSettle {
+                seen: Instant::now(),
+                size: current.0,
+                modified_at: current.1,
+                ..entry
+            },
+        );
         return;
-    };
-    if let Err(reason) = file_allowed(&rule, &root, &path, &meta) {
+    }
+    if let Err(reason) = file_allowed(&rule, Path::new(&rule.path), &entry.path, &meta) {
         logging::write(
             LogLevel::Debug,
             "watch.file_skipped",
             serde_json::json!({
-                "path": path.to_string_lossy(),
+                "path": entry.path.to_string_lossy(),
                 "reason": reason.as_str(),
             }),
         );
@@ -386,10 +524,10 @@ fn settle_and_record(app: AppHandle, path: PathBuf) {
     }
 
     let mut inner = state.lock();
-    if inner.generation != generation {
+    if inner.generation != entry.generation {
         return;
     }
-    let Some(pending) = enqueue_locked(&mut inner, &rule, &path, &meta) else {
+    let Some(pending) = enqueue_locked(&mut inner, &rule, &entry.path, &meta) else {
         return;
     };
     let _ = inner.spool.save();
@@ -425,6 +563,13 @@ fn initial_scan(app: AppHandle, generation: u64, rule: WatchRule) {
     }
 
     let snapshot = scan_tree(&rule);
+    if snapshot.errors > 0 {
+        logging::write(
+            LogLevel::Warn,
+            "watch.scan_errors",
+            serde_json::json!({ "watchId": rule.id, "count": snapshot.errors }),
+        );
+    }
     let mut detected: Vec<PendingFile> = Vec::new();
     let mut index_error: Option<String> = None;
     {
@@ -434,15 +579,25 @@ fn initial_scan(app: AppHandle, generation: u64, rule: WatchRule) {
         }
         let has_folder = inner.index.has_folder(&rule.id, &rule.path);
         if !has_folder {
-            let _ = inner
+            match inner
                 .index
-                .replace_folder(&rule.id, &rule.path, snapshot.files);
-            logging::write(
-                LogLevel::Info,
-                "watch.index_written",
-                serde_json::json!({ "watchId": rule.id, "baseline": true }),
-            );
-        } else if rule.scan_missed_while_closed {
+                .replace_folder(&rule.id, &rule.path, snapshot.files)
+            {
+                Ok(()) => logging::write(
+                    LogLevel::Info,
+                    "watch.index_written",
+                    serde_json::json!({ "watchId": rule.id, "baseline": true }),
+                ),
+                Err(error) => {
+                    logging::write(
+                        LogLevel::Error,
+                        "watch.index_limit",
+                        serde_json::json!({ "watchId": rule.id, "error": error }),
+                    );
+                    index_error = Some(error);
+                }
+            }
+        } else if rule.enabled && rule.scan_missed_while_closed {
             match inner
                 .index
                 .diff_and_replace(&rule.id, &rule.path, snapshot.files)
@@ -476,36 +631,47 @@ fn initial_scan(app: AppHandle, generation: u64, rule: WatchRule) {
                 }
             }
         } else {
-            let _ = inner
+            match inner
                 .index
-                .replace_folder(&rule.id, &rule.path, snapshot.files);
-            logging::write(
-                LogLevel::Info,
-                "watch.index_written",
-                serde_json::json!({ "watchId": rule.id, "baseline": false }),
-            );
+                .replace_folder(&rule.id, &rule.path, snapshot.files)
+            {
+                Ok(()) => logging::write(
+                    LogLevel::Info,
+                    "watch.index_written",
+                    serde_json::json!({ "watchId": rule.id, "baseline": false }),
+                ),
+                Err(error) => {
+                    logging::write(
+                        LogLevel::Error,
+                        "watch.index_limit",
+                        serde_json::json!({ "watchId": rule.id, "error": error }),
+                    );
+                    index_error = Some(error);
+                }
+            }
         }
         let _ = inner.index.save();
         let _ = inner.spool.save();
         if index_error.is_none() {
+            let (state, error) = status_after_index(&rule, None);
             let changed = inner
                 .statuses
                 .get(&rule.id)
-                .map(|status| status.state != "watching" || status.error.is_some())
+                .map(|status| status.state != state || status.error != error)
                 .unwrap_or(true);
             inner.statuses.insert(
                 rule.id.clone(),
                 WatchStatus {
                     watch_id: rule.id.clone(),
-                    state: "watching".to_string(),
-                    error: None,
+                    state: state.to_string(),
+                    error,
                 },
             );
             if changed {
                 logging::write(
                     LogLevel::Info,
                     "watch.status_changed",
-                    serde_json::json!({ "watchId": rule.id, "state": "watching" }),
+                    serde_json::json!({ "watchId": rule.id, "state": state }),
                 );
             }
         }
@@ -583,8 +749,68 @@ pub fn sync_watch_rules(
     state.sync(&app, rules)
 }
 
+/// Re-stats enabled roots so a folder deleted while the app runs stops reporting `watching`.
+fn refresh_missing(app: &AppHandle, state: &WatcherState) {
+    let missing: Vec<String> = {
+        let inner = state.lock();
+        inner
+            .rules
+            .iter()
+            .filter(|rule| rule.enabled && !Path::new(&rule.path).is_dir())
+            .filter(|rule| {
+                inner
+                    .statuses
+                    .get(&rule.id)
+                    .and_then(|status| status_when_missing(&status.state, false))
+                    .is_some()
+            })
+            .map(|rule| rule.id.clone())
+            .collect()
+    };
+    if missing.is_empty() {
+        return;
+    }
+    {
+        let mut inner = state.lock();
+        for id in missing {
+            logging::write(
+                LogLevel::Info,
+                "watch.status_changed",
+                serde_json::json!({ "watchId": id, "state": "missing" }),
+            );
+            inner.statuses.insert(
+                id.clone(),
+                WatchStatus {
+                    watch_id: id,
+                    state: "missing".to_string(),
+                    error: Some("Folder not found".to_string()),
+                },
+            );
+        }
+    }
+    emit_statuses(app);
+}
+
 #[tauri::command]
-pub fn get_watch_statuses(state: State<'_, WatcherState>) -> Vec<WatchStatus> {
+pub fn get_watch_statuses(app: AppHandle, state: State<'_, WatcherState>) -> Vec<WatchStatus> {
+    refresh_missing(&app, &state);
+
+    let (rules, recover) = {
+        let inner = state.lock();
+        let recover = inner.rules.iter().any(|rule| {
+            rule.enabled
+                && Path::new(&rule.path).is_dir()
+                && inner
+                    .statuses
+                    .get(&rule.id)
+                    .is_some_and(|status| status.state == "missing")
+        });
+        (inner.rules.clone(), recover)
+    };
+    if recover {
+        let _ = state.sync(&app, rules);
+    }
+
     let inner = state.lock();
     ordered_statuses(&inner)
 }
@@ -626,6 +852,32 @@ mod tests {
         assert!(is_settled((10, 100), (10, 100)));
         assert!(!is_settled((10, 100), (11, 100)));
         assert!(!is_settled((10, 100), (10, 101)));
+    }
+
+    #[test]
+    fn missing_status_downgrades_only_active_rules() {
+        assert_eq!(status_when_missing("watching", false), Some("missing"));
+        assert_eq!(status_when_missing("indexing", false), Some("missing"));
+        assert_eq!(status_when_missing("missing", true), None);
+        assert_eq!(status_when_missing("disabled", false), None);
+        assert_eq!(status_when_missing("watching", true), None);
+    }
+
+    #[test]
+    fn disabled_rules_keep_their_status_after_indexing() {
+        let enabled = WatchRule {
+            id: "w".into(),
+            path: "C:\\Root".into(),
+            enabled: true,
+            ..Default::default()
+        };
+        let disabled = WatchRule {
+            enabled: false,
+            ..enabled.clone()
+        };
+        assert_eq!(status_after_index(&enabled, None).0, "watching");
+        assert_eq!(status_after_index(&disabled, None).0, "disabled");
+        assert_eq!(status_after_index(&enabled, Some("limit")).0, "error");
     }
 
     #[test]

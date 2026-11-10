@@ -168,8 +168,8 @@ impl WatchIndex {
         self.store_folder(watch_id, root, files)
     }
 
-    /// Returns paths that are new or changed since the stored baseline, then replaces the baseline.
-    /// A folder without a baseline for this root reports every current file.
+    /// Returns paths absent from the stored baseline, then replaces the baseline.
+    /// Content changes never re-scan; a folder without a baseline for this root reports every current file.
     pub fn diff_and_replace(
         &mut self,
         watch_id: &str,
@@ -186,12 +186,9 @@ impl WatchIndex {
             let previous = &self.folders[watch_id].files;
             files
                 .iter()
-                .filter_map(|(raw, entry)| {
+                .filter_map(|(raw, _entry)| {
                     let key = normalize_key(raw);
-                    match previous.get(&key) {
-                        Some(old) if old == entry => None,
-                        _ => Some(raw.clone()),
-                    }
+                    (!previous.contains_key(&key)).then(|| raw.clone())
                 })
                 .collect()
         } else {
@@ -465,7 +462,7 @@ mod tests {
     }
 
     #[test]
-    fn index_treats_a_changed_file_as_new() {
+    fn index_ignores_content_changes_and_reports_only_new_files() {
         let dir = tempfile::tempdir().unwrap();
         let mut index = WatchIndex::load(dir.path().join("index.json"));
         index
@@ -481,16 +478,25 @@ mod tests {
                 )]),
             )
             .unwrap();
-        let current = BTreeMap::from([(
-            "C:\\Root\\a.txt".into(),
-            IndexEntry {
-                size: 5,
-                modified_at: 9,
-            },
-        )]);
+        let current = BTreeMap::from([
+            (
+                "C:\\Root\\a.txt".into(),
+                IndexEntry {
+                    size: 5,
+                    modified_at: 9,
+                },
+            ),
+            (
+                "C:\\Root\\b.txt".into(),
+                IndexEntry {
+                    size: 2,
+                    modified_at: 2,
+                },
+            ),
+        ]);
         assert_eq!(
             index.diff_and_replace("w", "C:\\Root", current).unwrap(),
-            vec!["C:\\Root\\a.txt"]
+            vec!["C:\\Root\\b.txt"]
         );
     }
 
