@@ -5,6 +5,20 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-11-11
+
+### Added
+
+- Settings now has a full-width search field that filters the page in place as you type, highlights the matched text, and shows how many settings are found
+- Search covers setting titles, hints, keywords, and whole section names, and forgives case, diacritics, missing spaces (`apikey`), prefixes, and small typos (`lvl` → “Log level”)
+- `Ctrl+F` or `/` focuses the settings search, `Esc` clears it, and a clear button plus a no-results state keep the empty query one step away
+
+## [0.9.1] - 2026-11-11
+
+### Changed
+
+- Select menus now use an opaque Fluent flyout background instead of a translucent blurred one, so the option list stays crisp over any content
+
 ## [0.9.0] - 2026-11-11
 
 ### Added

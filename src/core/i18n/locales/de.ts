@@ -72,6 +72,12 @@ const de = {
     md5: 'MD5',
     settingsTitle: 'Einstellungen',
     settingsSubtitle: 'Wie Sentinel aussieht, sich verbindet und Aufzeichnungen führt.',
+    settingsSearch: 'Einstellungen durchsuchen',
+    settingsSearchResults: 'Treffer: {{count}}',
+    settingsSearchEmptyTitle: 'Keine passenden Einstellungen',
+    settingsSearchEmptyCopy:
+      'Versuchen Sie ein kürzeres oder anderes Wort. Die Suche umfasst Titel, Hinweise und ganze Abschnitte.',
+    settingsSearchClear: 'Suche leeren',
     appearance: 'Erscheinungsbild',
     appearanceHint: 'Windows steuert Design und Akzentfarbe. Wählen Sie hier die Sprache der Oberfläche.',
     windowRestore: 'Wiederherstellen',

@@ -76,6 +76,12 @@ const ru = {
     md5: 'MD5',
     settingsTitle: 'Параметры',
     settingsSubtitle: 'Внешний вид, подключение и ведение записей Sentinel.',
+    settingsSearch: 'Поиск настроек',
+    settingsSearchResults: 'Найдено: {{count}}',
+    settingsSearchEmptyTitle: 'Ничего не найдено',
+    settingsSearchEmptyCopy:
+      'Попробуйте другое или более короткое слово. Поиск охватывает названия, подсказки и целые разделы.',
+    settingsSearchClear: 'Очистить поиск',
     appearance: 'Внешний вид',
     appearanceHint: 'Тема и акцентный цвет берутся из Windows. Здесь можно выбрать язык интерфейса.',
     windowRestore: 'Восстановить',

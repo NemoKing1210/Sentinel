@@ -47,6 +47,8 @@
   --text-disabled: rgba(255, 255, 255, 0.363);
   --divider: rgba(255, 255, 255, 0.0837);
   --flyout-bg: color-mix(in srgb, #2c2c2c 88%, transparent);
+  /* Select menus use an opaque Fluent flyout fill — no backdrop blur. */
+  --menu-bg: #2c2c2c;
   --shadow-flyout: 0 8px 16px rgba(0, 0, 0, 0.28), 0 0 2px rgba(0, 0, 0, 0.24);
   --info-bg: color-mix(in srgb, var(--accent) 9%, transparent);
   --info-border: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -112,6 +114,7 @@
   --text-disabled: rgba(0, 0, 0, 0.361);
   --divider: rgba(0, 0, 0, 0.0803);
   --flyout-bg: color-mix(in srgb, #f9f9f9 90%, transparent);
+  --menu-bg: #f9f9f9;
   --shadow-flyout: 0 8px 16px rgba(0, 0, 0, 0.14), 0 0 2px rgba(0, 0, 0, 0.12);
   --info-bg: color-mix(in srgb, var(--accent) 7%, transparent);
   --info-border: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -2157,6 +2160,117 @@ h2 {
   gap: 8px;
 }
 
+/* Settings search: full-width field above the sections. */
+.settings-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-search .search {
+  width: 100%;
+  height: 38px;
+  gap: 10px;
+  padding: 0 8px 0 12px;
+}
+
+.settings-search .search:focus-within {
+  border-bottom-color: var(--accent);
+  box-shadow:
+    inset 0 -1px 0 var(--accent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.settings-search-clear {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.1s ease,
+    color 0.1s ease;
+}
+
+.settings-search-clear:hover {
+  background: var(--subtle-hover);
+  color: var(--text);
+}
+
+.settings-search-clear:active {
+  background: var(--subtle-pressed);
+}
+
+.settings-search-kbd {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border: 1px solid var(--control-stroke);
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.settings-search-meta {
+  margin: 0;
+  padding: 0 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Query hits inside titles, hints and section names. */
+.settings-search-hit {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: inherit;
+}
+
+.settings-search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.settings-search-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-tertiary);
+}
+
+.settings-search-empty h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.settings-search-empty p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.settings-search-empty .button {
+  margin-top: 4px;
+}
+
 /* Each setting is its own SettingsCard, like the Windows 11 Settings app. */
 .settings-row {
   display: flex;
@@ -2618,9 +2732,8 @@ h2 {
   overflow-y: auto;
   border: 1px solid var(--card-stroke);
   border-radius: var(--radius-surface);
-  background: var(--flyout-bg);
+  background: var(--menu-bg);
   box-shadow: var(--shadow-flyout);
-  backdrop-filter: blur(30px) saturate(125%);
   animation: select-pop 120ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
@@ -3203,6 +3316,10 @@ h2 {
   .surface,
   .list-surface {
     border: 1px solid ButtonBorder;
+  }
+  .settings-search-hit {
+    background: Highlight;
+    color: HighlightText;
   }
   .manual-app button:focus-visible,
   .manual-app a:focus-visible,

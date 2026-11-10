@@ -72,6 +72,12 @@ const fr = {
     md5: 'MD5',
     settingsTitle: 'Préférences',
     settingsSubtitle: 'Apparence, connexion et conservation des enregistrements de Sentinel.',
+    settingsSearch: 'Rechercher dans les préférences',
+    settingsSearchResults: 'Résultats : {{count}}',
+    settingsSearchEmptyTitle: 'Aucune préférence correspondante',
+    settingsSearchEmptyCopy:
+      'Essayez un mot plus court ou différent. La recherche couvre les titres, les astuces et des sections entières.',
+    settingsSearchClear: 'Effacer la recherche',
     appearance: 'Apparence',
     appearanceHint: 'Windows gère le thème et la couleur d’accentuation. Choisissez ici la langue de l’interface.',
     windowRestore: 'Restaurer',

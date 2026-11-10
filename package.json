@@ -1,7 +1,7 @@
 {
   "name": "sentinel",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.10.0",
   "license": "MIT",
   "author": "NemoKing (https://github.com/NemoKing1210)",
   "homepage": "https://github.com/NemoKing1210/Sentinel",
@@ -27,7 +27,7 @@
     "version:minor": "node scripts/bump-version.mjs minor",
     "version:major": "node scripts/bump-version.mjs major",
     "release": "node scripts/release.mjs",
-    "test": "node --experimental-strip-types --test scripts/lib/versions.test.mjs src/core/i18n/resolveLanguage.test.ts src/app/utils/theme.test.ts src/app/utils/navigation.test.ts src/app/utils/windowReveal.test.ts src/app/utils/windowBounds.test.ts src/app/utils/scanPolling.test.ts src/app/utils/concurrency.test.ts src/app/navigation/routes.test.ts src/core/domain/watch.test.ts src/core/persistence/sanitize.test.ts src/core/persistence/persistTrigger.test.ts src/core/native/scanError.test.ts src/features/watch/watchRules.test.ts src/features/queue/scanScheduler.test.ts src/features/watch/ingestWatch.test.ts src/core/i18n/locales.test.ts",
+    "test": "node --experimental-strip-types --test scripts/lib/versions.test.mjs src/core/i18n/resolveLanguage.test.ts src/app/utils/theme.test.ts src/app/utils/navigation.test.ts src/app/utils/windowReveal.test.ts src/app/utils/windowBounds.test.ts src/app/utils/scanPolling.test.ts src/app/utils/concurrency.test.ts src/app/navigation/routes.test.ts src/core/domain/watch.test.ts src/core/persistence/sanitize.test.ts src/core/persistence/persistTrigger.test.ts src/core/native/scanError.test.ts src/features/watch/watchRules.test.ts src/features/queue/scanScheduler.test.ts src/features/watch/ingestWatch.test.ts src/features/settings/settingsSearch.test.ts src/core/i18n/locales.test.ts",
     "ci": "npm run lint && npm run format:check && npm run build && npm run check:versions && npm test"
   },
   "engines": {
