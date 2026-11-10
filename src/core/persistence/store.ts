@@ -1,10 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useAppStore } from '@/core/state/store';
 import { DEFAULT_SETTINGS } from '@/app/constants';
-import type { AppSettings, FileReport, ScanItem } from '@/core/domain/types';
+import type { AppSettings, FileReport, ScanItem, WatchRule } from '@/core/domain/types';
+import { sanitizeWatchedFolders } from '@/core/domain/watch';
 import { detectPreferredLanguage, isAppLanguage } from '@/core/i18n/resolveLanguage';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { setCloseToTray } from '@/core/native/api';
+import { sanitizeItems } from './sanitize';
 
 const SAVE_DEBOUNCE_MS = 600;
 
@@ -12,6 +14,7 @@ interface PersistedState {
   items: ScanItem[];
   history: FileReport[];
   settings: AppSettings;
+  watchedFolders?: WatchRule[];
   window?: WindowState;
 }
 
@@ -45,16 +48,10 @@ function sanitizeSettings(settings: AppSettings): AppSettings {
     notifyOnFailed: settings.notifyOnFailed,
     contextMenuEnabled: settings.contextMenuEnabled,
     reportOpenTarget: settings.reportOpenTarget === 'external' ? 'external' : 'internal',
+    scanConcurrency: settings.scanConcurrency,
+    scanDelaySeconds: settings.scanDelaySeconds,
     hasApiKey: false,
   };
-}
-
-function sanitizeItems(items: ScanItem[]): ScanItem[] {
-  return items.map((item) =>
-    item.status === 'uploading' || item.status === 'scanning'
-      ? { ...item, status: 'failed', progress: 0, error: 'interrupted_by_restart' as const }
-      : item,
-  );
 }
 
 export async function hydratePersistedState(): Promise<boolean> {
@@ -81,6 +78,7 @@ export async function hydratePersistedState(): Promise<boolean> {
       items: sanitizeItems(payload.items ?? []),
       history: payload.history ?? [],
       settings,
+      watchedFolders: sanitizeWatchedFolders(payload.watchedFolders),
       windowState: payload.window ?? null,
     });
     await setCloseToTray(settings.closeToTray);
@@ -115,6 +113,7 @@ async function flushPersistedState(): Promise<void> {
       items: sanitizeItems(state.items),
       history: state.history,
       settings: sanitizeSettings(state.settings),
+      watchedFolders: state.watchedFolders,
       window: readWindowState(),
     };
     await invoke('save_persisted_state', { state: payload });

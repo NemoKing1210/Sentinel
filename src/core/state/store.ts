@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AppSettings, FileReport, ScanItem } from '../domain/types';
+import type { AppSettings, FileReport, ScanItem, WatchRule, WatchStatus } from '../domain/types';
 import { DEFAULT_SETTINGS } from '../../app/constants';
 
 export interface WindowState {
@@ -15,6 +15,8 @@ interface AppState {
   history: FileReport[];
   settings: AppSettings;
   windowState: WindowState | null;
+  watchedFolders: WatchRule[];
+  watchStatuses: Record<string, WatchStatus>;
   hydrated: boolean;
   addItems: (items: ScanItem[]) => void;
   updateItem: (id: string, patch: Partial<ScanItem>) => void;
@@ -27,6 +29,10 @@ interface AppState {
   setSettings: (settings: Partial<AppSettings>) => void;
   setWindowState: (state: WindowState | null) => void;
   setHydrated: (hydrated: boolean) => void;
+  addWatchFolder: (rule: WatchRule) => void;
+  updateWatchFolder: (id: string, patch: Partial<WatchRule>) => void;
+  removeWatchFolder: (id: string) => void;
+  setWatchStatuses: (statuses: Record<string, WatchStatus>) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -34,6 +40,8 @@ export const useAppStore = create<AppState>((set) => ({
   history: [],
   settings: DEFAULT_SETTINGS,
   windowState: null,
+  watchedFolders: [],
+  watchStatuses: {},
   hydrated: false,
   addItems: (items) => set((state) => ({ items: [...items, ...state.items] })),
   updateItem: (id, patch) =>
@@ -51,4 +59,16 @@ export const useAppStore = create<AppState>((set) => ({
   setSettings: (settings) => set((state) => ({ settings: { ...state.settings, ...settings } })),
   setWindowState: (windowState) => set({ windowState }),
   setHydrated: (hydrated) => set({ hydrated }),
+  addWatchFolder: (rule) => set((state) => ({ watchedFolders: [...state.watchedFolders, rule] })),
+  updateWatchFolder: (id, patch) =>
+    set((state) => ({
+      watchedFolders: state.watchedFolders.map((rule) => (rule.id === id ? { ...rule, ...patch } : rule)),
+    })),
+  removeWatchFolder: (id) =>
+    set((state) => {
+      const watchStatuses = { ...state.watchStatuses };
+      delete watchStatuses[id];
+      return { watchedFolders: state.watchedFolders.filter((rule) => rule.id !== id), watchStatuses };
+    }),
+  setWatchStatuses: (watchStatuses) => set({ watchStatuses }),
 }));

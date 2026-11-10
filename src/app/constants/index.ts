@@ -20,6 +20,11 @@ export const POLL_INTERVAL_MIN = 1;
 export const POLL_INTERVAL_MAX = 60;
 export const POLL_INTERVALS = [3, 5, 10, 15, 30];
 
+export const SCAN_CONCURRENCY_MIN = 1;
+export const SCAN_CONCURRENCY_MAX = 4;
+export const SCAN_DELAY_MIN_SECONDS = 0;
+export const SCAN_DELAY_MAX_SECONDS = 120;
+
 export interface AccentPalette {
   teal: string;
   tealDeep: string;
@@ -40,4 +45,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notifyOnFailed: true,
   contextMenuEnabled: false,
   reportOpenTarget: 'internal',
+  scanConcurrency: 1,
+  scanDelaySeconds: 15,
 };

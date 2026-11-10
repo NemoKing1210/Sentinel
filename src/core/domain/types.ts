@@ -1,9 +1,42 @@
 export type Language = 'en' | 'ru' | 'es' | 'de' | 'fr' | 'pt' | 'zh';
 export type ColorScheme = 'light' | 'dark';
 export type LogLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-export type ScanStatus = 'queued' | 'uploading' | 'scanning' | 'completed' | 'failed';
+export type ScanStatus = 'waiting' | 'queued' | 'uploading' | 'scanning' | 'completed' | 'failed';
 export type Verdict = 'clean' | 'suspicious' | 'malicious' | 'unknown';
 export type ReportOpenTarget = 'internal' | 'external';
+export type WatchNotifyMode = 'all' | 'threats' | 'none';
+export type WatchState = 'disabled' | 'indexing' | 'watching' | 'missing' | 'error';
+
+export interface WatchRule {
+  id: string;
+  path: string;
+  enabled: boolean;
+  maxDepth: number | null;
+  includeExtensions: string[];
+  excludeExtensions: string[];
+  ignoreHidden: boolean;
+  ignoreTemp: boolean;
+  minSizeBytes: number;
+  maxSizeBytes: number;
+  settleMs: number;
+  scanMissedWhileClosed: boolean;
+  notify: WatchNotifyMode;
+}
+
+export interface WatchStatus {
+  watchId: string;
+  state: WatchState;
+  error?: string;
+}
+
+export interface WatchPendingFile {
+  id: string;
+  watchId: string;
+  path: string;
+  size: number;
+  modifiedAt: number;
+  detectedAt: number;
+}
 
 export type FileKind =
   | 'folder'
@@ -40,6 +73,12 @@ export interface ScanItem {
   analysisId?: string;
   error?: string;
   createdAt: string;
+  origin?: 'manual' | 'watch';
+  autoStart?: boolean;
+  watchId?: string;
+  watchName?: string;
+  retryAt?: string;
+  retryCount?: number;
 }
 
 export type EngineCategory =
@@ -74,6 +113,8 @@ export interface FileReport {
   engines: EngineResult[];
   vtUrl: string;
   scannedAt: string;
+  watchId?: string;
+  watchName?: string;
 }
 
 export interface AppSettings {
@@ -90,4 +131,6 @@ export interface AppSettings {
   notifyOnFailed: boolean;
   contextMenuEnabled: boolean;
   reportOpenTarget: ReportOpenTarget;
+  scanConcurrency: number;
+  scanDelaySeconds: number;
 }
