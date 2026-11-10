@@ -35,6 +35,7 @@ impl LogLevel {
 struct Logger {
     directory: PathBuf,
     level: LogLevel,
+    last_prune_day: Option<String>,
 }
 static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
 
@@ -48,7 +49,14 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         .and_then(|raw| serde_json::from_str::<LogConfig>(&raw).ok())
         .map(|config| config.level)
         .unwrap_or_default();
-    let _ = LOGGER.set(Mutex::new(Logger { directory, level }));
+    // Old logs are removed once per day, not on every write.
+    prune(&directory);
+    let today = Local::now().format("%Y-%m-%d").to_string();
+    let _ = LOGGER.set(Mutex::new(Logger {
+        directory,
+        level,
+        last_prune_day: Some(today),
+    }));
     write(LogLevel::Info, "app.started", json!({ "log_level": level }));
     Ok(())
 }
@@ -109,7 +117,7 @@ pub fn write(level: LogLevel, event: &str, fields: serde_json::Value) {
         eprintln!("[sentinel] {line}");
         return;
     };
-    let Ok(logger) = state.lock() else {
+    let Ok(mut logger) = state.lock() else {
         eprintln!("[sentinel] {line}");
         return;
     };
@@ -132,7 +140,14 @@ pub fn write(level: LogLevel, event: &str, fields: serde_json::Value) {
     if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&path) {
         let _ = writeln!(file, "{line}");
     }
-    prune(&logger.directory);
+    if should_prune(logger.last_prune_day.as_deref(), &date) {
+        prune(&logger.directory);
+        logger.last_prune_day = Some(date);
+    }
+}
+
+fn should_prune(last_prune_day: Option<&str>, today: &str) -> bool {
+    last_prune_day != Some(today)
 }
 
 fn prune(directory: &PathBuf) {
@@ -153,5 +168,17 @@ fn prune(directory: &PathBuf) {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prunes_on_the_first_run_of_a_new_day() {
+        assert!(should_prune(None, "2026-11-10"));
+        assert!(should_prune(Some("2026-11-09"), "2026-11-10"));
+        assert!(!should_prune(Some("2026-11-10"), "2026-11-10"));
     }
 }

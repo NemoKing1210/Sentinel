@@ -89,6 +89,8 @@ const en = {
     contextMenuHint: 'Adds "Scan with Sentinel" to the right-click menu for files and folders on Windows.',
     closeToTray: 'Keep in tray when closed',
     closeToTrayHint: 'Hide the window instead of quitting. Quit from the tray menu.',
+    autostart: 'Start with Windows',
+    autostartHint: 'Launch Sentinel automatically when you sign in.',
     startMinimized: 'Start minimized',
     startMinimizedHint: 'Launch Sentinel hidden in the system tray.',
     polling: 'Polling interval',
@@ -343,6 +345,18 @@ const en = {
       },
       contextMenuFailed: {
         title: 'Context menu update failed',
+        desc: 'Sentinel could not update the Windows registry.',
+      },
+      autostartOn: {
+        title: 'Autostart enabled',
+        desc: 'Sentinel will start when you sign in to Windows.',
+      },
+      autostartOff: {
+        title: 'Autostart disabled',
+        desc: 'Sentinel will no longer start with Windows.',
+      },
+      autostartFailed: {
+        title: 'Couldn’t change autostart',
         desc: 'Sentinel could not update the Windows registry.',
       },
       openReport: 'View report',

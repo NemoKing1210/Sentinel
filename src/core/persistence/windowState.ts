@@ -84,13 +84,11 @@ export async function applyPersistedWindowState(): Promise<void> {
 export function subscribeWindowState(): () => void {
   const window = getCurrentWindow();
   const handler = () => scheduleSnapshot();
-  const unlisten = window.onResized(handler);
+  const unlistenResize = window.onResized(handler);
   const unlistenMove = window.onMoved(handler);
-  const unlistenMaximize = window.onResized(handler);
   return () => {
-    void unlisten.then((fn) => fn());
+    void unlistenResize.then((fn) => fn());
     void unlistenMove.then((fn) => fn());
-    void unlistenMaximize.then((fn) => fn());
     if (timer) clearTimeout(timer);
   };
 }

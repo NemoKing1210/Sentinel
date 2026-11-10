@@ -6,6 +6,10 @@ import { useAppStore } from '@/core/state/store';
 import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import { describePreset, useToast } from '@/app/hooks/useToast';
 import { detectionCount, engineTotal } from '@/app/utils/format';
+import { normalizePollInterval } from '@/app/utils/scanPolling';
+import { runWithConcurrency } from '@/app/utils/concurrency';
+
+const MAX_CONCURRENT_SCANS = 2;
 import { logError, logInfo, logWarn } from '@/core/logging';
 
 export function useScanRunner() {
@@ -99,6 +103,7 @@ export function useScanRunner() {
       try {
         const response = await scanPath(path, item.isFolder, {
           onProgress: (progress) => updateItem(item.id, { status: 'scanning', progress }),
+          pollIntervalMs: normalizePollInterval(useAppStore.getState().settings.pollInterval),
         });
         const report: FileReport = {
           ...response.report,
@@ -140,9 +145,8 @@ export function useScanRunner() {
 
   const startAll = useCallback(
     (items: ScanItem[]) => {
-      items
-        .filter((item) => item.status === 'queued' || item.status === 'failed')
-        .forEach((item) => void runScan(item));
+      const pending = items.filter((item) => item.status === 'queued' || item.status === 'failed');
+      void runWithConcurrency(pending, MAX_CONCURRENT_SCANS, (item) => runScan(item));
     },
     [runScan],
   );

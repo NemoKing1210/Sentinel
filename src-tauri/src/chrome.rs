@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+use std::sync::{Mutex, PoisonError};
 use tauri::menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
@@ -14,7 +14,7 @@ const MAX_NAME_LENGTH: usize = 35;
 
 const TRAY_PREFIX: &str = "tray:";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrayActiveItem {
     pub id: String,
     pub name: String,
@@ -22,7 +22,7 @@ pub struct TrayActiveItem {
     pub progress: u8,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrayRecentItem {
     pub item_id: String,
     pub name: String,
@@ -31,7 +31,7 @@ pub struct TrayRecentItem {
     pub total: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrayLabels {
     pub show: String,
     pub dashboard: String,
@@ -55,7 +55,7 @@ pub struct TrayLabels {
     pub verdict_unknown: String,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct TrayState {
     pub labels: Option<TrayLabels>,
     pub active: Vec<TrayActiveItem>,
@@ -410,7 +410,7 @@ fn build_tray_menu_fallback<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Men
 
 pub fn install_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let state = app.state::<Mutex<TrayState>>();
-    let state_guard = state.lock().unwrap();
+    let state_guard = state.lock().unwrap_or_else(PoisonError::into_inner);
     let menu = build_tray_menu(app, &state_guard)?;
     drop(state_guard);
 
@@ -445,44 +445,57 @@ pub fn update_tray_state(
     active: String,
     recent: String,
 ) -> Result<(), String> {
-    let state = app.state::<Mutex<TrayState>>();
-    let mut state_guard = state.lock().map_err(|error| error.to_string())?;
-
-    match serde_json::from_str::<TrayLabels>(&labels) {
-        Ok(parsed) => state_guard.labels = Some(parsed),
+    let parsed_labels = match serde_json::from_str::<TrayLabels>(&labels) {
+        Ok(parsed) => Some(parsed),
         Err(error) => {
             logging::write(
                 LogLevel::Warn,
                 "tray.labels_parse_failed",
                 serde_json::json!({ "error": error.to_string() }),
             );
+            None
         }
-    }
-
-    match serde_json::from_str::<Vec<TrayActiveItem>>(&active) {
-        Ok(parsed) => state_guard.active = parsed,
+    };
+    let parsed_active = match serde_json::from_str::<Vec<TrayActiveItem>>(&active) {
+        Ok(parsed) => Some(parsed),
         Err(error) => {
             logging::write(
                 LogLevel::Warn,
                 "tray.active_parse_failed",
                 serde_json::json!({ "error": error.to_string() }),
             );
+            None
         }
-    }
-
-    match serde_json::from_str::<Vec<TrayRecentItem>>(&recent) {
-        Ok(parsed) => state_guard.recent = parsed,
+    };
+    let parsed_recent = match serde_json::from_str::<Vec<TrayRecentItem>>(&recent) {
+        Ok(parsed) => Some(parsed),
         Err(error) => {
             logging::write(
                 LogLevel::Warn,
                 "tray.recent_parse_failed",
                 serde_json::json!({ "error": error.to_string() }),
             );
+            None
         }
-    }
+    };
 
+    let state = app.state::<Mutex<TrayState>>();
+    let mut state_guard = state.lock().map_err(|error| error.to_string())?;
+    let before = state_guard.clone();
+    if let Some(labels) = parsed_labels {
+        state_guard.labels = Some(labels);
+    }
+    if let Some(active) = parsed_active {
+        state_guard.active = active;
+    }
+    if let Some(recent) = parsed_recent {
+        state_guard.recent = recent;
+    }
+    let changed = *state_guard != before;
     drop(state_guard);
-    rebuild_tray_menu(&app);
+    if changed {
+        rebuild_tray_menu(&app);
+    }
     Ok(())
 }
 
@@ -491,7 +504,7 @@ pub fn rebuild_tray_menu<R: Runtime>(app: &AppHandle<R>) {
         return;
     };
     let state = app.state::<Mutex<TrayState>>();
-    let state_guard = state.lock().unwrap();
+    let state_guard = state.lock().unwrap_or_else(PoisonError::into_inner);
     match build_tray_menu(app, &state_guard) {
         Ok(menu) => {
             if let Err(error) = tray.set_menu(Some(menu)) {

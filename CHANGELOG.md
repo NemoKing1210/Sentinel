@@ -5,6 +5,34 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-10
+
+### Added
+
+- Settings → System → “Start with Windows” registers Sentinel in the per-user Run key; it is opt-in, repairs a stale executable path on launch, and is removed by the uninstaller
+- Context-menu scans started while Sentinel is already running are queued and survive a webview that is still loading
+
+### Changed
+
+- Files and folder archives upload as a stream instead of being read into memory, so a 650 MB scan no longer needs 650 MB of RAM
+- VirusTotal requests share one pooled HTTP client with connection reuse, request timeouts, and one automatic retry after a 429 rate limit
+- The polling interval from Settings is now actually used; an unfinished analysis fails after five minutes instead of being reported as clean
+- At most two scans run at once when starting the whole queue
+- Log retention cleanup runs once per day instead of on every log write
+- The main window stays hidden until the persisted state is hydrated, so “Start minimized” no longer flashes a window
+- The tray menu is rebuilt only when its contents change
+- Release builds use LTO, one codegen unit, and stripped symbols; the frontend is split into vendor chunks
+- The app now ships a strict Content Security Policy
+
+### Fixed
+
+- The SHA-256 reported for an upload is computed from the exact bytes streamed to VirusTotal, not from a separate read of the file
+- “Keep in tray when closed” now takes effect immediately instead of after a restart
+- Consecutive context-menu launches no longer overwrite each other’s pending paths
+- Folder metadata is collected off the UI thread
+- External links are limited to http and https
+- Removed a duplicate window-resize listener
+
 ## [0.7.1] - 2026-11-10
 
 ### Changed

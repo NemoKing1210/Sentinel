@@ -12,6 +12,7 @@ import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import {
   detectPaths,
   getApiKey,
+  getAutostart,
   getLogLevel,
   getPendingScanPaths,
   hasSavedApiKey,
@@ -24,6 +25,7 @@ import {
   pickPath,
   registerContextMenu,
   saveApiKey,
+  setAutostart,
   setLogLevel,
   subscribeToFileDrops,
   unregisterContextMenu,
@@ -87,6 +89,7 @@ export default function App() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [supportsContextMenu, setSupportsContextMenu] = useState(false);
+  const [supportsAutostart, setSupportsAutostart] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const scrollPositions = useRef(new Map<string, number>());
 
@@ -213,7 +216,7 @@ export default function App() {
     void (async () => {
       const persistOk = await hydratePersistedState();
       if (cancelled.current) return;
-      const [hasApiKey, logLevel] = await Promise.all([
+      const [hasApiKey, logLevel, autostart] = await Promise.all([
         hasSavedApiKey().catch((error) => {
           logWarn('bootstrap.key_check_failed', { error: String(error) });
           return useAppStore.getState().settings.hasApiKey;
@@ -222,14 +225,31 @@ export default function App() {
           logWarn('bootstrap.log_level_failed', { error: String(error) });
           return useAppStore.getState().settings.logLevel;
         }),
+        getAutostart().catch((error) => {
+          logWarn('bootstrap.autostart_check_failed', { error: String(error) });
+          return useAppStore.getState().settings.autostart;
+        }),
       ]);
       if (cancelled.current) return;
-      useAppStore.getState().setSettings({ hasApiKey, logLevel });
+      useAppStore.getState().setSettings({ hasApiKey, logLevel, autostart });
       if (!persistOk) {
         logWarn('bootstrap.persistence_locked');
         return;
       }
       useAppStore.getState().setHydrated(true);
+      // Bind before draining: a scan requested while the webview was loading must
+      // find hydrated state, and an event arriving during the drain must not be lost.
+      const contextMenuUnlisten = await bindContextMenuScans({
+        onPaths: (paths) => void scanContextPathsRef.current(paths),
+      }).catch((error) => {
+        logWarn('bootstrap.context_menu_listener_failed', { error: String(error) });
+        return undefined;
+      });
+      if (cancelled.current) {
+        contextMenuUnlisten?.();
+        return;
+      }
+      disposeContextMenu = contextMenuUnlisten;
       const pendingContextPaths = await getPendingScanPaths().catch((error) => {
         logWarn('bootstrap.context_paths_failed', { error: String(error) });
         return [] as string[];
@@ -289,15 +309,6 @@ export default function App() {
         }),
       )
       .catch((error) => logWarn('bootstrap.notification_listener_failed', { error: String(error) }));
-    void bindContextMenuScans({
-      onPaths: (paths) => void scanContextPathsRef.current(paths),
-    })
-      .then(
-        keepListener(cancelled, (unlisten) => {
-          disposeContextMenu = unlisten;
-        }),
-      )
-      .catch((error) => logWarn('bootstrap.context_menu_listener_failed', { error: String(error) }));
     logInfo('app.started_ui');
     return () => {
       cancelled.current = true;
@@ -385,10 +396,14 @@ export default function App() {
 
   useEffect(() => {
     void isWindowsPlatform()
-      .then(setSupportsContextMenu)
+      .then((windows) => {
+        setSupportsContextMenu(windows);
+        setSupportsAutostart(windows);
+      })
       .catch((error) => {
         logWarn('bootstrap.platform_check_failed', { error: String(error) });
         setSupportsContextMenu(false);
+        setSupportsAutostart(false);
       });
   }, []);
 
@@ -478,6 +493,18 @@ export default function App() {
     } catch (error) {
       logError('shell.context_menu_change_failed_ui', { enabled, error: String(error) });
       showToast(describePreset('contextMenuFailed', t));
+    }
+  };
+
+  const changeAutostart = async (enabled: boolean) => {
+    try {
+      await setAutostart(enabled);
+      setSettings({ autostart: enabled });
+      showToast(describePreset(enabled ? 'autostartOn' : 'autostartOff', t));
+      logInfo('autostart.changed_ui', { enabled });
+    } catch (error) {
+      logError('autostart.change_failed_ui', { enabled, error: String(error) });
+      showToast(describePreset('autostartFailed', t));
     }
   };
 
@@ -597,6 +624,8 @@ export default function App() {
                       setSettings={updateSettings}
                       supportsContextMenu={supportsContextMenu}
                       setContextMenuEnabled={changeContextMenuEnabled}
+                      supportsAutostart={supportsAutostart}
+                      setAutostartEnabled={changeAutostart}
                       changeLanguage={(language) => void i18n.changeLanguage(language)}
                       setLogLevel={changeLogLevel}
                       openLogDirectory={async () => {

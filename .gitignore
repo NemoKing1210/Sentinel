@@ -7,3 +7,4 @@ src-tauri/gen/
 .DS_Store
 .cursor/
 .superpowers/
+docs/

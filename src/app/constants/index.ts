@@ -33,6 +33,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   logLevel: 'info',
   scanImmediately: true,
   closeToTray: true,
+  autostart: false,
   startMinimized: false,
   notificationsEnabled: true,
   notifyOnCompleted: true,

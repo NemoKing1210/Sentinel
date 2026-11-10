@@ -87,6 +87,8 @@ const zh = {
     contextMenuHint: '在 Windows 中为文件和文件夹的右键菜单添加「使用 Sentinel 扫描」。',
     closeToTray: '关闭时保留在托盘',
     closeToTrayHint: '隐藏窗口而不是退出。从托盘菜单退出。',
+    autostart: '随 Windows 启动',
+    autostartHint: '登录 Windows 时自动启动 Sentinel。',
     startMinimized: '最小化启动',
     startMinimizedHint: '在系统托盘中隐藏启动 Sentinel。',
     polling: '轮询间隔',
@@ -337,6 +339,18 @@ const zh = {
       },
       contextMenuFailed: {
         title: '菜单更新失败',
+        desc: 'Sentinel 无法更新 Windows 注册表。',
+      },
+      autostartOn: {
+        title: '已启用自动启动',
+        desc: '登录 Windows 时将自动启动 Sentinel。',
+      },
+      autostartOff: {
+        title: '已禁用自动启动',
+        desc: 'Sentinel 将不再随 Windows 启动。',
+      },
+      autostartFailed: {
+        title: '无法更改自动启动',
         desc: 'Sentinel 无法更新 Windows 注册表。',
       },
       openReport: '查看报告',

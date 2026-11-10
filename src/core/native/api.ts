@@ -5,6 +5,15 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { ask, open } from '@tauri-apps/plugin-dialog';
 import type { EngineCategory, FileReport, LogLevel, ScanItem } from '../domain/types';
 import { detectFileKind, detectMimeType } from '@/app/utils/fileKind';
+import {
+  analysisPhase,
+  DEFAULT_POLL_INTERVAL_MS,
+  DEFAULT_SCAN_TIMEOUT_MS,
+  MAX_POLL_INTERVAL_MS,
+  MIN_POLL_INTERVAL_MS,
+  pollAttempts,
+  pollProgress,
+} from '@/app/utils/scanPolling';
 
 const isTauri = Boolean((window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
 const bytes = (value: number) => value;
@@ -210,6 +219,15 @@ export async function setCloseToTray(enabled: boolean): Promise<void> {
   if (isTauri) await invoke('set_close_to_tray', { enabled });
 }
 
+export async function getAutostart(): Promise<boolean> {
+  if (!isTauri) return false;
+  return invoke<boolean>('get_autostart');
+}
+
+export async function setAutostart(enabled: boolean): Promise<void> {
+  if (isTauri) await invoke('set_autostart', { enabled });
+}
+
 export interface TrayMenuLabels {
   show: string;
   dashboard: string;
@@ -324,6 +342,27 @@ export async function subscribeToFileDrops(
 
 export interface ScanProgress {
   onProgress?: (progress: number) => void;
+  /** Poll cadence in milliseconds; defaults to 5 s. */
+  pollIntervalMs?: number;
+  /** Whole-analysis budget; defaults to 5 minutes. */
+  timeoutMs?: number;
+}
+
+interface AnalysisResult {
+  engine_name?: string;
+  category?: string;
+  result?: string | null;
+  engine_update?: string;
+}
+
+interface AnalysisAttributes {
+  status?: string;
+  stats?: Partial<Record<'malicious' | 'suspicious' | 'undetected' | 'harmless', number>>;
+  results?: Record<string, AnalysisResult>;
+}
+
+interface AnalysisResponse {
+  data?: { attributes?: AnalysisAttributes };
 }
 
 const ENGINE_CATEGORIES: ReadonlySet<string> = new Set([
@@ -352,17 +391,29 @@ export async function scanPath(
       ? invoke<{ analysis_id: string; sha256: string }>('submit_archive', { paths: [path] })
       : invoke<{ analysis_id: string; sha256: string }>('submit_file', { path }));
     options.onProgress?.(35);
-    let analysis: any = null;
-    for (let attempt = 0; attempt < 60; attempt += 1) {
-      analysis = await invoke<any>('get_analysis_status', { analysisId: upload.analysis_id });
-      if (analysis?.data?.attributes?.status === 'completed') break;
-      if (analysis?.data?.attributes?.status === 'failed') throw new Error('VirusTotal analysis failed');
-      options.onProgress?.(Math.min(95, 40 + attempt));
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+    const intervalMs = Math.min(
+      MAX_POLL_INTERVAL_MS,
+      Math.max(MIN_POLL_INTERVAL_MS, options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS),
+    );
+    const attempts = pollAttempts(intervalMs, options.timeoutMs ?? DEFAULT_SCAN_TIMEOUT_MS);
+    let analysis: AnalysisResponse | null = null;
+    let phase: ReturnType<typeof analysisPhase> = 'pending';
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      analysis = await invoke<AnalysisResponse>('get_analysis_status', { analysisId: upload.analysis_id });
+      phase = analysisPhase(analysis?.data?.attributes?.status);
+      if (phase === 'completed') break;
+      if (phase === 'failed') throw new Error('VirusTotal analysis failed');
+      options.onProgress?.(pollProgress(attempt, attempts));
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      }
     }
-    const attrs = analysis?.data?.attributes || {};
-    const stats = attrs.stats || {};
-    const results = Object.values(attrs.results || {}) as any[];
+    if (phase !== 'completed') {
+      throw new Error('VirusTotal analysis timed out');
+    }
+    const attrs = analysis?.data?.attributes ?? {};
+    const stats = attrs.stats ?? {};
+    const results = Object.values(attrs.results ?? {});
     const report: FileReport = {
       itemId: upload.analysis_id,
       name: path.split(/[\\/]/).pop() || 'upload',
@@ -372,7 +423,7 @@ export async function scanPath(
       sha256: upload.sha256,
       sha1: '',
       md5: '',
-      verdict: stats.malicious > 0 ? 'malicious' : stats.suspicious > 0 ? 'suspicious' : 'clean',
+      verdict: (stats.malicious ?? 0) > 0 ? 'malicious' : (stats.suspicious ?? 0) > 0 ? 'suspicious' : 'clean',
       stats: {
         malicious: stats.malicious || 0,
         suspicious: stats.suspicious || 0,

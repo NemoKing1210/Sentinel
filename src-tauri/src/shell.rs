@@ -21,6 +21,16 @@ pub fn collect_scan_args(args: impl IntoIterator<Item = String>) -> Vec<String> 
     paths
 }
 
+fn merge_pending(existing: Vec<String>, incoming: Vec<String>) -> Vec<String> {
+    let mut merged = existing;
+    for path in incoming {
+        if !path.trim().is_empty() && !merged.iter().any(|kept| kept == &path) {
+            merged.push(path);
+        }
+    }
+    merged
+}
+
 pub fn stash_launch_paths(args: Vec<String>) {
     let paths = collect_scan_args(args);
     if paths.is_empty() {
@@ -28,7 +38,8 @@ pub fn stash_launch_paths(args: Vec<String>) {
     }
     let count = paths.len();
     if let Ok(mut guard) = PENDING_PATHS.lock() {
-        *guard = Some(paths);
+        let existing = guard.take().unwrap_or_default();
+        *guard = Some(merge_pending(existing, paths));
     }
     logging::write(
         LogLevel::Info,
@@ -263,6 +274,17 @@ mod tests {
             r"C:\temp\file.exe".to_string(),
         ];
         assert!(collect_scan_args(args).is_empty());
+    }
+
+    #[test]
+    fn merges_new_paths_without_duplicates() {
+        assert_eq!(
+            merge_pending(
+                vec!["a".to_string(), "b".to_string()],
+                vec!["b".to_string(), "c".to_string(), "a".to_string()]
+            ),
+            vec!["a".to_string(), "b".to_string(), "c".to_string()]
+        );
     }
 
     #[test]

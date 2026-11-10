@@ -83,6 +83,7 @@ export interface AppSettings {
   logLevel: LogLevel;
   scanImmediately: boolean;
   closeToTray: boolean;
+  autostart: boolean;
   startMinimized: boolean;
   notificationsEnabled: boolean;
   notifyOnCompleted: boolean;

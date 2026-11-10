@@ -93,6 +93,8 @@ const ru = {
     contextMenuHint: 'Добавляет «Проверить с Sentinel» в меню правой кнопки мыши для файлов и папок в Windows.',
     closeToTray: 'Оставлять в трее при закрытии',
     closeToTrayHint: 'Скрывать окно вместо выхода. Завершить работу можно через меню в трее.',
+    autostart: 'Запускать с Windows',
+    autostartHint: 'Автоматически запускать Sentinel при входе в систему.',
     startMinimized: 'Запускать свёрнутым',
     startMinimizedHint: 'Запускать Sentinel скрытым в системном трее.',
     polling: 'Интервал опроса',
@@ -352,6 +354,18 @@ const ru = {
       },
       contextMenuFailed: {
         title: 'Не удалось обновить меню',
+        desc: 'Sentinel не смог обновить реестр Windows.',
+      },
+      autostartOn: {
+        title: 'Автозапуск включён',
+        desc: 'Sentinel будет запускаться при входе в Windows.',
+      },
+      autostartOff: {
+        title: 'Автозапуск отключён',
+        desc: 'Sentinel больше не будет запускаться вместе с Windows.',
+      },
+      autostartFailed: {
+        title: 'Не удалось изменить автозапуск',
         desc: 'Sentinel не смог обновить реестр Windows.',
       },
       openReport: 'Открыть отчёт',

@@ -22,6 +22,8 @@ interface SettingsPageProps {
   setSettings: (v: Partial<AppSettings>) => void;
   supportsContextMenu: boolean;
   setContextMenuEnabled: (enabled: boolean) => Promise<void>;
+  supportsAutostart: boolean;
+  setAutostartEnabled: (enabled: boolean) => void;
   changeLanguage: (language: Language) => void;
   setLogLevel: (level: LogLevel) => Promise<void>;
   openLogDirectory: () => Promise<void>;
@@ -82,6 +84,8 @@ export function SettingsPage({
   setSettings,
   supportsContextMenu,
   setContextMenuEnabled,
+  supportsAutostart,
+  setAutostartEnabled,
   changeLanguage,
   setLogLevel: changeLogLevel,
   openLogDirectory,
@@ -254,6 +258,16 @@ export function SettingsPage({
         </SettingsSection>
       )}
       <SettingsSection title={t('systemSection')}>
+        {supportsAutostart && (
+          <Switch
+            className="settings-row surface"
+            icon="bolt"
+            checked={settings.autostart}
+            onChange={setAutostartEnabled}
+            label={t('autostart')}
+            description={t('autostartHint')}
+          />
+        )}
         <Switch
           className="settings-row surface"
           icon="minimize"

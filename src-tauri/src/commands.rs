@@ -2,12 +2,15 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
     fs::File,
-    io::{Read, Write},
     path::Path,
-    time::UNIX_EPOCH,
+    pin::Pin,
+    sync::{Arc, Mutex, OnceLock},
+    task::{Context, Poll},
+    time::{Duration, UNIX_EPOCH},
 };
 use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
+use tokio::io::{AsyncRead, ReadBuf};
 use walkdir::WalkDir;
 use zip::{write::SimpleFileOptions, ZipWriter};
 
@@ -18,6 +21,109 @@ const BASE: &str = "https://www.virustotal.com/api/v3";
 const MAX_FILE_BYTES: u64 = 650 * 1024 * 1024;
 const SMALL_FILE_BYTES: u64 = 32 * 1024 * 1024;
 const MAX_RESPONSE_SNIPPET: usize = 500;
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(45);
+/// A 650 MB upload on a slow link needs far longer than a metadata call.
+const UPLOAD_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+const RETRY_AFTER_DEFAULT_SECS: u64 = 5;
+const RETRY_AFTER_MAX_SECS: u64 = 60;
+
+static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+
+/// One pooled client for every request: keeps TLS sessions alive across polls.
+fn http_client() -> &'static reqwest::Client {
+    HTTP_CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .connect_timeout(Duration::from_secs(30))
+            .pool_idle_timeout(Duration::from_secs(90))
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new())
+    })
+}
+
+/// Streams a file into the request body while hashing the exact bytes sent, so
+/// the reported SHA-256 always matches what VirusTotal received.
+struct HashingReader<R> {
+    inner: R,
+    hasher: Arc<Mutex<Sha256>>,
+}
+
+impl<R> HashingReader<R> {
+    fn new(inner: R, hasher: Arc<Mutex<Sha256>>) -> Self {
+        Self { inner, hasher }
+    }
+}
+
+impl<R: AsyncRead + Unpin> AsyncRead for HashingReader<R> {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        let before = buf.filled().len();
+        let result = Pin::new(&mut self.inner).poll_read(cx, buf);
+        if matches!(result, Poll::Ready(Ok(()))) {
+            let filled = buf.filled();
+            if filled.len() > before {
+                let mut hasher = self
+                    .hasher
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner());
+                hasher.update(&filled[before..]);
+            }
+        }
+        result
+    }
+}
+
+/// Finalize a copy so a retry can keep the shared hasher handle.
+fn hex_digest(hasher: &Mutex<Sha256>) -> String {
+    let digest = hasher
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .clone()
+        .finalize();
+    format!("{digest:x}")
+}
+
+fn retry_after_seconds(value: Option<&str>) -> u64 {
+    value
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .map(|seconds| seconds.clamp(1, RETRY_AFTER_MAX_SECS))
+        .unwrap_or(RETRY_AFTER_DEFAULT_SECS)
+}
+
+/// Only a rate limit is worth a second attempt; every other status is final.
+fn retry_plan(status: reqwest::StatusCode, retry_after: Option<&str>) -> Option<Duration> {
+    (status == reqwest::StatusCode::TOO_MANY_REQUESTS)
+        .then(|| Duration::from_secs(retry_after_seconds(retry_after)))
+}
+
+/// Sends the request, and repeats it once after `Retry-After` when VirusTotal
+/// answers 429. The closure builds a fresh request, so the retry is not tainted
+/// by a consumed body.
+async fn send_with_429_retry<F>(
+    build: F,
+    rate_limit_event: &str,
+) -> Result<reqwest::Response, reqwest::Error>
+where
+    F: Fn() -> reqwest::RequestBuilder,
+{
+    let response = build().send().await?;
+    let retry_after = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok());
+    let Some(delay) = retry_plan(response.status(), retry_after) else {
+        return Ok(response);
+    };
+    logging::write(
+        LogLevel::Warn,
+        rate_limit_event,
+        serde_json::json!({ "delay": delay.as_secs(), "retrying": true }),
+    );
+    tokio::time::sleep(delay).await;
+    build().send().await
+}
 
 #[derive(Serialize)]
 pub struct ApiResponse {
@@ -41,8 +147,14 @@ fn epoch_seconds(time: std::io::Result<std::time::SystemTime>) -> u64 {
 }
 
 #[tauri::command]
-pub fn get_path_metadata(path: String) -> Result<PathMetadata, String> {
-    let file_path = Path::new(&path);
+pub async fn get_path_metadata(path: String) -> Result<PathMetadata, String> {
+    tauri::async_runtime::spawn_blocking(move || path_metadata(&path))
+        .await
+        .map_err(|error| format!("fs.metadata_task_failed: {error}"))?
+}
+
+fn path_metadata(path: &str) -> Result<PathMetadata, String> {
+    let file_path = Path::new(path);
     let metadata = match std::fs::metadata(file_path) {
         Ok(metadata) => metadata,
         Err(error) => {
@@ -260,11 +372,16 @@ pub async fn validate_api_key() -> Result<bool, String> {
         "connection.request_started",
         serde_json::json!({ "endpoint": "/domains/google.com" }),
     );
-    let response = match reqwest::Client::new()
-        .get(format!("{BASE}/domains/google.com"))
-        .header("x-apikey", &key)
-        .send()
-        .await
+    let response = match send_with_429_retry(
+        || {
+            http_client()
+                .get(format!("{BASE}/domains/google.com"))
+                .header("x-apikey", &key)
+                .timeout(REQUEST_TIMEOUT)
+        },
+        "connection.rate_limited",
+    )
+    .await
     {
         Ok(response) => response,
         Err(error) => return Err(fail("connection.request_failed", error.to_string())),
@@ -334,22 +451,7 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
         ));
     }
 
-    let mut file = match File::open(file_path) {
-        Ok(file) => file,
-        Err(error) => return Err(fail("scan.file_open_failed", error.to_string())),
-    };
-    let mut contents = Vec::new();
-    if let Err(error) = file.read_to_end(&mut contents) {
-        return Err(fail("scan.file_read_failed", error.to_string()));
-    }
-    let sha256 = format!("{:x}", Sha256::digest(&contents));
-    logging::write(
-        LogLevel::Info,
-        "scan.file_hashed",
-        serde_json::json!({ "file_name": file_name, "size": size, "sha256": sha256 }),
-    );
-
-    let client = reqwest::Client::new();
+    let client = http_client();
     let endpoint = if size <= SMALL_FILE_BYTES {
         format!("{BASE}/files")
     } else {
@@ -358,11 +460,16 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
             "scan.upload_url_requested",
             serde_json::json!({ "file_name": file_name }),
         );
-        let response = match client
-            .get(format!("{BASE}/files/upload_url"))
-            .header("x-apikey", &key)
-            .send()
-            .await
+        let response = match send_with_429_retry(
+            || {
+                client
+                    .get(format!("{BASE}/files/upload_url"))
+                    .header("x-apikey", &key)
+                    .timeout(REQUEST_TIMEOUT)
+            },
+            "scan.upload_url_rate_limited",
+        )
+        .await
         {
             Ok(response) => response,
             Err(error) => return Err(fail("scan.upload_url_failed", error.to_string())),
@@ -383,23 +490,56 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
         }
     };
 
-    let part = reqwest::multipart::Part::bytes(contents).file_name(
-        file_path
-            .file_name()
-            .and_then(|x| x.to_str())
-            .unwrap_or("upload")
-            .to_string(),
-    );
-    let form = reqwest::multipart::Form::new().part("file", part);
-    let response = match client
-        .post(endpoint)
-        .header("x-apikey", key)
-        .multipart(form)
-        .send()
-        .await
-    {
-        Ok(response) => response,
-        Err(error) => return Err(fail("scan.upload_failed", error.to_string())),
+    let mut retried = false;
+    let (response, hasher) = loop {
+        let hasher = Arc::new(Mutex::new(Sha256::new()));
+        let upload_file = match tokio::fs::File::open(file_path).await {
+            Ok(file) => file,
+            Err(error) => return Err(fail("scan.file_open_failed", error.to_string())),
+        };
+        let stream =
+            tokio_util::io::ReaderStream::new(HashingReader::new(upload_file, Arc::clone(&hasher)));
+        let part =
+            reqwest::multipart::Part::stream_with_length(reqwest::Body::wrap_stream(stream), size)
+                .file_name(file_name.clone());
+        let form = reqwest::multipart::Form::new().part("file", part);
+        let response = match client
+            .post(&endpoint)
+            .header("x-apikey", &key)
+            .multipart(form)
+            .timeout(UPLOAD_TIMEOUT)
+            .send()
+            .await
+        {
+            Ok(response) => response,
+            Err(error) => return Err(fail("scan.upload_failed", error.to_string())),
+        };
+        let retry_after = response
+            .headers()
+            .get(reqwest::header::RETRY_AFTER)
+            .and_then(|value| value.to_str().ok());
+        match retry_plan(response.status(), retry_after) {
+            Some(delay) if !retried => {
+                retried = true;
+                logging::write(
+                    LogLevel::Warn,
+                    "scan.upload_rate_limited",
+                    serde_json::json!({
+                        "file_name": file_name,
+                        "delay": delay.as_secs(),
+                        "retrying": true,
+                    }),
+                );
+                tokio::time::sleep(delay).await;
+            }
+            Some(delay) => {
+                return Err(fail(
+                    "scan.upload_rate_limited",
+                    format!("VirusTotal rate limit; retry in {} s", delay.as_secs()),
+                ));
+            }
+            None => break (response, hasher),
+        }
     };
     if !response.status().is_success() {
         return Err(fail(
@@ -407,6 +547,12 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
             format!("VirusTotal returned {}", response.status()),
         ));
     }
+    let sha256 = hex_digest(&hasher);
+    logging::write(
+        LogLevel::Info,
+        "scan.file_hashed",
+        serde_json::json!({ "file_name": file_name, "size": size, "sha256": sha256 }),
+    );
     let json: serde_json::Value = match response.json().await {
         Ok(json) => json,
         Err(error) => return Err(fail("scan.response_parse_failed", error.to_string())),
@@ -490,15 +636,11 @@ pub async fn submit_archive(paths: Vec<String>) -> Result<ApiResponse, String> {
                 ))
             }
         };
-        let mut contents = Vec::new();
-        if let Err(error) = input.read_to_end(&mut contents) {
-            return Err(fail("scan.archive_read_failed", error.to_string()));
-        }
-        if let Err(error) = archive.write_all(&contents) {
-            return Err(fail("scan.archive_write_failed", error.to_string()));
+        match std::io::copy(&mut input, &mut archive) {
+            Ok(bytes) => byte_count += bytes,
+            Err(error) => return Err(fail("scan.archive_write_failed", error.to_string())),
         }
         file_count += 1;
-        byte_count += contents.len() as u64;
     }
     if let Err(error) = archive.finish() {
         return Err(fail("scan.archive_finish_failed", error.to_string()));
@@ -517,9 +659,12 @@ pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Valu
         Ok(key) => key,
         Err(error) => return Err(fail("scan.poll_api_key_failed", error)),
     };
-    let response = match reqwest::Client::new()
-        .get(format!("{BASE}/analyses/{analysis_id}"))
-        .header("x-apikey", key)
+    let client = http_client();
+    let url = format!("{BASE}/analyses/{analysis_id}");
+    let mut response = match client
+        .get(&url)
+        .header("x-apikey", &key)
+        .timeout(REQUEST_TIMEOUT)
         .send()
         .await
     {
@@ -531,6 +676,37 @@ pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Valu
             ))
         }
     };
+    let retry_after = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok());
+    if let Some(delay) = retry_plan(response.status(), retry_after) {
+        logging::write(
+            LogLevel::Warn,
+            "scan.poll_rate_limited",
+            serde_json::json!({
+                "analysis_id": analysis_id,
+                "delay": delay.as_secs(),
+                "retrying": true,
+            }),
+        );
+        tokio::time::sleep(delay).await;
+        response = match client
+            .get(&url)
+            .header("x-apikey", &key)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await
+        {
+            Ok(response) => response,
+            Err(error) => {
+                return Err(fail(
+                    "scan.poll_failed",
+                    format!("{error} (analysis_id: {analysis_id})"),
+                ))
+            }
+        };
+    }
     if !response.status().is_success() {
         let status = response.status();
         return Err(fail(
@@ -561,6 +737,12 @@ pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Valu
     Ok(json)
 }
 
+fn is_allowed_external_url(raw: &str) -> bool {
+    reqwest::Url::parse(raw)
+        .map(|url| matches!(url.scheme(), "http" | "https"))
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 pub async fn open_external_url(url: String, app: tauri::AppHandle) -> Result<(), String> {
     logging::write(
@@ -568,6 +750,12 @@ pub async fn open_external_url(url: String, app: tauri::AppHandle) -> Result<(),
         "ui.external_url_open_requested",
         serde_json::json!({ "url": url }),
     );
+    if !is_allowed_external_url(&url) {
+        return Err(fail(
+            "ui.external_url_rejected",
+            format!("unsupported URL: {url}"),
+        ));
+    }
     match app.opener().open_url(url, None::<&str>) {
         Ok(()) => Ok(()),
         Err(error) => Err(fail("ui.external_url_open_failed", error.to_string())),
@@ -945,5 +1133,117 @@ mod system_accent_tests {
     fn reads_rgb_from_dwm_argb() {
         assert_eq!(accent_from_registry_value(0xC40078D4), "#0078d4");
         assert_eq!(accent_from_registry_value(0xFFC42B1C), "#c42b1c");
+    }
+}
+
+#[cfg(test)]
+mod upload_tests {
+    use super::*;
+
+    #[test]
+    fn parses_retry_after_with_bounds() {
+        assert_eq!(retry_after_seconds(Some("12")), 12);
+        assert_eq!(retry_after_seconds(Some("0")), 1);
+        assert_eq!(retry_after_seconds(Some("120")), 60);
+        assert_eq!(retry_after_seconds(Some("soon")), 5);
+        assert_eq!(retry_after_seconds(None), 5);
+    }
+
+    #[test]
+    fn retry_plan_only_for_rate_limits() {
+        assert_eq!(
+            retry_plan(reqwest::StatusCode::TOO_MANY_REQUESTS, Some("7")),
+            Some(Duration::from_secs(7))
+        );
+        assert_eq!(
+            retry_plan(reqwest::StatusCode::TOO_MANY_REQUESTS, None),
+            Some(Duration::from_secs(RETRY_AFTER_DEFAULT_SECS))
+        );
+        assert_eq!(retry_plan(reqwest::StatusCode::OK, Some("7")), None);
+        assert_eq!(retry_plan(reqwest::StatusCode::BAD_REQUEST, None), None);
+    }
+
+    #[tokio::test]
+    async fn hashing_reader_covers_exactly_the_bytes_streamed() {
+        use std::sync::{Arc, Mutex};
+        use tokio::io::AsyncReadExt;
+
+        let hasher = Arc::new(Mutex::new(Sha256::new()));
+        let mut reader = HashingReader::new(&b"hello"[..], Arc::clone(&hasher));
+        let mut chunk = [0_u8; 2];
+        let mut streamed = Vec::new();
+        loop {
+            let read = reader.read(&mut chunk).await.expect("read");
+            if read == 0 {
+                break;
+            }
+            streamed.extend_from_slice(&chunk[..read]);
+        }
+        assert_eq!(streamed, b"hello");
+        assert_eq!(
+            hex_digest(&hasher),
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        );
+    }
+
+    #[tokio::test]
+    async fn retries_once_after_a_rate_limit() {
+        use std::io::{BufRead, BufReader, Write};
+        use std::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+        let address = listener.local_addr().expect("address");
+        let server = std::thread::spawn(move || {
+            for attempt in 0..2 {
+                let (mut stream, _) = listener.accept().expect("accept");
+                let mut reader = BufReader::new(stream.try_clone().expect("clone"));
+                let mut line = String::new();
+                loop {
+                    line.clear();
+                    let read = reader.read_line(&mut line).expect("read");
+                    if read == 0 || line == "\r\n" {
+                        break;
+                    }
+                }
+                let response = if attempt == 0 {
+                    "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                } else {
+                    "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+                };
+                stream.write_all(response.as_bytes()).expect("write");
+            }
+        });
+
+        let url = format!("http://{address}/status");
+        let response = send_with_429_retry(
+            || http_client().get(&url).timeout(Duration::from_secs(5)),
+            "test.rate_limited",
+        )
+        .await
+        .expect("response");
+
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+        assert_eq!(response.text().await.expect("body"), "ok");
+        server.join().expect("server");
+    }
+}
+
+#[cfg(test)]
+mod external_url_tests {
+    use super::*;
+
+    #[test]
+    fn accepts_http_and_https_urls() {
+        assert!(is_allowed_external_url(
+            "https://www.virustotal.com/gui/file/abc"
+        ));
+        assert!(is_allowed_external_url("http://example.com"));
+    }
+
+    #[test]
+    fn rejects_other_schemes_and_garbage() {
+        assert!(!is_allowed_external_url("file:///C:/Windows/System32"));
+        assert!(!is_allowed_external_url("javascript:alert(1)"));
+        assert!(!is_allowed_external_url("not a url"));
     }
 }

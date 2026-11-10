@@ -1,3 +1,4 @@
+mod autostart;
 mod browser;
 mod chrome;
 mod commands;
@@ -27,9 +28,12 @@ pub fn run() {
                 let _ = window.unminimize();
                 let _ = window.set_focus();
             }
-            let paths = shell::collect_scan_args(argv);
+            let paths = shell::collect_scan_args(argv.clone());
             if !paths.is_empty() {
-                let _ = app.emit("native:context-scan", serde_json::json!({ "paths": paths }));
+                // Queue the paths as well as notifying the UI: the webview may still be
+                // loading, in which case the event is lost but the queue survives.
+                shell::stash_launch_paths(argv);
+                let _ = app.emit("native:context-scan", serde_json::json!({}));
                 logging::write(
                     logging::LogLevel::Info,
                     "shell.second_instance_paths_forwarded",
@@ -75,6 +79,8 @@ pub fn run() {
             shell::is_context_menu_registered,
             shell::get_pending_scan_paths,
             shell::platform_name,
+            autostart::get_autostart,
+            autostart::set_autostart,
             set_close_to_tray,
             chrome::update_tray_state
         ])
@@ -87,10 +93,23 @@ pub fn run() {
                     serde_json::json!({ "error": error.to_string() }),
                 );
             }
-            if let Some(stored) = persistence::read_close_to_tray_setting(app.handle()) {
+            let stored_settings = persistence::read_settings(app.handle());
+            if let Some(stored) = stored_settings
+                .as_ref()
+                .and_then(|settings| persistence::setting_bool(settings, "closeToTray"))
+            {
                 CLOSE_TO_TRAY.store(stored, Ordering::Release);
             }
-            if persistence::read_setting_bool(app.handle(), "contextMenuEnabled").unwrap_or(false) {
+            let autostart_wanted = stored_settings
+                .as_ref()
+                .and_then(|settings| persistence::setting_bool(settings, "autostart"))
+                .unwrap_or(false);
+            autostart::sync_from_settings(app.handle(), autostart_wanted);
+            if stored_settings
+                .as_ref()
+                .and_then(|settings| persistence::setting_bool(settings, "contextMenuEnabled"))
+                .unwrap_or(false)
+            {
                 if let Err(error) = shell::register_context_menu() {
                     logging::write(
                         logging::LogLevel::Warn,

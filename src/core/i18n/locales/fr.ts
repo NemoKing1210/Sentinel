@@ -89,6 +89,8 @@ const fr = {
     contextMenuHint: 'Ajoute « Analyser avec Sentinel » au menu contextuel des fichiers et dossiers sous Windows.',
     closeToTray: 'Garder dans le bac à la fermeture',
     closeToTrayHint: 'Masquer la fenêtre au lieu de quitter. Quittez via le menu du bac.',
+    autostart: 'Démarrer avec Windows',
+    autostartHint: 'Lancer Sentinel automatiquement à l’ouverture de session.',
     startMinimized: 'Démarrer réduit',
     startMinimizedHint: 'Lancer Sentinel masqué dans la barre système.',
     polling: 'Intervalle d’interrogation',
@@ -347,6 +349,18 @@ const fr = {
       contextMenuFailed: {
         title: 'Mise à jour du menu impossible',
         desc: 'Sentinel n’a pas pu modifier le registre Windows.',
+      },
+      autostartOn: {
+        title: 'Démarrage automatique activé',
+        desc: 'Sentinel démarrera à l’ouverture de session Windows.',
+      },
+      autostartOff: {
+        title: 'Démarrage automatique désactivé',
+        desc: 'Sentinel ne démarrera plus avec Windows.',
+      },
+      autostartFailed: {
+        title: 'Impossible de modifier le démarrage automatique',
+        desc: 'Sentinel n’a pas pu mettre à jour le registre Windows.',
       },
       openReport: 'Voir le rapport',
       dismiss: 'Fermer',

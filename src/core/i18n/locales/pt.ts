@@ -89,6 +89,8 @@ const pt = {
     contextMenuHint: 'Adiciona "Analisar com Sentinel" ao menu de contexto de arquivos e pastas no Windows.',
     closeToTray: 'Manter na bandeja ao fechar',
     closeToTrayHint: 'Ocultar a janela em vez de sair. Saia pelo menu da bandeja.',
+    autostart: 'Iniciar com o Windows',
+    autostartHint: 'Iniciar o Sentinel automaticamente ao entrar no Windows.',
     startMinimized: 'Iniciar minimizado',
     startMinimizedHint: 'Iniciar o Sentinel oculto na bandeja do sistema.',
     polling: 'Intervalo de consulta',
@@ -345,6 +347,18 @@ const pt = {
       },
       contextMenuFailed: {
         title: 'Falha ao atualizar o menu',
+        desc: 'O Sentinel não conseguiu atualizar o registro do Windows.',
+      },
+      autostartOn: {
+        title: 'Início automático ativado',
+        desc: 'O Sentinel será iniciado ao entrar no Windows.',
+      },
+      autostartOff: {
+        title: 'Início automático desativado',
+        desc: 'O Sentinel não será mais iniciado com o Windows.',
+      },
+      autostartFailed: {
+        title: 'Não foi possível alterar o início automático',
         desc: 'O Sentinel não conseguiu atualizar o registro do Windows.',
       },
       openReport: 'Ver relatório',

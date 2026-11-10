@@ -150,16 +150,15 @@ pub fn clear_persisted_state(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-pub fn read_setting_bool(app: &tauri::AppHandle, key: &str) -> Option<bool> {
+/// Parse `state.json` once at startup; callers read every setting they need
+/// from the returned object.
+pub fn read_settings(app: &tauri::AppHandle) -> Option<Value> {
     let path = state_path(app).ok()?;
     let raw = fs::read_to_string(&path).ok()?;
     let value: Value = serde_json::from_str(&raw).ok()?;
-    value
-        .get("settings")
-        .and_then(|settings| settings.get(key))
-        .and_then(|v| v.as_bool())
+    value.get("settings").cloned()
 }
 
-pub fn read_close_to_tray_setting(app: &tauri::AppHandle) -> Option<bool> {
-    read_setting_bool(app, "closeToTray")
+pub fn setting_bool(settings: &Value, key: &str) -> Option<bool> {
+    settings.get(key).and_then(|value| value.as_bool())
 }

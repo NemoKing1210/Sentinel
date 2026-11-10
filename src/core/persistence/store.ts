@@ -38,6 +38,7 @@ function sanitizeSettings(settings: AppSettings): AppSettings {
     logLevel: settings.logLevel,
     scanImmediately: settings.scanImmediately,
     closeToTray: settings.closeToTray,
+    autostart: settings.autostart,
     startMinimized: settings.startMinimized,
     notificationsEnabled: settings.notificationsEnabled,
     notifyOnCompleted: settings.notifyOnCompleted,
@@ -136,13 +137,14 @@ export function subscribePersistence(): () => void {
     const historyChanged = state.history !== previous.history;
     const settingsChanged = state.settings !== previous.settings;
     const windowChanged = state.windowState !== previous.windowState;
+    const closeToTrayChanged = state.settings.closeToTray !== previous.settings.closeToTray;
     previous = state;
     if (!itemsChanged && !historyChanged && !settingsChanged && !windowChanged) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       void flushPersistedState();
     }, SAVE_DEBOUNCE_MS);
-    if (settingsChanged && state.settings.closeToTray !== previous.settings.closeToTray) {
+    if (closeToTrayChanged) {
       void setCloseToTray(state.settings.closeToTray);
     }
   });

@@ -89,6 +89,8 @@ const de = {
     contextMenuHint: 'Fügt „Mit Sentinel scannen“ zum Rechtsklick-Menü für Dateien und Ordner in Windows hinzu.',
     closeToTray: 'Beim Schließen im Tray behalten',
     closeToTrayHint: 'Fenster ausblenden statt beenden. Beenden Sie über das Tray-Menü.',
+    autostart: 'Mit Windows starten',
+    autostartHint: 'Sentinel beim Anmelden automatisch starten.',
     startMinimized: 'Minimiert starten',
     startMinimizedHint: 'Sentinel verborgen im System-Tray starten.',
     polling: 'Abfrageintervall',
@@ -347,6 +349,18 @@ const de = {
       contextMenuFailed: {
         title: 'Menü konnte nicht aktualisiert werden',
         desc: 'Sentinel konnte die Windows-Registrierung nicht ändern.',
+      },
+      autostartOn: {
+        title: 'Autostart aktiviert',
+        desc: 'Sentinel startet künftig bei der Windows-Anmeldung.',
+      },
+      autostartOff: {
+        title: 'Autostart deaktiviert',
+        desc: 'Sentinel startet nicht mehr mit Windows.',
+      },
+      autostartFailed: {
+        title: 'Autostart konnte nicht geändert werden',
+        desc: 'Sentinel konnte die Windows-Registrierung nicht aktualisieren.',
       },
       openReport: 'Bericht ansehen',
       dismiss: 'Schließen',
