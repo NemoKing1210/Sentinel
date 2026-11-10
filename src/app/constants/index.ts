@@ -1,7 +1,7 @@
 import type { AppSettings, Language, LogLevel } from '@/core/domain/types';
 import { detectPreferredLanguage } from '@/core/i18n/resolveLanguage';
 
-export const VIEWS = ['dashboard', 'queue', 'watch', 'history', 'settings'] as const;
+export const VIEWS = ['dashboard', 'queue', 'history', 'watch', 'settings'] as const;
 export type View = (typeof VIEWS)[number];
 
 export const LANGUAGES: ReadonlyArray<{ value: Language; label: string }> = [

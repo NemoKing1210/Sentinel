@@ -219,6 +219,14 @@ const fr = {
     scanImmediatelyHint: 'Lancer l’analyse dès qu’un fichier est ajouté. Désactivez pour ne que mettre en file.',
     scanImmediatelyOn: 'Activé',
     scanImmediatelyOff: 'Désactivé',
+    resetSection: 'Réinitialisation',
+    resetSettings: 'Réinitialiser les préférences',
+    resetSettingsHint:
+      'Rétablit les valeurs par défaut de chaque préférence de cette page. La clé d’API, l’historique, la file d’attente et les dossiers surveillés sont conservés.',
+    resetSettingsAction: 'Réinitialiser',
+    resetSettingsConfirmTitle: 'Réinitialiser les préférences ?',
+    resetSettingsConfirmCopy:
+      'Toutes les préférences reviendront à leurs valeurs par défaut. Cette action est irréversible. La clé d’API, l’historique, la file d’attente et les dossiers surveillés sont conservés.',
     about: 'À propos',
     aboutHint: 'Détails du projet, auteur et code source.',
     aboutDescription:
@@ -434,6 +442,14 @@ const fr = {
       autostartFailed: {
         title: 'Impossible de modifier le démarrage automatique',
         desc: 'Sentinel n’a pas pu mettre à jour le registre Windows.',
+      },
+      settingsReset: {
+        title: 'Préférences réinitialisées',
+        desc: 'Toutes les préférences ont retrouvé leurs valeurs par défaut.',
+      },
+      settingsResetFailed: {
+        title: 'Impossible de réinitialiser les préférences',
+        desc: 'La modification n’a pas été appliquée. Réessayez.',
       },
       openReport: 'Voir le rapport',
       dismiss: 'Fermer',

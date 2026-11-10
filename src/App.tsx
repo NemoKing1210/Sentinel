@@ -5,12 +5,13 @@ import { MotionConfig } from 'motion/react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAppStore } from '@/core/state/store';
-import { LANGUAGES, type View } from '@/app/constants';
+import { LANGUAGES, DEFAULT_SETTINGS, type View } from '@/app/constants';
 import { PageTransition } from '@/app/navigation/PageTransition';
 import { ROUTES, isBrowserPath, reportIdFromPath, resolveView } from '@/app/navigation/routes';
 import { useAppNavigate } from '@/app/navigation/useAppNavigate';
 import {
   ackWatchSpool,
+  confirmAction,
   detectPaths,
   drainWatchSpool,
   getApiKey,
@@ -563,13 +564,13 @@ export default function App() {
       icon: 'queue',
       count: items.filter((item) => item.status !== 'completed').length,
     },
+    { id: 'history', label: t('history'), icon: 'history', count: history.length },
     {
       id: 'watch',
       label: t('watch'),
       icon: 'eye',
       count: watchedFolders.filter((rule) => rule.enabled).length,
     },
-    { id: 'history', label: t('history'), icon: 'history', count: history.length },
     { id: 'settings', label: t('settings'), icon: 'tune' },
   ];
 
@@ -655,6 +656,38 @@ export default function App() {
     } catch (error) {
       logError('autostart.change_failed_ui', { enabled, error: String(error) });
       showToast(describePreset('autostartFailed', t));
+    }
+  };
+
+  const resetSettings = async () => {
+    const confirmed = await confirmAction({
+      title: t('resetSettingsConfirmTitle'),
+      message: t('resetSettingsConfirmCopy'),
+      kind: 'warning',
+      okLabel: t('resetSettingsAction'),
+    });
+    if (!confirmed) return;
+
+    const defaults = { ...DEFAULT_SETTINGS, hasApiKey: settings.hasApiKey };
+    try {
+      if (supportsContextMenu && settings.contextMenuEnabled) {
+        await unregisterContextMenu();
+      }
+      if (supportsAutostart && settings.autostart !== defaults.autostart) {
+        await setAutostart(defaults.autostart);
+      }
+      if (settings.logLevel !== defaults.logLevel) {
+        await setLogLevel(defaults.logLevel);
+      }
+      if (settings.language !== defaults.language) {
+        await i18n.changeLanguage(defaults.language);
+      }
+      setSettings(defaults);
+      showToast(describePreset('settingsReset', t));
+      logInfo('settings.reset_ui');
+    } catch (error) {
+      logError('settings.reset_failed_ui', { error: String(error) });
+      showToast(describePreset('settingsResetFailed', t));
     }
   };
 
@@ -776,6 +809,7 @@ export default function App() {
                       save={save}
                       validate={validate}
                       setSettings={updateSettings}
+                      resetSettings={() => void resetSettings()}
                       supportsContextMenu={supportsContextMenu}
                       setContextMenuEnabled={changeContextMenuEnabled}
                       supportsAutostart={supportsAutostart}

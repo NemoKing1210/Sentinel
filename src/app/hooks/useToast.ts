@@ -67,7 +67,9 @@ export type ToastPreset =
   | 'contextMenuFailed'
   | 'autostartOn'
   | 'autostartOff'
-  | 'autostartFailed';
+  | 'autostartFailed'
+  | 'settingsReset'
+  | 'settingsResetFailed';
 
 interface PresetDescriptor {
   icon: string;
@@ -299,6 +301,18 @@ const PRESETS: Record<ToastPreset, PresetDescriptor> = {
     level: 'error',
     titleKey: 'toast.autostartFailed.title',
     descKey: 'toast.autostartFailed.desc',
+  },
+  settingsReset: {
+    icon: 'refresh',
+    level: 'success',
+    titleKey: 'toast.settingsReset.title',
+    descKey: 'toast.settingsReset.desc',
+  },
+  settingsResetFailed: {
+    icon: 'alert',
+    level: 'error',
+    titleKey: 'toast.settingsResetFailed.title',
+    descKey: 'toast.settingsResetFailed.desc',
   },
 };
 

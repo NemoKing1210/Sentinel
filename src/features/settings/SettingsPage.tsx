@@ -46,6 +46,7 @@ interface SettingsPageProps {
   save: () => void;
   validate: () => void;
   setSettings: (v: Partial<AppSettings>) => void;
+  resetSettings: () => void;
   supportsContextMenu: boolean;
   setContextMenuEnabled: (enabled: boolean) => Promise<void>;
   supportsAutostart: boolean;
@@ -263,6 +264,7 @@ export function SettingsPage({
   save,
   validate,
   setSettings,
+  resetSettings,
   supportsContextMenu,
   setContextMenuEnabled,
   supportsAutostart,
@@ -345,6 +347,12 @@ export function SettingsPage({
         title: t('logging'),
         description: t('loggingHint'),
         keywords: ['logs', 'logging', 'diagnostics', 'debug', 'errors'],
+      },
+      {
+        id: 'reset',
+        title: t('resetSection'),
+        description: t('resetSettingsHint'),
+        keywords: ['reset', 'default', 'defaults', 'restore', 'factory', 'clear', 'preferences'],
       },
       {
         id: 'about',
@@ -486,6 +494,13 @@ export function SettingsPage({
         section: 'logging',
         title: t('openLogs'),
         keywords: ['folder', 'file', 'directory', 'diagnostics', 'jsonl', 'logs'],
+      },
+      {
+        id: 'resetSettings',
+        section: 'reset',
+        title: t('resetSettings'),
+        description: t('resetSettingsHint'),
+        keywords: ['reset', 'default', 'defaults', 'restore', 'factory', 'preferences'],
       },
       {
         id: 'aboutApp',
@@ -828,6 +843,15 @@ export function SettingsPage({
               )}
               {show('openLogs') && (
                 <SettingsLink icon="folderOpen" title={t('openLogs')} onClick={() => void openLogDirectory()} />
+              )}
+            </SettingsSection>
+            <SettingsSection title={t('resetSection')} visible={sectionVisible('reset')}>
+              {show('resetSettings') && (
+                <SettingsRow icon="refresh" title={t('resetSettings')} description={t('resetSettingsHint')}>
+                  <Button variant="outline" icon="refresh" onClick={resetSettings}>
+                    {t('resetSettingsAction')}
+                  </Button>
+                </SettingsRow>
               )}
             </SettingsSection>
             <SettingsSection title={t('about')} visible={sectionVisible('about')}>

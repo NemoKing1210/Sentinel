@@ -219,6 +219,14 @@ const de = {
     scanImmediatelyHint: 'Scan starten, sobald Sie eine Datei hinzufügen. Deaktivieren, um nur einzureihen.',
     scanImmediatelyOn: 'An',
     scanImmediatelyOff: 'Aus',
+    resetSection: 'Zurücksetzen',
+    resetSettings: 'Einstellungen zurücksetzen',
+    resetSettingsHint:
+      'Setzt alle Einstellungen auf dieser Seite auf ihre Standardwerte zurück. API-Schlüssel, Verlauf, Warteschlange und überwachte Ordner bleiben erhalten.',
+    resetSettingsAction: 'Auf Standard zurücksetzen',
+    resetSettingsConfirmTitle: 'Einstellungen zurücksetzen?',
+    resetSettingsConfirmCopy:
+      'Alle Einstellungen werden auf ihre Standardwerte zurückgesetzt. Dies kann nicht rückgängig gemacht werden. API-Schlüssel, Verlauf, Warteschlange und überwachte Ordner bleiben erhalten.',
     about: 'Über',
     aboutHint: 'Projektdetails, Autor und Quellcode.',
     aboutDescription:
@@ -433,6 +441,14 @@ const de = {
       autostartFailed: {
         title: 'Autostart konnte nicht geändert werden',
         desc: 'Sentinel konnte die Windows-Registrierung nicht aktualisieren.',
+      },
+      settingsReset: {
+        title: 'Einstellungen zurückgesetzt',
+        desc: 'Alle Einstellungen sind wieder auf ihren Standardwerten.',
+      },
+      settingsResetFailed: {
+        title: 'Einstellungen konnten nicht zurückgesetzt werden',
+        desc: 'Die Änderung wurde nicht übernommen. Versuchen Sie es erneut.',
       },
       openReport: 'Bericht ansehen',
       dismiss: 'Schließen',

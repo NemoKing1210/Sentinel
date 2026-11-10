@@ -2469,6 +2469,9 @@ h2 {
 .stepper {
   display: flex;
   align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  flex: 0 0 auto;
   height: 32px;
   overflow: hidden;
   border: 1px solid var(--control-stroke);
@@ -2512,7 +2515,7 @@ h2 {
 }
 
 .stepper-value input {
-  width: 32px;
+  width: 5ch;
   height: 100%;
   padding: 0;
   border: 0;

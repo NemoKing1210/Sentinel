@@ -223,6 +223,14 @@ const ru = {
     scanImmediatelyHint: 'Запускать проверку сразу после добавления файла. Выключите, чтобы только ставить в очередь.',
     scanImmediatelyOn: 'Вкл',
     scanImmediatelyOff: 'Выкл',
+    resetSection: 'Сброс',
+    resetSettings: 'Сбросить настройки',
+    resetSettingsHint:
+      'Вернуть все параметры на этой странице к значениям по умолчанию. API-ключ, история, очередь и наблюдаемые папки сохранятся.',
+    resetSettingsAction: 'Сбросить',
+    resetSettingsConfirmTitle: 'Сбросить настройки?',
+    resetSettingsConfirmCopy:
+      'Все параметры вернутся к значениям по умолчанию. Это действие нельзя отменить. API-ключ, история, очередь и наблюдаемые папки сохранятся.',
     about: 'О проекте',
     aboutHint: 'Сведения о проекте, авторе и исходном коде.',
     aboutDescription:
@@ -441,6 +449,14 @@ const ru = {
       autostartFailed: {
         title: 'Не удалось изменить автозапуск',
         desc: 'Sentinel не смог обновить реестр Windows.',
+      },
+      settingsReset: {
+        title: 'Настройки сброшены',
+        desc: 'Все параметры возвращены к значениям по умолчанию.',
+      },
+      settingsResetFailed: {
+        title: 'Не удалось сбросить настройки',
+        desc: 'Изменения не применены. Попробуйте ещё раз.',
       },
       openReport: 'Открыть отчёт',
       dismiss: 'Закрыть',

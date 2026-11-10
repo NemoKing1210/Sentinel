@@ -211,6 +211,13 @@ const zh = {
     scanImmediatelyHint: '添加文件后立即开始扫描。关闭则仅加入队列。',
     scanImmediatelyOn: '开启',
     scanImmediatelyOff: '关闭',
+    resetSection: '重置',
+    resetSettings: '重置设置',
+    resetSettingsHint: '将此页面上的所有偏好设置恢复为默认值。API 密钥、扫描历史、队列和监视的文件夹将保留。',
+    resetSettingsAction: '恢复默认',
+    resetSettingsConfirmTitle: '重置设置？',
+    resetSettingsConfirmCopy:
+      '所有偏好设置将恢复为默认值，此操作无法撤销。API 密钥、扫描历史、队列和监视的文件夹将保留。',
     about: '关于',
     aboutHint: '项目详情、作者和源代码。',
     aboutDescription: 'Sentinel 是一款 Tauri 桌面应用，使用 VirusTotal API 检查文件和文件夹，并保留本地扫描历史记录。',
@@ -422,6 +429,14 @@ const zh = {
       autostartFailed: {
         title: '无法更改自动启动',
         desc: 'Sentinel 无法更新 Windows 注册表。',
+      },
+      settingsReset: {
+        title: '设置已重置',
+        desc: '所有偏好设置已恢复为默认值。',
+      },
+      settingsResetFailed: {
+        title: '无法重置设置',
+        desc: '更改未生效，请重试。',
       },
       openReport: '查看报告',
       dismiss: '关闭',

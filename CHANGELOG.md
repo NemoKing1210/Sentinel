@@ -5,6 +5,24 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-11-11
+
+### Changed
+
+- The “Watch” item in the navigation pane now appears after “History”
+
+## [0.11.0] - 2026-11-11
+
+### Added
+
+- Settings → Reset → “Reset settings” restores every preference to its default value after a confirmation prompt, and re-applies the native side effects: interface language, log level, autostart, and the Explorer context menu; the API key, scan history, queue, and watched folders are kept
+
+## [0.10.1] - 2026-11-11
+
+### Fixed
+
+- Number steppers now hug their content instead of stretching across the field, and no longer clip four- or five-digit values such as the 10000 ms settle delay
+
 ## [0.10.0] - 2026-11-11
 
 ### Added

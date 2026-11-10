@@ -218,6 +218,14 @@ const es = {
     scanImmediatelyHint: 'Empezar a analizar en cuanto añadas un archivo. Desactívalo para solo poner en cola.',
     scanImmediatelyOn: 'Sí',
     scanImmediatelyOff: 'No',
+    resetSection: 'Restablecer',
+    resetSettings: 'Restablecer ajustes',
+    resetSettingsHint:
+      'Devuelve todas las preferencias de esta página a sus valores predeterminados. La clave de API, el historial, la cola y las carpetas vigiladas se conservan.',
+    resetSettingsAction: 'Restablecer',
+    resetSettingsConfirmTitle: '¿Restablecer los ajustes?',
+    resetSettingsConfirmCopy:
+      'Todas las preferencias volverán a sus valores predeterminados. Esta acción no se puede deshacer. La clave de API, el historial, la cola y las carpetas vigiladas se conservan.',
     about: 'Acerca de',
     aboutHint: 'Detalles del proyecto, autor y código fuente.',
     aboutDescription:
@@ -433,6 +441,14 @@ const es = {
       autostartFailed: {
         title: 'No se pudo cambiar el inicio automático',
         desc: 'Sentinel no pudo actualizar el registro de Windows.',
+      },
+      settingsReset: {
+        title: 'Ajustes restablecidos',
+        desc: 'Todas las preferencias han vuelto a sus valores predeterminados.',
+      },
+      settingsResetFailed: {
+        title: 'No se pudieron restablecer los ajustes',
+        desc: 'El cambio no se aplicó. Inténtalo de nuevo.',
       },
       openReport: 'Ver informe',
       dismiss: 'Cerrar',

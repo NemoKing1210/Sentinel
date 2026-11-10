@@ -215,6 +215,14 @@ const en = {
     scanImmediatelyHint: 'Start scanning as soon as you add a file. Turn off to queue only.',
     scanImmediatelyOn: 'On',
     scanImmediatelyOff: 'Off',
+    resetSection: 'Reset',
+    resetSettings: 'Reset settings',
+    resetSettingsHint:
+      'Restore every preference on this page to its default value. Your API key, scan history, queue, and watched folders are kept.',
+    resetSettingsAction: 'Reset to defaults',
+    resetSettingsConfirmTitle: 'Reset settings?',
+    resetSettingsConfirmCopy:
+      'All preferences return to their defaults. This cannot be undone. Your API key, scan history, queue, and watched folders are kept.',
     about: 'About',
     aboutHint: 'Project details, author and source code.',
     aboutDescription:
@@ -429,6 +437,14 @@ const en = {
       autostartFailed: {
         title: 'Couldn’t change autostart',
         desc: 'Sentinel could not update the Windows registry.',
+      },
+      settingsReset: {
+        title: 'Settings reset',
+        desc: 'All preferences are back to their defaults.',
+      },
+      settingsResetFailed: {
+        title: 'Couldn’t reset settings',
+        desc: 'The change was not applied. Try again.',
       },
       openReport: 'View report',
       dismiss: 'Dismiss',

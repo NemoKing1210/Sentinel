@@ -218,6 +218,14 @@ const pt = {
     scanImmediatelyHint: 'Começar a analisar assim que você adicionar um arquivo. Desative para apenas enfileirar.',
     scanImmediatelyOn: 'Ativado',
     scanImmediatelyOff: 'Desativado',
+    resetSection: 'Redefinir',
+    resetSettings: 'Redefinir configurações',
+    resetSettingsHint:
+      'Restaura todas as preferências desta página para os valores padrão. A chave de API, o histórico, a fila e as pastas monitoradas são mantidos.',
+    resetSettingsAction: 'Redefinir',
+    resetSettingsConfirmTitle: 'Redefinir configurações?',
+    resetSettingsConfirmCopy:
+      'Todas as preferências voltarão aos valores padrão. Esta ação não pode ser desfeita. A chave de API, o histórico, a fila e as pastas monitoradas são mantidos.',
     about: 'Sobre',
     aboutHint: 'Detalhes do projeto, autor e código-fonte.',
     aboutDescription:
@@ -432,6 +440,14 @@ const pt = {
       autostartFailed: {
         title: 'Não foi possível alterar o início automático',
         desc: 'O Sentinel não conseguiu atualizar o registro do Windows.',
+      },
+      settingsReset: {
+        title: 'Configurações redefinidas',
+        desc: 'Todas as preferências voltaram aos valores padrão.',
+      },
+      settingsResetFailed: {
+        title: 'Não foi possível redefinir as configurações',
+        desc: 'A alteração não foi aplicada. Tente novamente.',
       },
       openReport: 'Ver relatório',
       dismiss: 'Fechar',
