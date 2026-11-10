@@ -10,7 +10,7 @@ import { detectionCount, engineTotal } from '@/app/utils/format';
 import { normalizePollInterval } from '@/app/utils/scanPolling';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { shouldNotifyWatch } from '@/core/domain/watch';
-import { scanResumePhase } from './scanScheduler';
+import { scanResumePhase, scanStartPatch } from './scanScheduler';
 
 export function useScanRunner() {
   const { t } = useTranslation();
@@ -102,12 +102,14 @@ export function useScanRunner() {
       const current = useAppStore.getState().items.find((entry) => entry.id === item.id);
       if (!current) return;
       const path = current.path || current.name;
+      const phase = scanResumePhase(current);
+      updateItem(current.id, scanStartPatch(phase));
 
       let analysisId = current.analysisId ?? '';
       let sha256 = current.sha256 ?? '';
       let result: ScanPollResult;
       try {
-        if (scanResumePhase(current) === 'submit') {
+        if (phase === 'submit') {
           if (current.origin !== 'watch') showToast(describePreset('scanStarted', t));
           logInfo('scan.started', { item: current.name, path, isFolder: current.isFolder ?? false });
           const submitted = await submitScanPath(path, current.isFolder);

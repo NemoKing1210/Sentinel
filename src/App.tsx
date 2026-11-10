@@ -17,6 +17,7 @@ import {
   getAutostart,
   getLogLevel,
   getPendingScanPaths,
+  getWatchStatuses,
   hasSavedApiKey,
   isWindowsPlatform,
   listenWatchDetected,
@@ -445,6 +446,17 @@ export default function App() {
       if (timer) clearTimeout(timer);
     };
   }, [hydrated, showToast, t]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    // Re-stat watched roots periodically so a folder deleted mid-session turns `missing`.
+    const timer = window.setInterval(() => {
+      void getWatchStatuses()
+        .then((statuses) => useAppStore.getState().setWatchStatuses(statusesById(statuses)))
+        .catch((error) => logWarn('watch.status_refresh_failed', { error: String(error) }));
+    }, 15_000);
+    return () => window.clearInterval(timer);
+  }, [hydrated]);
 
   useEffect(() => {
     const main = mainRef.current;

@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { ScanItem } from '../../core/domain/types.ts';
 import { ScanError } from '../../core/native/scanError.ts';
-import { nextStartWaitMs, retryDelaySeconds, scanResumePhase, selectNextScan } from './scanScheduler.ts';
+import {
+  nextStartWaitMs,
+  retryDelaySeconds,
+  scanResumePhase,
+  scanStartPatch,
+  selectNextScan,
+} from './scanScheduler.ts';
 
 function makeItem(patch: Partial<ScanItem>): ScanItem {
   return {
@@ -32,6 +38,18 @@ test('selects manual before watch and only auto-start items', () => {
   const idle = makeItem({ id: 'i', origin: 'manual', autoStart: false });
   assert.equal(selectNextScan([watch, manual, idle])?.id, 'm');
   assert.equal(selectNextScan([idle]), null);
+});
+
+test('never selects an item that is already running', () => {
+  const first = makeItem({ id: 'a', createdAt: '2026-01-01T00:00:00Z' });
+  const second = makeItem({ id: 'b', createdAt: '2026-01-02T00:00:00Z' });
+  assert.equal(selectNextScan([first, second], new Set(['a']))?.id, 'b');
+  assert.equal(selectNextScan([first], new Set(['a'])), null);
+});
+
+test('marks an item busy before the network call starts', () => {
+  assert.deepEqual(scanStartPatch('submit'), { status: 'uploading', progress: 0 });
+  assert.deepEqual(scanStartPatch('poll'), { status: 'scanning' });
 });
 
 test('waits until the delay elapses', () => {

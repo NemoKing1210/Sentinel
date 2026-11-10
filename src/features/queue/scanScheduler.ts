@@ -14,9 +14,16 @@ function originRank(item: ScanItem): number {
   return item.origin === 'watch' ? 1 : 0;
 }
 
-/** Next item the scheduler may start: queued, auto-start, manual before watch, oldest first. */
-export function selectNextScan(items: ScanItem[]): ScanItem | null {
-  const candidates = items.filter((item) => item.status === 'queued' && item.autoStart === true);
+/** Marks an item busy before its network call starts, so a second tick cannot start it again. */
+export function scanStartPatch(phase: 'submit' | 'poll'): Partial<Pick<ScanItem, 'status' | 'progress'>> {
+  return phase === 'submit' ? { status: 'uploading', progress: 0 } : { status: 'scanning' };
+}
+
+/** Next item the scheduler may start: queued, auto-start, not already running, manual before watch. */
+export function selectNextScan(items: ScanItem[], activeIds: ReadonlySet<string> = new Set<string>()): ScanItem | null {
+  const candidates = items.filter(
+    (item) => item.status === 'queued' && item.autoStart === true && !activeIds.has(item.id),
+  );
   if (candidates.length === 0) return null;
   const [next] = [...candidates].sort((a, b) => {
     const byOrigin = originRank(a) - originRank(b);

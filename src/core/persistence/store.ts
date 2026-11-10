@@ -6,6 +6,7 @@ import { sanitizeWatchedFolders } from '@/core/domain/watch';
 import { detectPreferredLanguage, isAppLanguage } from '@/core/i18n/resolveLanguage';
 import { logError, logInfo, logWarn } from '@/core/logging';
 import { setCloseToTray } from '@/core/native/api';
+import { persistenceChanged } from './persistTrigger';
 import { sanitizeItems } from './sanitize';
 
 const SAVE_DEBOUNCE_MS = 600;
@@ -131,13 +132,10 @@ export function flushPersistedState(): Promise<boolean> {
 export function subscribePersistence(): () => void {
   let previous = useAppStore.getState();
   const unsubscribe = useAppStore.subscribe((state) => {
-    const itemsChanged = state.items !== previous.items;
-    const historyChanged = state.history !== previous.history;
-    const settingsChanged = state.settings !== previous.settings;
-    const windowChanged = state.windowState !== previous.windowState;
+    const changed = persistenceChanged(previous, state);
     const closeToTrayChanged = state.settings.closeToTray !== previous.settings.closeToTray;
     previous = state;
-    if (!itemsChanged && !historyChanged && !settingsChanged && !windowChanged) return;
+    if (!changed) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       void flushPersistedState();

@@ -69,7 +69,7 @@ export function useScanScheduler({ executeScan, notifyFailed }: SchedulerOptions
     if (activeRef.current.size >= state.settings.scanConcurrency) return;
     if (now < nextStartAtRef.current) return;
     if (nextStartWaitMs(lastStartedAtRef.current, now, state.settings.scanDelaySeconds) > 0) return;
-    const next = selectNextScan(state.items);
+    const next = selectNextScan(state.items, activeRef.current);
     if (!next) return;
     if (!state.settings.hasApiKey) {
       if (!noKeyToastShownRef.current) {
