@@ -96,6 +96,10 @@ const pt = {
     startMinimizedHint: 'Iniciar o Sentinel oculto na bandeja do sistema.',
     polling: 'Intervalo de consulta',
     pollingHint: 'Com que frequência a fila atualiza o status da análise.',
+    scanConcurrency: 'Verificações simultâneas',
+    scanConcurrencyHint: 'Quantos ficheiros o Sentinel envia ao mesmo tempo.',
+    scanDelay: 'Pausa entre envios',
+    scanDelayHint: 'Protege contra os limites do VirusTotal. Aplica-se a todas as verificações.',
     sec: 's',
     increase: 'Aumentar',
     decrease: 'Diminuir',
@@ -358,6 +362,10 @@ const pt = {
       pollIntervalChanged: {
         title: 'Intervalo de consulta: {{interval}} s',
         desc: 'A fila atualizará o status da análise a cada {{interval}} segundos.',
+      },
+      scanSettingsChanged: {
+        title: 'Ritmo de análise atualizado',
+        desc: 'Os novos limites aplicam-se à próxima verificação.',
       },
       queueCleared: {
         title: 'Fila limpa',

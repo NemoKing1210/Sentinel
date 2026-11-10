@@ -96,6 +96,10 @@ const de = {
     startMinimizedHint: 'Sentinel verborgen im System-Tray starten.',
     polling: 'Abfrageintervall',
     pollingHint: 'Wie oft die Warteschlange den Scan-Status aktualisiert.',
+    scanConcurrency: 'Gleichzeitige Prüfungen',
+    scanConcurrencyHint: 'Wie viele Dateien Sentinel gleichzeitig hochlädt.',
+    scanDelay: 'Pause zwischen Uploads',
+    scanDelayHint: 'Schützt vor den Limits von VirusTotal. Gilt für alle Prüfungen.',
     sec: 's',
     increase: 'Erhöhen',
     decrease: 'Verringern',
@@ -359,6 +363,10 @@ const de = {
       pollIntervalChanged: {
         title: 'Abfrageintervall: {{interval}} s',
         desc: 'Die Warteschlange aktualisiert den Scan-Status alle {{interval}} Sekunden.',
+      },
+      scanSettingsChanged: {
+        title: 'Prüftempo aktualisiert',
+        desc: 'Die neuen Limits gelten für die nächste Prüfung.',
       },
       queueCleared: {
         title: 'Warteschlange geleert',

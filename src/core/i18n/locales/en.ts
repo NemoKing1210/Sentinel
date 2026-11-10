@@ -96,6 +96,10 @@ const en = {
     startMinimizedHint: 'Launch Sentinel hidden in the system tray.',
     polling: 'Polling interval',
     pollingHint: 'How often the queue refreshes scan status.',
+    scanConcurrency: 'Simultaneous scans',
+    scanConcurrencyHint: 'How many files Sentinel uploads at once.',
+    scanDelay: 'Delay between uploads',
+    scanDelayHint: 'Protects against VirusTotal rate limits. Applies to all scans.',
     sec: 'sec',
     increase: 'Increase',
     decrease: 'Decrease',
@@ -356,6 +360,10 @@ const en = {
       pollIntervalChanged: {
         title: 'Polling interval: {{interval}} sec',
         desc: 'Queue will refresh scan status every {{interval}} seconds.',
+      },
+      scanSettingsChanged: {
+        title: 'Scan pacing updated',
+        desc: 'New limits apply to the next scan.',
       },
       queueCleared: {
         title: 'Queue cleared',

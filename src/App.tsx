@@ -653,6 +653,9 @@ export default function App() {
     if (patch.pollInterval !== undefined) {
       showToast(describePreset('pollIntervalChanged', t, { interval: patch.pollInterval }));
     }
+    if (patch.scanConcurrency !== undefined || patch.scanDelaySeconds !== undefined) {
+      showToast(describePreset('scanSettingsChanged', t));
+    }
   };
 
   const clearQueue = useCallback(() => {

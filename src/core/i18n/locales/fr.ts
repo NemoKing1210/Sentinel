@@ -96,6 +96,10 @@ const fr = {
     startMinimizedHint: 'Lancer Sentinel masqué dans la barre système.',
     polling: 'Intervalle d’interrogation',
     pollingHint: 'Fréquence d’actualisation du statut des analyses dans la file.',
+    scanConcurrency: 'Analyses simultanées',
+    scanConcurrencyHint: 'Nombre de fichiers que Sentinel téléverse en même temps.',
+    scanDelay: 'Pause entre les envois',
+    scanDelayHint: 'Protège contre les limites de VirusTotal. S’applique à toutes les analyses.',
     sec: 's',
     increase: 'Augmenter',
     decrease: 'Diminuer',
@@ -360,6 +364,10 @@ const fr = {
       pollIntervalChanged: {
         title: 'Intervalle d’interrogation : {{interval}} s',
         desc: 'La file actualisera le statut des analyses toutes les {{interval}} secondes.',
+      },
+      scanSettingsChanged: {
+        title: 'Rythme d’analyse mis à jour',
+        desc: 'Les nouvelles limites s’appliquent à la prochaine analyse.',
       },
       queueCleared: {
         title: 'File vidée',

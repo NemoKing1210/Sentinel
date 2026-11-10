@@ -100,6 +100,10 @@ const ru = {
     startMinimizedHint: 'Запускать Sentinel скрытым в системном трее.',
     polling: 'Интервал опроса',
     pollingHint: 'Как часто очередь обновляет статус проверок.',
+    scanConcurrency: 'Одновременных проверок',
+    scanConcurrencyHint: 'Сколько файлов Sentinel загружает одновременно.',
+    scanDelay: 'Пауза между загрузками',
+    scanDelayHint: 'Защищает от лимитов VirusTotal. Действует на все проверки.',
     sec: 'сек',
     increase: 'Увеличить',
     decrease: 'Уменьшить',
@@ -367,6 +371,10 @@ const ru = {
       pollIntervalChanged: {
         title: 'Интервал опроса: {{interval}} сек',
         desc: 'Очередь будет обновлять статус каждые {{interval}} секунд.',
+      },
+      scanSettingsChanged: {
+        title: 'Настройки темпа обновлены',
+        desc: 'Новые ограничения применятся к следующей проверке.',
       },
       queueCleared: {
         title: 'Очередь очищена',

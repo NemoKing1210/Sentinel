@@ -94,6 +94,10 @@ const zh = {
     startMinimizedHint: '在系统托盘中隐藏启动 Sentinel。',
     polling: '轮询间隔',
     pollingHint: '队列刷新扫描状态的频率。',
+    scanConcurrency: '同时检查数',
+    scanConcurrencyHint: 'Sentinel 一次上传多少个文件。',
+    scanDelay: '上传间隔',
+    scanDelayHint: '防止触发 VirusTotal 的速率限制。适用于所有检查。',
     sec: '秒',
     increase: '增加',
     decrease: '减少',
@@ -349,6 +353,10 @@ const zh = {
       pollIntervalChanged: {
         title: '轮询间隔：{{interval}} 秒',
         desc: '队列将每 {{interval}} 秒刷新一次扫描状态。',
+      },
+      scanSettingsChanged: {
+        title: '扫描节奏已更新',
+        desc: '新限制将在下次检查时生效。',
       },
       queueCleared: {
         title: '队列已清空',

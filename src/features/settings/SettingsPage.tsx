@@ -1,7 +1,17 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppSettings, Language, LogLevel, ReportOpenTarget } from '@/core/domain/types';
-import { LANGUAGES, LOG_LEVELS, POLL_INTERVAL_MAX, POLL_INTERVAL_MIN, POLL_INTERVALS } from '@/app/constants';
+import {
+  LANGUAGES,
+  LOG_LEVELS,
+  POLL_INTERVAL_MAX,
+  POLL_INTERVAL_MIN,
+  POLL_INTERVALS,
+  SCAN_CONCURRENCY_MAX,
+  SCAN_CONCURRENCY_MIN,
+  SCAN_DELAY_MAX_SECONDS,
+  SCAN_DELAY_MIN_SECONDS,
+} from '@/app/constants';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { Icon } from '@/components/ui/Icon';
@@ -200,6 +210,29 @@ export function SettingsPage({
               ))}
             </div>
           </div>
+        </SettingsRow>
+        <SettingsRow icon="bolt" title={t('scanConcurrency')} description={t('scanConcurrencyHint')}>
+          <StepperInput
+            value={settings.scanConcurrency}
+            min={SCAN_CONCURRENCY_MIN}
+            max={SCAN_CONCURRENCY_MAX}
+            ariaLabel={t('scanConcurrency')}
+            increaseLabel={t('increase')}
+            decreaseLabel={t('decrease')}
+            onChange={(value) => setSettings({ scanConcurrency: value })}
+          />
+        </SettingsRow>
+        <SettingsRow icon="clock" title={t('scanDelay')} description={t('scanDelayHint')}>
+          <StepperInput
+            value={settings.scanDelaySeconds}
+            min={SCAN_DELAY_MIN_SECONDS}
+            max={SCAN_DELAY_MAX_SECONDS}
+            unit={t('sec')}
+            ariaLabel={t('scanDelay')}
+            increaseLabel={t('increase')}
+            decreaseLabel={t('decrease')}
+            onChange={(value) => setSettings({ scanDelaySeconds: value })}
+          />
         </SettingsRow>
       </SettingsSection>
       <SettingsSection title={t('reportsSection')}>
