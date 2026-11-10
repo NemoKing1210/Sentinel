@@ -14,6 +14,7 @@ import {
   pollAttempts,
   pollProgress,
 } from '@/app/utils/scanPolling';
+import { toScanError } from './scanError';
 
 const isTauri = Boolean((window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
 const bytes = (value: number) => value;
@@ -387,9 +388,14 @@ export async function scanPath(
   options: ScanProgress = {},
 ): Promise<{ analysisId: string; report: FileReport }> {
   if (isTauri) {
-    const upload = await (isFolder
-      ? invoke<{ analysis_id: string; sha256: string }>('submit_archive', { paths: [path] })
-      : invoke<{ analysis_id: string; sha256: string }>('submit_file', { path }));
+    let upload: { analysis_id: string; sha256: string };
+    try {
+      upload = await (isFolder
+        ? invoke<{ analysis_id: string; sha256: string }>('submit_archive', { paths: [path] })
+        : invoke<{ analysis_id: string; sha256: string }>('submit_file', { path }));
+    } catch (error) {
+      throw toScanError(error);
+    }
     options.onProgress?.(35);
     const intervalMs = Math.min(
       MAX_POLL_INTERVAL_MS,
@@ -399,7 +405,11 @@ export async function scanPath(
     let analysis: AnalysisResponse | null = null;
     let phase: ReturnType<typeof analysisPhase> = 'pending';
     for (let attempt = 0; attempt < attempts; attempt += 1) {
-      analysis = await invoke<AnalysisResponse>('get_analysis_status', { analysisId: upload.analysis_id });
+      try {
+        analysis = await invoke<AnalysisResponse>('get_analysis_status', { analysisId: upload.analysis_id });
+      } catch (error) {
+        throw toScanError(error);
+      }
       phase = analysisPhase(analysis?.data?.attributes?.status);
       if (phase === 'completed') break;
       if (phase === 'failed') throw new Error('VirusTotal analysis failed');

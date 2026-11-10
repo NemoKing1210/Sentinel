@@ -125,6 +125,83 @@ where
     build().send().await
 }
 
+/// Why a scan command failed, mapped to a stable code the UI can branch on.
+#[derive(Debug, Clone, Copy)]
+pub enum ScanFailureKind {
+    RateLimited,
+    TooLarge,
+    Missing,
+    Rejected,
+    Other,
+}
+
+impl ScanFailureKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            ScanFailureKind::RateLimited => "rate_limited",
+            ScanFailureKind::TooLarge => "too_large",
+            ScanFailureKind::Missing => "missing",
+            ScanFailureKind::Rejected => "rejected",
+            ScanFailureKind::Other => "other",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanCommandError {
+    pub code: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry_after_secs: Option<u64>,
+}
+
+impl ScanCommandError {
+    pub fn new(kind: ScanFailureKind, message: impl Into<String>) -> Self {
+        Self {
+            code: kind.as_str().to_string(),
+            message: message.into(),
+            retry_after_secs: None,
+        }
+    }
+
+    pub fn rate_limited(retry_after_secs: Option<u64>, message: impl Into<String>) -> Self {
+        Self {
+            code: ScanFailureKind::RateLimited.as_str().to_string(),
+            message: message.into(),
+            retry_after_secs,
+        }
+    }
+}
+
+fn fail_scan(event: &str, kind: ScanFailureKind, error: impl Into<String>) -> ScanCommandError {
+    let message = error.into();
+    logging::write(
+        LogLevel::Error,
+        event,
+        serde_json::json!({ "error": message, "code": kind.as_str() }),
+    );
+    ScanCommandError::new(kind, message)
+}
+
+fn fail_scan_rate_limited(
+    event: &str,
+    retry_after_secs: u64,
+    error: impl Into<String>,
+) -> ScanCommandError {
+    let message = error.into();
+    logging::write(
+        LogLevel::Error,
+        event,
+        serde_json::json!({
+            "error": message,
+            "code": ScanFailureKind::RateLimited.as_str(),
+            "retryAfterSecs": retry_after_secs,
+        }),
+    );
+    ScanCommandError::rate_limited(Some(retry_after_secs), message)
+}
+
 #[derive(Serialize)]
 pub struct ApiResponse {
     pub analysis_id: String,
@@ -417,7 +494,7 @@ pub async fn validate_api_key() -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
+pub async fn submit_file(path: String) -> Result<ApiResponse, ScanCommandError> {
     let file_name = Path::new(&path)
         .file_name()
         .and_then(|name| name.to_str())
@@ -431,22 +508,35 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
 
     let key = match api_key() {
         Ok(key) => key,
-        Err(error) => return Err(fail("scan.api_key_failed", error)),
+        Err(error) => {
+            return Err(fail_scan(
+                "scan.api_key_failed",
+                ScanFailureKind::Other,
+                error,
+            ))
+        }
     };
     let file_path = Path::new(&path);
     let metadata = match std::fs::metadata(file_path) {
         Ok(metadata) => metadata,
         Err(error) => {
-            return Err(fail(
+            let kind = if error.kind() == std::io::ErrorKind::NotFound {
+                ScanFailureKind::Missing
+            } else {
+                ScanFailureKind::Other
+            };
+            return Err(fail_scan(
                 "scan.metadata_failed",
+                kind,
                 format!("{error} (path: {path})"),
-            ))
+            ));
         }
     };
     let size = metadata.len();
     if size > MAX_FILE_BYTES {
-        return Err(fail(
+        return Err(fail_scan(
             "scan.file_too_large",
+            ScanFailureKind::TooLarge,
             format!("File exceeds the 650 MB VirusTotal limit: {size} bytes"),
         ));
     }
@@ -472,21 +562,53 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
         .await
         {
             Ok(response) => response,
-            Err(error) => return Err(fail("scan.upload_url_failed", error.to_string())),
+            Err(error) => {
+                return Err(fail_scan(
+                    "scan.upload_url_failed",
+                    ScanFailureKind::Other,
+                    error.to_string(),
+                ))
+            }
         };
         if !response.status().is_success() {
-            return Err(fail(
+            let status = response.status();
+            let retry_after = response
+                .headers()
+                .get(reqwest::header::RETRY_AFTER)
+                .and_then(|value| value.to_str().ok());
+            if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                let seconds = retry_after_seconds(retry_after);
+                return Err(fail_scan_rate_limited(
+                    "scan.upload_url_rate_limited",
+                    seconds,
+                    format!("VirusTotal rate limit; retry in {seconds} s"),
+                ));
+            }
+            return Err(fail_scan(
                 "scan.upload_url_rejected",
-                format!("VirusTotal returned {}", response.status()),
+                ScanFailureKind::Rejected,
+                format!("VirusTotal returned {status}"),
             ));
         }
         let json: serde_json::Value = match response.json().await {
             Ok(json) => json,
-            Err(error) => return Err(fail("scan.upload_url_parse_failed", error.to_string())),
+            Err(error) => {
+                return Err(fail_scan(
+                    "scan.upload_url_parse_failed",
+                    ScanFailureKind::Other,
+                    error.to_string(),
+                ))
+            }
         };
         match json["data"].as_str() {
             Some(url) => url.to_string(),
-            None => return Err(fail("scan.upload_url_invalid", "Invalid upload URL")),
+            None => {
+                return Err(fail_scan(
+                    "scan.upload_url_invalid",
+                    ScanFailureKind::Other,
+                    "Invalid upload URL",
+                ))
+            }
         }
     };
 
@@ -495,7 +617,14 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
         let hasher = Arc::new(Mutex::new(Sha256::new()));
         let upload_file = match tokio::fs::File::open(file_path).await {
             Ok(file) => file,
-            Err(error) => return Err(fail("scan.file_open_failed", error.to_string())),
+            Err(error) => {
+                let kind = if error.kind() == std::io::ErrorKind::NotFound {
+                    ScanFailureKind::Missing
+                } else {
+                    ScanFailureKind::Other
+                };
+                return Err(fail_scan("scan.file_open_failed", kind, error.to_string()));
+            }
         };
         let stream =
             tokio_util::io::ReaderStream::new(HashingReader::new(upload_file, Arc::clone(&hasher)));
@@ -512,7 +641,13 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
             .await
         {
             Ok(response) => response,
-            Err(error) => return Err(fail("scan.upload_failed", error.to_string())),
+            Err(error) => {
+                return Err(fail_scan(
+                    "scan.upload_failed",
+                    ScanFailureKind::Other,
+                    error.to_string(),
+                ))
+            }
         };
         let retry_after = response
             .headers()
@@ -533,8 +668,9 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
                 tokio::time::sleep(delay).await;
             }
             Some(delay) => {
-                return Err(fail(
+                return Err(fail_scan_rate_limited(
                     "scan.upload_rate_limited",
+                    delay.as_secs(),
                     format!("VirusTotal rate limit; retry in {} s", delay.as_secs()),
                 ));
             }
@@ -542,9 +678,23 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
         }
     };
     if !response.status().is_success() {
-        return Err(fail(
+        let status = response.status();
+        let retry_after = response
+            .headers()
+            .get(reqwest::header::RETRY_AFTER)
+            .and_then(|value| value.to_str().ok());
+        if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            let seconds = retry_after_seconds(retry_after);
+            return Err(fail_scan_rate_limited(
+                "scan.upload_rate_limited",
+                seconds,
+                format!("VirusTotal rate limit; retry in {seconds} s"),
+            ));
+        }
+        return Err(fail_scan(
             "scan.upload_rejected",
-            format!("VirusTotal returned {}", response.status()),
+            ScanFailureKind::Rejected,
+            format!("VirusTotal returned {status}"),
         ));
     }
     let sha256 = hex_digest(&hasher);
@@ -555,7 +705,13 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
     );
     let json: serde_json::Value = match response.json().await {
         Ok(json) => json,
-        Err(error) => return Err(fail("scan.response_parse_failed", error.to_string())),
+        Err(error) => {
+            return Err(fail_scan(
+                "scan.response_parse_failed",
+                ScanFailureKind::Other,
+                error.to_string(),
+            ))
+        }
     };
     let analysis_id = json["data"]["id"].as_str().unwrap_or_default().to_string();
     logging::write(
@@ -570,10 +726,16 @@ pub async fn submit_file(path: String) -> Result<ApiResponse, String> {
 }
 
 #[tauri::command]
-pub async fn submit_archive(paths: Vec<String>) -> Result<ApiResponse, String> {
+pub async fn submit_archive(paths: Vec<String>) -> Result<ApiResponse, ScanCommandError> {
     let source = match paths.first() {
         Some(source) => source.clone(),
-        None => return Err(fail("scan.archive_no_folder", "No folder selected")),
+        None => {
+            return Err(fail_scan(
+                "scan.archive_no_folder",
+                ScanFailureKind::Missing,
+                "No folder selected",
+            ))
+        }
     };
     logging::write(
         LogLevel::Info,
@@ -582,19 +744,32 @@ pub async fn submit_archive(paths: Vec<String>) -> Result<ApiResponse, String> {
     );
     let root = Path::new(&source);
     if !root.is_dir() {
-        return Err(fail(
+        return Err(fail_scan(
             "scan.archive_not_folder",
+            ScanFailureKind::Missing,
             format!("Selected path is not a folder: {source}"),
         ));
     }
 
     let temp = match tempfile::NamedTempFile::new() {
         Ok(temp) => temp,
-        Err(error) => return Err(fail("scan.archive_temp_failed", error.to_string())),
+        Err(error) => {
+            return Err(fail_scan(
+                "scan.archive_temp_failed",
+                ScanFailureKind::Other,
+                error.to_string(),
+            ))
+        }
     };
     let output = match temp.reopen() {
         Ok(output) => output,
-        Err(error) => return Err(fail("scan.archive_temp_failed", error.to_string())),
+        Err(error) => {
+            return Err(fail_scan(
+                "scan.archive_temp_failed",
+                ScanFailureKind::Other,
+                error.to_string(),
+            ))
+        }
     };
     let mut archive = ZipWriter::new(output);
     let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
@@ -620,30 +795,56 @@ pub async fn submit_archive(paths: Vec<String>) -> Result<ApiResponse, String> {
         }
         let relative = match entry_path.strip_prefix(root) {
             Ok(relative) => relative,
-            Err(error) => return Err(fail("scan.archive_walk_failed", error.to_string())),
+            Err(error) => {
+                return Err(fail_scan(
+                    "scan.archive_walk_failed",
+                    ScanFailureKind::Other,
+                    error.to_string(),
+                ))
+            }
         };
         if let Err(error) =
             archive.start_file(relative.to_string_lossy().replace('\\', "/"), options)
         {
-            return Err(fail("scan.archive_write_failed", error.to_string()));
+            return Err(fail_scan(
+                "scan.archive_write_failed",
+                ScanFailureKind::Other,
+                error.to_string(),
+            ));
         }
         let mut input = match File::open(entry_path) {
             Ok(input) => input,
             Err(error) => {
-                return Err(fail(
+                let kind = if error.kind() == std::io::ErrorKind::NotFound {
+                    ScanFailureKind::Missing
+                } else {
+                    ScanFailureKind::Other
+                };
+                return Err(fail_scan(
                     "scan.archive_read_failed",
+                    kind,
                     format!("{error} (path: {})", entry_path.display()),
-                ))
+                ));
             }
         };
         match std::io::copy(&mut input, &mut archive) {
             Ok(bytes) => byte_count += bytes,
-            Err(error) => return Err(fail("scan.archive_write_failed", error.to_string())),
+            Err(error) => {
+                return Err(fail_scan(
+                    "scan.archive_write_failed",
+                    ScanFailureKind::Other,
+                    error.to_string(),
+                ))
+            }
         }
         file_count += 1;
     }
     if let Err(error) = archive.finish() {
-        return Err(fail("scan.archive_finish_failed", error.to_string()));
+        return Err(fail_scan(
+            "scan.archive_finish_failed",
+            ScanFailureKind::Other,
+            error.to_string(),
+        ));
     }
     logging::write(
         LogLevel::Info,
@@ -654,10 +855,18 @@ pub async fn submit_archive(paths: Vec<String>) -> Result<ApiResponse, String> {
 }
 
 #[tauri::command]
-pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Value, String> {
+pub async fn get_analysis_status(
+    analysis_id: String,
+) -> Result<serde_json::Value, ScanCommandError> {
     let key = match api_key() {
         Ok(key) => key,
-        Err(error) => return Err(fail("scan.poll_api_key_failed", error)),
+        Err(error) => {
+            return Err(fail_scan(
+                "scan.poll_api_key_failed",
+                ScanFailureKind::Other,
+                error,
+            ))
+        }
     };
     let client = http_client();
     let url = format!("{BASE}/analyses/{analysis_id}");
@@ -670,8 +879,9 @@ pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Valu
     {
         Ok(response) => response,
         Err(error) => {
-            return Err(fail(
+            return Err(fail_scan(
                 "scan.poll_failed",
+                ScanFailureKind::Other,
                 format!("{error} (analysis_id: {analysis_id})"),
             ))
         }
@@ -700,8 +910,9 @@ pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Valu
         {
             Ok(response) => response,
             Err(error) => {
-                return Err(fail(
+                return Err(fail_scan(
                     "scan.poll_failed",
+                    ScanFailureKind::Other,
                     format!("{error} (analysis_id: {analysis_id})"),
                 ))
             }
@@ -709,14 +920,33 @@ pub async fn get_analysis_status(analysis_id: String) -> Result<serde_json::Valu
     }
     if !response.status().is_success() {
         let status = response.status();
-        return Err(fail(
+        let retry_after = response
+            .headers()
+            .get(reqwest::header::RETRY_AFTER)
+            .and_then(|value| value.to_str().ok());
+        if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            let seconds = retry_after_seconds(retry_after);
+            return Err(fail_scan_rate_limited(
+                "scan.poll_rate_limited",
+                seconds,
+                format!("VirusTotal rate limit; retry in {seconds} s (analysis_id: {analysis_id})"),
+            ));
+        }
+        return Err(fail_scan(
             "scan.poll_rejected",
+            ScanFailureKind::Rejected,
             format!("VirusTotal returned {status} (analysis_id: {analysis_id})"),
         ));
     }
     let json: serde_json::Value = match response.json().await {
         Ok(json) => json,
-        Err(error) => return Err(fail("scan.poll_parse_failed", error.to_string())),
+        Err(error) => {
+            return Err(fail_scan(
+                "scan.poll_parse_failed",
+                ScanFailureKind::Other,
+                error.to_string(),
+            ))
+        }
     };
     let status = json["data"]["attributes"]["status"]
         .as_str()
@@ -1245,5 +1475,46 @@ mod external_url_tests {
         assert!(!is_allowed_external_url("file:///C:/Windows/System32"));
         assert!(!is_allowed_external_url("javascript:alert(1)"));
         assert!(!is_allowed_external_url("not a url"));
+    }
+}
+
+#[cfg(test)]
+mod scan_error_tests {
+    use super::*;
+
+    #[test]
+    fn scan_error_serializes_camel_case() {
+        let error = ScanCommandError::rate_limited(Some(7), "slow down");
+        let json = serde_json::to_value(&error).unwrap();
+        assert_eq!(json["code"], "rate_limited");
+        assert_eq!(json["message"], "slow down");
+        assert_eq!(json["retryAfterSecs"], 7);
+    }
+
+    #[test]
+    fn maps_failure_kinds_to_codes() {
+        assert_eq!(
+            ScanCommandError::new(ScanFailureKind::TooLarge, "big").code,
+            "too_large"
+        );
+        assert_eq!(
+            ScanCommandError::new(ScanFailureKind::Missing, "gone").code,
+            "missing"
+        );
+        assert_eq!(
+            ScanCommandError::new(ScanFailureKind::Rejected, "no").code,
+            "rejected"
+        );
+        assert_eq!(
+            ScanCommandError::new(ScanFailureKind::Other, "x").code,
+            "other"
+        );
+    }
+
+    #[test]
+    fn retry_after_clamps_for_the_single_internal_retry() {
+        assert_eq!(retry_after_seconds(Some("0")), 1);
+        assert_eq!(retry_after_seconds(Some("3600")), 60);
+        assert_eq!(retry_after_seconds(None), RETRY_AFTER_DEFAULT_SECS);
     }
 }
