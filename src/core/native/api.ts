@@ -1,9 +1,18 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { ask, open } from '@tauri-apps/plugin-dialog';
-import type { EngineCategory, FileReport, LogLevel, ScanItem } from '../domain/types';
+import type {
+  EngineCategory,
+  FileReport,
+  LogLevel,
+  ScanItem,
+  WatchPendingFile,
+  WatchRule,
+  WatchStatus,
+} from '../domain/types';
 import { detectFileKind, detectMimeType } from '@/app/utils/fileKind';
 import {
   analysisPhase,
@@ -477,6 +486,36 @@ export async function scanPath(
       scannedAt: new Date().toISOString(),
     },
   };
+}
+
+export function syncWatchRules(rules: WatchRule[]): Promise<WatchStatus[]> {
+  if (!isTauri) return Promise.resolve([]);
+  return invoke<WatchStatus[]>('sync_watch_rules', { rules });
+}
+
+export function getWatchStatuses(): Promise<WatchStatus[]> {
+  if (!isTauri) return Promise.resolve([]);
+  return invoke<WatchStatus[]>('get_watch_statuses');
+}
+
+export function drainWatchSpool(): Promise<WatchPendingFile[]> {
+  if (!isTauri) return Promise.resolve([]);
+  return invoke<WatchPendingFile[]>('drain_watch_spool');
+}
+
+export function ackWatchSpool(ids: string[]): Promise<void> {
+  if (!isTauri) return Promise.resolve();
+  return invoke('ack_watch_spool', { ids });
+}
+
+export async function listenWatchDetected(handler: (file: WatchPendingFile) => void): Promise<UnlistenFn> {
+  if (!isTauri) return () => undefined;
+  return listen<WatchPendingFile>('watch:file-detected', (event) => handler(event.payload));
+}
+
+export async function listenWatchStatus(handler: (statuses: WatchStatus[]) => void): Promise<UnlistenFn> {
+  if (!isTauri) return () => undefined;
+  return listen<WatchStatus[]>('watch:status', (event) => handler(event.payload));
 }
 
 interface PathMetadata {
