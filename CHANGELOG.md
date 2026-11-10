@@ -5,6 +5,13 @@ All notable changes to Sentinel are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-11-10
+
+### Changed
+
+- Settings dropdowns now stretch to the card's right edge, matching the other row controls
+- The selected tab keeps its regular weight instead of switching to semibold
+
 ## [0.7.0] - 2026-11-05
 
 ### Changed
